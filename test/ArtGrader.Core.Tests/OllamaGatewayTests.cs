@@ -75,6 +75,50 @@ public class OllamaGatewayTests
     }
 
     [Fact]
+    public async Task Fast_mode_uses_the_instruct_variant_of_a_thinking_only_model()
+    {
+        var fake = new FakeOllama((HttpStatusCode.OK, Ok));
+
+        var response = await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), default);
+
+        Assert.Equal("qwen3-vl:32b-instruct", fake.Requests.Single()["model"]!.GetValue<string>());
+        Assert.Equal("qwen3-vl:32b-instruct", response.Model);
+    }
+
+    [Fact]
+    public async Task Thinking_mode_keeps_the_selected_model()
+    {
+        var fake = new FakeOllama((HttpStatusCode.OK, Ok));
+
+        await new OllamaGateway(new HttpClient(fake), new Settings("high")).CompleteJsonAsync(Request(), default);
+
+        Assert.Equal("qwen3-vl:32b", fake.Requests.Single()["model"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Fast_mode_falls_back_to_the_selected_model_when_the_instruct_variant_is_missing()
+    {
+        var fake = new FakeOllama(
+            (HttpStatusCode.NotFound, """{"error":"model 'qwen3-vl:32b-instruct' not found"}"""),
+            (HttpStatusCode.OK, Ok));
+
+        var response = await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), default);
+
+        Assert.Equal("qwen3-vl:32b", fake.Requests[1]["model"]!.GetValue<string>());
+        Assert.Equal("""{"ok":true}""", response.Json);
+    }
+
+    [Fact]
+    public async Task Models_that_can_switch_thinking_off_are_not_replaced()
+    {
+        var fake = new FakeOllama((HttpStatusCode.OK, Ok));
+
+        await new OllamaGateway(new HttpClient(fake), new Settings("medium", "qwen3.8:27b")).CompleteJsonAsync(Request(), default);
+
+        Assert.Equal("qwen3.8:27b", fake.Requests.Single()["model"]!.GetValue<string>());
+    }
+
+    [Fact]
     public async Task Retries_without_thinking_when_the_model_cannot_think()
     {
         var fake = new FakeOllama(

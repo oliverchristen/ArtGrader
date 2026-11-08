@@ -123,7 +123,7 @@
                             </div>
                         </div>
                     }
-                    @foreach (var other in models.Where(m => LocalModelCatalog.Find(m.Name) is null))
+                    @foreach (var other in models.Where(m => !LocalModelCatalog.IsKnown(m.Name)))
                     {
                         <div class="@($"model-card {(ollamaModel == other.Name ? "on" : "")}")">
                             <button type="button" role="radio" aria-checked="@(ollamaModel == other.Name)" class="model-pick" @onclick="() => ollamaModel = other.Name">
@@ -147,6 +147,36 @@
                         <span class="c-text">Antwortet direkt ohne Nachdenken. Gut, wenn viele Arbeiten anstehen.</span>
                     </button>
                 </div>
+                @if (effort == "medium" && LocalModelCatalog.Find(ollamaModel) is { FastVariant: { } fastVariant } selectedModel && !IsInstalled(fastVariant))
+                {
+                    var fastDownload = Downloads.Get(fastVariant);
+                    <div class="model-card missing" style="margin-top:12px">
+                        <div class="model-pick" style="cursor:default">
+                            <span class="model-head"><span class="model-title">Schnell-Variante für «@selectedModel.Title»</span><code>@fastVariant</code></span>
+                            <span class="model-text">Dieses Modell kann das Nachdenken nicht abschalten. Für den Schnell-Modus braucht es eine zweite Variante. Bis sie geladen ist, denkt es trotzdem nach.</span>
+                            <span class="model-facts"><span>@selectedModel.DownloadGb.ToString("0.#") GB</span></span>
+                        </div>
+                        <div class="model-action">
+                            @if (fastDownload is { Error: { } fastError })
+                            {
+                                <span class="work-error">@fastError</span>
+                            }
+                            else if (fastDownload is not null)
+                            {
+                                var fastFraction = fastDownload.Progress?.Fraction ?? 0;
+                                <div class="brush-progress" style="min-width:140px"><span style="@($"width:{(fastFraction * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture)}%")"></span></div>
+                                <span class="faint" style="font-size:.8rem">@(fastDownload.Progress?.Fraction is { } ff ? $"{ff:P0}" : "startet …")</span>
+                            }
+                            else
+                            {
+                                <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Download" Disabled="@(!ollamaReachable)"
+                                           OnClick="() => Downloads.Start(fastVariant)">
+                                    Herunterladen
+                                </MudButton>
+                            }
+                        </div>
+                    </div>
+                }
 
                 <MudGrid Spacing="2" Class="mt-2">
                     <MudItem xs="12" sm="8">
@@ -203,7 +233,9 @@
 
     private void OnDownloadsChanged() => InvokeAsync(async () =>
     {
-        var done = LocalModelCatalog.Recommended.Count(m => Downloads.Get(m.Name)?.Done == true);
+        var done = LocalModelCatalog.Recommended
+            .SelectMany(m => new[] { m.Name, m.FastVariant })
+            .Count(name => name is not null && Downloads.Get(name)?.Done == true);
         if (done != completedDownloads)
         {
             completedDownloads = done;

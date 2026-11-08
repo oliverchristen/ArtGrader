@@ -40,9 +40,10 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         }
 
         var think = !request.Quick && UsesThinking(settings.Effort);
+        var fastVariant = think ? null : LocalModelCatalog.FastVariantOf(settings.OllamaModel);
         var body = new JsonObject
         {
-            ["model"] = settings.OllamaModel,
+            ["model"] = fastVariant ?? settings.OllamaModel,
             ["stream"] = false,
             ["format"] = request.Schema.DeepClone(),
             ["keep_alive"] = "15m",
@@ -62,6 +63,11 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         try
         {
             var response = await SendAsync(settings.OllamaUrl, body, cancellationToken);
+            if (fastVariant is not null && response.NotFound)
+            {
+                body["model"] = settings.OllamaModel;
+                response = await SendAsync(settings.OllamaUrl, body, cancellationToken);
+            }
             if (response.Error?.Contains("does not support thinking", StringComparison.OrdinalIgnoreCase) == true)
             {
                 body.Remove("think");
@@ -77,7 +83,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
             }
             return new ModelJsonResponse(
                 response.Message?.Content ?? "",
-                settings.OllamaModel,
+                body["model"]!.GetValue<string>(),
                 new ModelUsage(response.PromptEvalCount, response.EvalCount, 0, 0));
         }
         finally
@@ -196,7 +202,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
             }
             if (message.StatusCode == HttpStatusCode.NotFound && parsed?.Error is not null)
             {
-                return parsed with { Error = $"Das Modell ist nicht installiert ({parsed.Error}). Im Terminal: ollama pull <modell>" };
+                return parsed with { Error = $"Das Modell ist nicht installiert ({parsed.Error}). Im Terminal: ollama pull <modell>", NotFound = true };
             }
             if (!message.IsSuccessStatusCode)
             {
@@ -210,6 +216,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
     {
         [JsonPropertyName("message")] public ChatMessage? Message { get; init; }
         [JsonPropertyName("done_reason")] public string? DoneReason { get; init; }
+        [JsonIgnore] public bool NotFound { get; init; }
         [JsonPropertyName("prompt_eval_count")] public long PromptEvalCount { get; init; }
         [JsonPropertyName("eval_count")] public long EvalCount { get; init; }
         [JsonPropertyName("error")] public string? Error { get; init; }

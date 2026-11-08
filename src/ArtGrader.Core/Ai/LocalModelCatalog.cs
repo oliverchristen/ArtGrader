@@ -7,7 +7,8 @@ public sealed record LocalModel(
     double DownloadGb,
     int MinMemoryGb,
     string MinutesWithThinking,
-    string MinutesFast);
+    string MinutesFast,
+    string? FastVariant = null);
 
 public static class LocalModelCatalog
 {
@@ -20,16 +21,22 @@ public static class LocalModelCatalog
             20.9,
             32,
             "6–7",
-            "2–3"),
+            "2–3",
+            "qwen3-vl:32b-instruct"),
         new(
             "qwen3-vl:30b",
-            "Schnell",
+            "Flink",
             "Gleich gross, aber pro Wort rechnet nur ein kleiner Teil des Modells mit (Mixture of Experts). Deutlich schneller, etwas ungenauer.",
             19.6,
             32,
             "1–2",
-            "unter 1"),
+            "unter 1",
+            "qwen3-vl:30b-a3b-instruct"),
     ];
 
     public static LocalModel? Find(string? name) => Recommended.FirstOrDefault(m => m.Name == name);
+
+    public static string? FastVariantOf(string model) => Find(model)?.FastVariant;
+
+    public static bool IsKnown(string name) => Recommended.Any(m => m.Name == name || m.FastVariant == name);
 }
