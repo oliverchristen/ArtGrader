@@ -1,0 +1,160 @@
+@if (Exam.Submissions.Count == 0)
+{
+    <div class="sheet empty-state">
+        <img src="img/empty-sketch.svg" alt="" />
+        <p class="muted mt-3">Noch keine Arbeiten.</p>
+    </div>
+    return;
+}
+
+<div class="stats">
+    <div class="stat">
+        <div class="k">Durchschnitt</div>
+        <div class="v">@(average?.ToString("0.00") ?? "–")</div>
+        <div class="faint" style="font-size:.8rem">@(provisionalOnly ? "vorläufig" : $"{finalCount} feste Noten")</div>
+    </div>
+    <div class="stat">
+        <div class="k">Spannweite</div>
+        <div class="v">@(min is null ? "–" : $"{min:0.0#} – {max:0.0#}")</div>
+    </div>
+    <div class="stat">
+        <div class="k">Abgeschlossen</div>
+        <div class="v">@Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen)<span class="faint" style="font-size:1rem"> / @Exam.Submissions.Count</span></div>
+    </div>
+    <div class="stat">
+        <div class="k">Verteilung</div>
+        <div class="histogram" aria-label="Notenverteilung">
+            @foreach (var (grade, count) in histogram)
+            {
+                <div title="@($"{count}× Note {grade}")">
+                    <i style="@($"height:{(histogramMax == 0 ? 0 : 100 * count / histogramMax)}%")"></i>
+                    <span>@grade</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<section class="sheet">
+    <div class="d-flex align-center flex-wrap gap-2 mb-4">
+        <h2 class="sheet-title" style="margin:0">Notenliste</h2>
+        <span class="topbar-spacer"></span>
+        <MudButton Class="btn-ink" StartIcon="@Icons.Material.Outlined.GridOn" Href="@($"/export/{Exam.Id}/noten.xlsx")" Target="_blank">Excel</MudButton>
+        <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
+                   Href="@($"/export/{Exam.Id}/beurteilungen.pdf?begruendungen={withJustifications.ToString().ToLowerInvariant()}")">
+            Beurteilungsbögen (PDF)
+        </MudButton>
+        <MudSwitch @bind-Value="withJustifications" Color="Color.Primary" Label="mit Begründungen" />
+    </div>
+    <div class="table-wrap">
+        <table class="grades">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    @foreach (var (criterion, number) in criteria.Select((c, i) => (c, i + 1)))
+                    {
+                        <th title="@criterion.Text">K@(number)@(criterion.AssessedBy == AssessedBy.Teacher ? "*" : "")</th>
+                    }
+                    <th>Punkte</th>
+                    <th>Note</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var submission in Exam.Submissions)
+                {
+                    var result = GradeCalculator.Calculate(Exam, submission);
+                    var grade = GradeCalculator.FinalGrade(Exam, submission);
+                    <tr>
+                        <td class="name"><a href="@($"/pruefung/{Exam.Id}/arbeit/{submission.Id}")">@submission.StudentName</a></td>
+                        @foreach (var criterion in criteria)
+                        {
+                            var level = submission.Assessments.FirstOrDefault(a => a.CriterionId == criterion.Id)?.EffectiveLevel;
+                            <td>
+                                @if (level is not null)
+                                {
+                                    <span class="@($"lv-dot lv-{(int)level.Value}")" title="@LevelText.Label(level.Value)"></span>
+                                }
+                                else
+                                {
+                                    <span class="lv-dot none" title="offen"></span>
+                                }
+                            </td>
+                        }
+                        <td class="muted">@result.Points.ToString("0.##") / @result.MaxPoints.ToString("0.##")</td>
+                        <td class="grade-cell">
+                            @if (grade is not null)
+                            {
+                                @grade.Value.ToString("0.0#")@(submission.FinalGradeOverride is not null ? " ✎" : "")
+                            }
+                            else if (result.Provisional is not null)
+                            {
+                                <span class="faint" title="vorläufig">≈ @result.Provisional.Value.ToString("0.0#")</span>
+                            }
+                            else
+                            {
+                                <span class="faint">–</span>
+                            }
+                        </td>
+                        <td><span class="@($"status s-{submission.Status}")"><span class="dot"></span>@LevelText.Label(submission.Status)</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="legend">
+        @foreach (var level in LevelText.AllDescending)
+        {
+            <span><i class="@($"lv-dot lv-{(int)level}")"></i>@LevelText.Label(level)</span>
+        }
+        <span><i class="lv-dot none"></i>offen</span>
+        <span>✎ Note selbst gesetzt</span>
+        <span>≈ vorläufig</span>
+    </div>
+</section>
+
+<section class="sheet">
+    <h2 class="sheet-title">Kriterien</h2>
+    @foreach (var (criterion, number) in criteria.Select((c, i) => (c, i + 1)))
+    {
+        <div class="muted" style="font-size:.92rem;margin-top:6px">
+            <b style="color:var(--ink)">K@(number)</b> @criterion.Text
+            @if (criterion.AssessedBy == AssessedBy.Teacher)
+            {
+                <span class="tag teacher ml-1">Lehrperson</span>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
+
+    private List<RubricCriterion> criteria = [];
+    private bool withJustifications;
+    private decimal? average;
+    private decimal? min;
+    private decimal? max;
+    private int finalCount;
+    private bool provisionalOnly;
+    private List<(string Grade, int Count)> histogram = [];
+    private int histogramMax;
+
+    protected override void OnParametersSet()
+    {
+        criteria = Exam.OrderedCriteria().ToList();
+        var finals = Exam.Submissions.Select(s => GradeCalculator.FinalGrade(Exam, s)).OfType<decimal>().ToList();
+        finalCount = finals.Count;
+        var shown = finals.Count > 0
+            ? finals
+            : Exam.Submissions.Select(s => GradeCalculator.Calculate(Exam, s).Provisional).OfType<decimal>().ToList();
+        provisionalOnly = finals.Count == 0 && shown.Count > 0;
+        average = shown.Count == 0 ? null : shown.Average();
+        min = shown.Count == 0 ? null : shown.Min();
+        max = shown.Count == 0 ? null : shown.Max();
+        histogram = Enumerable.Range(1, 6)
+            .Select(g => (g.ToString(), shown.Count(x => Math.Round(x, MidpointRounding.AwayFromZero) == g)))
+            .ToList();
+        histogramMax = histogram.Count == 0 ? 0 : histogram.Max(h => h.Count);
+    }
+}

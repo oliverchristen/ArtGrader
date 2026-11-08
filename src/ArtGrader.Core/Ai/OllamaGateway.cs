@@ -1,0 +1,243 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+
+namespace ArtGrader.Core.Ai;
+
+public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSource) : IModelGateway
+{
+    private const int ContextTokens = 32768;
+    private readonly SemaphoreSlim oneAtATime = new(1, 1);
+
+    public async Task<ModelJsonResponse> CompleteJsonAsync(ModelJsonRequest request, CancellationToken cancellationToken)
+    {
+        var settings = settingsSource.Current();
+        if (string.IsNullOrWhiteSpace(settings.OllamaModel))
+        {
+            throw new ModelNotConfiguredException("Es ist kein lokales Modell gewählt. Bitte unter «Einstellungen» ein Ollama-Modell auswählen.");
+        }
+
+        var text = new StringBuilder();
+        var images = new List<string>();
+        foreach (var part in request.SharedContext.Concat(request.Content))
+        {
+            switch (part)
+            {
+                case TextPart t:
+                    text.Append(t.Text).Append("\n\n");
+                    break;
+                case ImagePart image:
+                    images.Add(Convert.ToBase64String(image.Jpeg));
+                    text.Append($"[Bild {images.Count} ist angehängt]\n\n");
+                    break;
+                case PdfPart pdf:
+                    throw new ModelException(
+                        $"Das lokale Modell kann keine PDF-Dateien lesen ({pdf.Title}). Bitte den Text als Word-Datei hochladen oder einfügen.");
+            }
+        }
+
+        var think = !request.Quick && UsesThinking(settings.Effort);
+        var body = new JsonObject
+        {
+            ["model"] = settings.OllamaModel,
+            ["stream"] = false,
+            ["format"] = request.Schema.DeepClone(),
+            ["keep_alive"] = "15m",
+            ["options"] = new JsonObject { ["num_ctx"] = ContextTokens, ["temperature"] = 0.2 },
+            ["messages"] = new JsonArray(
+                new JsonObject { ["role"] = "system", ["content"] = request.SystemPrompt },
+                new JsonObject
+                {
+                    ["role"] = "user",
+                    ["content"] = text.ToString().Trim(),
+                    ["images"] = new JsonArray(images.Select(i => (JsonNode)JsonValue.Create(i)!).ToArray()),
+                }),
+        };
+        body["think"] = think;
+
+        await oneAtATime.WaitAsync(cancellationToken);
+        try
+        {
+            var response = await SendAsync(settings.OllamaUrl, body, cancellationToken);
+            if (response.Error?.Contains("does not support thinking", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                body.Remove("think");
+                response = await SendAsync(settings.OllamaUrl, body, cancellationToken);
+            }
+            if (response.Error is not null)
+            {
+                throw new ModelException($"Das lokale Modell meldet einen Fehler: {response.Error}");
+            }
+            if (response.DoneReason == "length")
+            {
+                throw new ModelException("Die Antwort des lokalen Modells wurde abgeschnitten. Bitte nochmals versuchen.");
+            }
+            return new ModelJsonResponse(
+                response.Message?.Content ?? "",
+                settings.OllamaModel,
+                new ModelUsage(response.PromptEvalCount, response.EvalCount, 0, 0));
+        }
+        finally
+        {
+            oneAtATime.Release();
+        }
+    }
+
+    public static bool UsesThinking(string effort) => effort is "high" or "max";
+
+    public async Task<IReadOnlyList<OllamaModelInfo>> ListModelsAsync(string baseUrl, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var tags = await http.GetFromJsonAsync<TagsResponse>(new Uri(new Uri(baseUrl), "/api/tags"), cancellationToken);
+            return (tags?.Models ?? [])
+                .Select(m => new OllamaModelInfo(m.Name, m.Size))
+                .OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or UriFormatException)
+        {
+            throw new ModelException($"Ollama ist unter {baseUrl} nicht erreichbar. Läuft die Ollama-App?", ex);
+        }
+    }
+
+    public async Task PullAsync(string baseUrl, string model, IProgress<PullProgress> progress, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new Uri(baseUrl), "/api/pull"))
+        {
+            Content = new StringContent(new JsonObject { ["model"] = model, ["stream"] = true }.ToJsonString(), Encoding.UTF8, "application/json"),
+        };
+        HttpResponseMessage response;
+        try
+        {
+            response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new ModelException($"Ollama ist unter {baseUrl} nicht erreichbar. Läuft die Ollama-App?", ex);
+        }
+
+        using (response)
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var reader = new StreamReader(stream);
+            while (await reader.ReadLineAsync(cancellationToken) is { } line)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+                PullLine? update;
+                try
+                {
+                    update = JsonSerializer.Deserialize<PullLine>(line);
+                }
+                catch (JsonException)
+                {
+                    continue;
+                }
+                if (update?.Error is { } error)
+                {
+                    throw new ModelException($"Download fehlgeschlagen: {error}");
+                }
+                if (update is null)
+                {
+                    continue;
+                }
+                progress.Report(new PullProgress(update.Status ?? "", update.Completed, update.Total));
+                if (update.Status == "success")
+                {
+                    return;
+                }
+            }
+        }
+        throw new ModelException("Der Download wurde unterbrochen. Bitte nochmals starten – er setzt dort fort, wo er aufgehört hat.");
+    }
+
+    private sealed record PullLine(
+        [property: JsonPropertyName("status")] string? Status,
+        [property: JsonPropertyName("completed")] long Completed,
+        [property: JsonPropertyName("total")] long Total,
+        [property: JsonPropertyName("error")] string? Error);
+
+    private async Task<ChatResponse> SendAsync(string baseUrl, JsonObject body, CancellationToken cancellationToken)
+    {
+        HttpResponseMessage message;
+        try
+        {
+            message = await http.PostAsync(
+                new Uri(new Uri(baseUrl), "/api/chat"),
+                new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"),
+                cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new ModelException($"Ollama ist unter {baseUrl} nicht erreichbar. Läuft die Ollama-App?", ex);
+        }
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new ModelException("Das lokale Modell hat zu lange nicht geantwortet (Zeitüberschreitung).", ex);
+        }
+
+        using (message)
+        {
+            var raw = await message.Content.ReadAsStringAsync(cancellationToken);
+            ChatResponse? parsed;
+            try
+            {
+                parsed = JsonSerializer.Deserialize<ChatResponse>(raw);
+            }
+            catch (JsonException)
+            {
+                parsed = null;
+            }
+            if (message.StatusCode == HttpStatusCode.NotFound && parsed?.Error is not null)
+            {
+                return parsed with { Error = $"Das Modell ist nicht installiert ({parsed.Error}). Im Terminal: ollama pull <modell>" };
+            }
+            if (!message.IsSuccessStatusCode)
+            {
+                return new ChatResponse { Error = parsed?.Error ?? $"HTTP {(int)message.StatusCode}" };
+            }
+            return parsed ?? new ChatResponse { Error = "Unverständliche Antwort von Ollama." };
+        }
+    }
+
+    private sealed record ChatResponse
+    {
+        [JsonPropertyName("message")] public ChatMessage? Message { get; init; }
+        [JsonPropertyName("done_reason")] public string? DoneReason { get; init; }
+        [JsonPropertyName("prompt_eval_count")] public long PromptEvalCount { get; init; }
+        [JsonPropertyName("eval_count")] public long EvalCount { get; init; }
+        [JsonPropertyName("error")] public string? Error { get; init; }
+    }
+
+    private sealed record ChatMessage([property: JsonPropertyName("content")] string? Content);
+
+    private sealed record TagsResponse([property: JsonPropertyName("models")] List<TagModel>? Models);
+
+    private sealed record TagModel(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("size")] long Size);
+}
+
+public sealed record OllamaModelInfo(string Name, long SizeBytes);
+
+public sealed record PullProgress(string Status, long Completed, long Total)
+{
+    public double? Fraction => Total > 0 ? (double)Completed / Total : null;
+}
+
+public sealed class RoutingModelGateway(
+    IAiSettingsSource settings,
+    AnthropicClaudeGateway anthropic,
+    OllamaGateway ollama) : IModelGateway
+{
+    public Task<ModelJsonResponse> CompleteJsonAsync(ModelJsonRequest request, CancellationToken cancellationToken) =>
+        settings.Current().Provider == AiProvider.Ollama
+            ? ollama.CompleteJsonAsync(request, cancellationToken)
+            : anthropic.CompleteJsonAsync(request, cancellationToken);
+}

@@ -1,0 +1,362 @@
+@page "/pruefung/{ExamId:guid}/arbeit/{SubmissionId:guid}"
+@using ArtGrader.Core.Images
+@inject ExamRepository Repository
+@inject GradingEvents Events
+@inject GradingQueue Queue
+@inject FileStore Files
+@inject ISnackbar Snackbar
+@inject SettingsStore Settings
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>@(submission?.StudentName ?? "Arbeit") · ArtGrader</PageTitle>
+
+@if (exam is null || submission is null)
+{
+    @if (loaded)
+    {
+        <div class="banner error">Diese Arbeit gibt es nicht (mehr). <a href="@($"/pruefung/{ExamId}")">Zur Prüfung</a></div>
+    }
+    else
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Tertiary" />
+    }
+}
+else
+{
+    var index = exam.Submissions.FindIndex(s => s.Id == submission.Id);
+    var previous = index > 0 ? exam.Submissions[index - 1] : null;
+    var next = index < exam.Submissions.Count - 1 ? exam.Submissions[index + 1] : null;
+    var result = GradeCalculator.Calculate(exam, submission);
+    var grade = submission.FinalGradeOverride ?? result.Grade;
+    var busy = submission.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet;
+
+    <nav class="crumbs">
+        <a href="/">Prüfungen</a><span>/</span><a href="@($"/pruefung/{exam.Id}")">@exam.Title</a><span>/</span><span>@submission.StudentName</span>
+    </nav>
+
+    <div class="review-head">
+        <div class="student-nav">
+            <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : Url(previous))" aria-label="Vorherige Arbeit" />
+            <div class="student-name">
+                <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" Variant="Variant.Text" aria-label="Name" />
+            </div>
+            <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : Url(next))" aria-label="Nächste Arbeit" />
+            <span class="faint">@(index + 1) von @exam.Submissions.Count</span>
+        </div>
+        <div class="d-flex align-center flex-wrap gap-2">
+            @if (saved)
+            {
+                <span class="faint" style="font-size:.85rem">✓ gespeichert</span>
+            }
+            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.AutoAwesome" Disabled="@(busy || !Settings.IsConfigured)" OnClick="RegradeAsync">
+                @(submission.GradedAt is null ? "KI-Vorschlag holen" : "Neu bewerten")
+            </MudButton>
+            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
+                       Href="@($"/export/{exam.Id}/beurteilungen.pdf?submission={submission.Id}")">PDF</MudButton>
+            @if (submission.Status == SubmissionStatus.Abgeschlossen)
+            {
+                <MudButton Class="btn-quiet" OnClick="() => SaveAsync(complete: false)" StartIcon="@Icons.Material.Outlined.LockOpen">Wieder öffnen</MudButton>
+            }
+            else
+            {
+                <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.Check" Disabled="@(grade is null || busy)" OnClick="CompleteAsync">
+                    Abschliessen@(next is null ? "" : " & weiter")
+                </MudButton>
+            }
+        </div>
+    </div>
+
+    <div class="review-grid">
+        <div class="sticky-side">
+            @if (submission.Images.Count > 0)
+            {
+                var current = submission.Images[Math.Min(imageIndex, submission.Images.Count - 1)];
+                <div class="@($"frame {(zoomed ? "zoomed" : "")}")">
+                    <img src="@($"/files/{current.RelativePath}")" alt="Foto @(imageIndex + 1) der Arbeit" @onclick="() => zoomed = !zoomed" />
+                </div>
+            }
+            <div class="thumbs">
+                @for (var i = 0; i < submission.Images.Count; i++)
+                {
+                    var n = i;
+                    <img src="@($"/files/{submission.Images[n].RelativePath}")" class="@(n == imageIndex ? "current" : "")" alt="Foto @(n + 1)" @onclick="() => imageIndex = n" />
+                }
+                <label class="add-photo" title="Weiteres Foto (Detail, Rückseite …)">
+                    <InputFile OnChange="AddPhotosAsync" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.heic" aria-label="Foto hinzufügen" />
+                    <MudIcon Icon="@Icons.Material.Outlined.Add" />
+                </label>
+                @if (submission.Images.Count > 1)
+                {
+                    <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" OnClick="RemoveCurrentPhotoAsync" aria-label="Dieses Foto entfernen" />
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(submission.AiDescription))
+            {
+                <p class="ai-sees"><b>Was die KI sieht.</b> @submission.AiDescription</p>
+            }
+            @if (submission.ModelId is not null)
+            {
+                <p class="faint" style="font-size:.78rem">Vorschlag von <code>@submission.ModelId</code>@(submission.GradedAt is { } at ? $" · {at:dd.MM.yyyy HH:mm}" : "")</p>
+            }
+        </div>
+
+        <div>
+            <section class="sheet grade-card">
+                <div class="@($"grade-stamp {(grade is null ? "provisional" : "")}")">
+                    @(grade?.ToString("0.0#") ?? result.Provisional?.ToString("0.0#") ?? "–")
+                    <small>@(grade is null ? "vorläufig" : "Note")</small>
+                </div>
+                <div class="grade-facts">
+                    <div class="big">@result.Points.ToString("0.##") von @result.MaxPoints.ToString("0.##") Punkten</div>
+                    <div class="muted">
+                        @if (result.MissingCount > 0)
+                        {
+                            <text>Noch @result.MissingCount Kriterium/en für dich offen.</text>
+                        }
+                        else if (submission.FinalGradeOverride is not null && result.Grade is not null)
+                        {
+                            <text>Berechnet wäre @result.Grade.Value.ToString("0.0#").</text>
+                        }
+                        else
+                        {
+                            <text>@LevelText.Label(submission.Status)</text>
+                        }
+                    </div>
+                    @if (busy)
+                    {
+                        <div class="banner mt-3"><MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:#8a5f0c" /> Die KI schaut sich die Arbeit an …</div>
+                    }
+                    @if (submission.Status == SubmissionStatus.Fehler)
+                    {
+                        <div class="banner error mt-3">@submission.ErrorMessage</div>
+                    }
+                </div>
+                <MudNumericField T="decimal?" Value="submission.FinalGradeOverride" ValueChanged="SetOverrideAsync" Label="Note selbst setzen"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="6" Step="0.25m" Clearable="true" Style="max-width: 170px" />
+            </section>
+
+            <section class="sheet">
+                <div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-2">
+                    <h2 class="sheet-title">Beurteilung</h2>
+                    <span class="faint" style="font-size:.8rem">gestrichelt = Vorschlag der KI · farbig = gilt</span>
+                </div>
+                @foreach (var category in exam.Categories)
+                {
+                    <div class="cat-label">@category.Name</div>
+                    @foreach (var criterion in category.Criteria)
+                    {
+                        var assessment = submission.AssessmentFor(criterion.Id);
+                        var teacherOnly = criterion.AssessedBy == AssessedBy.Teacher;
+                        <div class="crit">
+                            <div class="crit-head">
+                                <div class="crit-text">@criterion.Text</div>
+                                @if (teacherOnly)
+                                {
+                                    <span class="tag teacher">Lehrperson</span>
+                                }
+                                else if (assessment.AiConfidence == Confidence.Tief && assessment.TeacherLevel is null)
+                                {
+                                    <span class="tag unsure">KI unsicher</span>
+                                }
+                            </div>
+                            <div class="levels" role="radiogroup" aria-label="@criterion.Text">
+                                @foreach (var level in LevelText.AllDescending)
+                                {
+                                    var chosen = assessment.EffectiveLevel == level;
+                                    var ai = assessment.AiLevel == level;
+                                    <button type="button" role="radio" aria-checked="@(chosen ? "true" : "false")"
+                                            class="@($"lv-{(int)level} {(chosen ? "chosen" : "")} {(ai ? "ai" : "")}")"
+                                            @onclick="() => SetLevelAsync(assessment, level)">
+                                        <span class="swatch" style="@($"background:var(--level-{(int)level})")"></span>
+                                        <span class="l">@LevelText.Label(level)</span>
+                                        <span class="s">@LevelText.Short(level)</span>
+                                    </button>
+                                }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(assessment.AiJustification))
+                            {
+                                <div class="why">@assessment.AiJustification</div>
+                            }
+                            @if (assessment.TeacherLevel is not null && assessment.AiLevel is not null && assessment.TeacherLevel != assessment.AiLevel)
+                            {
+                                <button type="button" class="revert" @onclick="() => SetLevelAsync(assessment, null)">
+                                    ↺ Vorschlag der KI übernehmen (@LevelText.Label(assessment.AiLevel.Value))
+                                </button>
+                            }
+                        </div>
+                    }
+                }
+            </section>
+
+            <section class="sheet">
+                <h2 class="sheet-title">Rückmeldung</h2>
+                <p class="sheet-sub">Erscheint im PDF für die Schülerin oder den Schüler.</p>
+                @if (!string.IsNullOrWhiteSpace(submission.AiStrengths) || !string.IsNullOrWhiteSpace(submission.AiNextSteps))
+                {
+                    <div class="notes-grid">
+                        <div class="note-col">
+                            <h4>Stärken</h4>
+                            <ul>@foreach (var line in Lines(submission.AiStrengths)) { <li>@line</li> }</ul>
+                        </div>
+                        <div class="note-col">
+                            <h4>Nächste Schritte</h4>
+                            <ul>@foreach (var line in Lines(submission.AiNextSteps)) { <li>@line</li> }</ul>
+                        </div>
+                    </div>
+                }
+                <MudTextField T="string" Value="submission.TeacherComment" ValueChanged="SetCommentAsync" Variant="Variant.Outlined" Lines="4" Sizing="InputSizing.Auto"
+                              Label="Deine Rückmeldung" DebounceInterval="800" />
+                @if (!string.IsNullOrWhiteSpace(submission.AiOverallComment) && submission.TeacherComment != submission.AiOverallComment)
+                {
+                    <div class="ai-quote">«@submission.AiOverallComment»</div>
+                    <MudButton Class="btn-quiet mt-1" Size="Size.Small" StartIcon="@Icons.Material.Outlined.ContentPaste" OnClick="() => SetCommentAsync(submission.AiOverallComment)">
+                        Vorschlag übernehmen
+                    </MudButton>
+                }
+            </section>
+        </div>
+    </div>
+}
+
+@code {
+    private const long MaxImageBytes = 40 * 1024 * 1024;
+
+    [Parameter] public Guid ExamId { get; set; }
+    [Parameter] public Guid SubmissionId { get; set; }
+
+    private Exam? exam;
+    private Submission? submission;
+    private bool loaded;
+    private bool saved;
+    private bool zoomed;
+    private int imageIndex;
+
+    protected override void OnInitialized() => Events.SubmissionChanged += OnSubmissionChanged;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        imageIndex = 0;
+        zoomed = false;
+        saved = false;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        exam = await Repository.GetAsync(ExamId);
+        submission = exam?.Submissions.FirstOrDefault(s => s.Id == SubmissionId);
+        loaded = true;
+    }
+
+    private string Url(Submission s) => $"/pruefung/{ExamId}/arbeit/{s.Id}";
+
+    private static IEnumerable<string> Lines(string text) =>
+        text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private void OnSubmissionChanged(Guid examId, Guid submissionId)
+    {
+        if (submissionId == SubmissionId)
+        {
+            InvokeAsync(async () =>
+            {
+                await LoadAsync();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task SetLevelAsync(CriterionAssessment assessment, Level? level)
+    {
+        assessment.TeacherLevel = level is not null && level == assessment.AiLevel ? null : level;
+        await SaveAsync(complete: submission!.Status == SubmissionStatus.Abgeschlossen);
+    }
+
+    private async Task SetOverrideAsync(decimal? value)
+    {
+        submission!.FinalGradeOverride = value is null ? null : Math.Clamp(value.Value, 1m, 6m);
+        await SaveAsync(complete: submission.Status == SubmissionStatus.Abgeschlossen);
+    }
+
+    private async Task SetCommentAsync(string value)
+    {
+        submission!.TeacherComment = value ?? "";
+        await SaveAsync(complete: submission.Status == SubmissionStatus.Abgeschlossen);
+    }
+
+    private async Task RenameAsync(string name)
+    {
+        submission!.StudentName = name;
+        await SaveAsync(complete: submission.Status == SubmissionStatus.Abgeschlossen);
+    }
+
+    private async Task SaveAsync(bool complete)
+    {
+        await Repository.SaveReviewAsync(submission!, complete);
+        submission!.Status = complete ? SubmissionStatus.Abgeschlossen
+            : submission.Status == SubmissionStatus.Abgeschlossen ? SubmissionStatus.Vorschlag : submission.Status;
+        saved = true;
+        Events.Raise(ExamId, SubmissionId);
+    }
+
+    private async Task CompleteAsync()
+    {
+        if (string.IsNullOrWhiteSpace(submission!.TeacherComment) && !string.IsNullOrWhiteSpace(submission.AiOverallComment))
+        {
+            submission.TeacherComment = submission.AiOverallComment;
+        }
+        await SaveAsync(complete: true);
+        var index = exam!.Submissions.FindIndex(s => s.Id == submission.Id);
+        var next = exam.Submissions.Skip(index + 1).FirstOrDefault(s => s.Status != SubmissionStatus.Abgeschlossen)
+            ?? exam.Submissions.Skip(index + 1).FirstOrDefault();
+        Snackbar.Add($"«{submission.StudentName}» abgeschlossen.", Severity.Success);
+        Navigation.NavigateTo(next is null ? $"/pruefung/{ExamId}" : Url(next));
+    }
+
+    private async Task RegradeAsync()
+    {
+        await Queue.EnqueueAsync(ExamId, [SubmissionId]);
+        submission!.Status = SubmissionStatus.InWarteschlange;
+    }
+
+    private async Task AddPhotosAsync(InputFileChangeEventArgs e)
+    {
+        var images = new List<SubmissionImage>();
+        foreach (var file in e.GetMultipleFiles(20))
+        {
+            try
+            {
+                if (file.Size > MaxImageBytes)
+                {
+                    throw new UnsupportedImageException("grösser als 40 MB");
+                }
+                await using var stream = file.OpenReadStream(MaxImageBytes);
+                images.Add(new SubmissionImage { OriginalName = file.Name, RelativePath = await Files.SaveSubmissionImageAsync(ExamId, stream, CancellationToken.None) });
+            }
+            catch (UnsupportedImageException ex)
+            {
+                Snackbar.Add($"{file.Name}: {ex.Message}", Severity.Error);
+            }
+        }
+        if (images.Count > 0)
+        {
+            await Repository.AddImagesAsync(SubmissionId, images);
+            await LoadAsync();
+            imageIndex = submission!.Images.Count - 1;
+            Snackbar.Add("Foto hinzugefügt. Für eine neue Einschätzung «Neu bewerten» wählen.", Severity.Info);
+        }
+    }
+
+    private async Task RemoveCurrentPhotoAsync()
+    {
+        var image = submission!.Images[Math.Min(imageIndex, submission.Images.Count - 1)];
+        foreach (var removed in await Repository.RemoveImageAsync(image.Id))
+        {
+            Files.Delete(removed.RelativePath);
+        }
+        imageIndex = 0;
+        await LoadAsync();
+    }
+
+    public void Dispose() => Events.SubmissionChanged -= OnSubmissionChanged;
+}

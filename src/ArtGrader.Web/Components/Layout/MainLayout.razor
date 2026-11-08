@@ -1,0 +1,87 @@
+﻿@inherits LayoutComponentBase
+@using ArtGrader.Core.Ai
+@inject SettingsStore Settings
+@implements IDisposable
+
+<MudThemeProvider Theme="theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<header class="topbar">
+    <div class="topbar-inner">
+        <a href="/" class="brand" aria-label="ArtGrader – zur Übersicht">
+            <img src="favicon.svg" alt="" />
+            <span>
+                <span class="brand-name">Art<em>Grader</em></span>
+                <span class="brand-sub">Bildnerisches Gestalten</span>
+            </span>
+        </a>
+        <span class="topbar-spacer"></span>
+        <a href="/einstellungen" class="@($"provider-pill {(Settings.IsConfigured ? "" : "warn")}")" title="Einstellungen">
+            <span class="dot"></span>
+            <span class="label">@ProviderLabel()</span>
+            <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
+        </a>
+    </div>
+</header>
+
+<main class="page">
+    @Body
+</main>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Ein unerwarteter Fehler ist aufgetreten.
+    <a href="." class="reload">Neu laden</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private static readonly string[] Sans = ["DM Sans", "Segoe UI", "-apple-system", "BlinkMacSystemFont", "Helvetica Neue", "Arial", "sans-serif"];
+    private static readonly string[] Serif = ["Fraunces", "Georgia", "serif"];
+
+    private readonly MudTheme theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#2c4a9a",
+            Secondary = "#c0533a",
+            Tertiary = "#d39b2f",
+            Success = "#4f7b5c",
+            Warning = "#b77f12",
+            Error = "#b3402a",
+            Info = "#2c4a9a",
+            Background = "#f4ede1",
+            Surface = "#fffcf6",
+            TextPrimary = "#262019",
+            TextSecondary = "#6a6157",
+            LinesInputs = "#cdbda4",
+            Divider = "#e2d6c2",
+            ActionDefault = "#6a6157",
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography { FontFamily = Sans },
+            H4 = new H4Typography { FontFamily = Serif, FontWeight = "600" },
+            H5 = new H5Typography { FontFamily = Serif, FontWeight = "600" },
+            H6 = new H6Typography { FontFamily = Serif, FontWeight = "600" },
+            Button = new ButtonTypography { FontFamily = Sans, FontWeight = "600", TextTransform = "none" },
+        },
+        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "10px" },
+    };
+
+    private string ProviderLabel()
+    {
+        if (!Settings.IsConfigured)
+        {
+            return Settings.Provider == AiProvider.Ollama ? "Lokales Modell wählen" : "API-Schlüssel fehlt";
+        }
+        return Settings.Provider == AiProvider.Ollama ? $"Lokal · {Settings.OllamaModel}" : "Claude · Cloud";
+    }
+
+    protected override void OnInitialized() => Settings.Changed += OnSettingsChanged;
+
+    private void OnSettingsChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Settings.Changed -= OnSettingsChanged;
+}

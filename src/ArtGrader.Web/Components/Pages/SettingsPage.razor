@@ -1,0 +1,291 @@
+@page "/einstellungen"
+@using ArtGrader.Core.Ai
+@using ArtGrader.Core.Storage
+@inject SettingsStore Settings
+@inject OllamaGateway Ollama
+@inject AppPaths Paths
+@inject ISnackbar Snackbar
+@inject ModelDownloads Downloads
+@implements IDisposable
+
+<PageTitle>Einstellungen · ArtGrader</PageTitle>
+
+<div class="page-head">
+    <div class="eyebrow">Einstellungen</div>
+    <h1 class="page-title">Wer schaut <em>mit</em>?</h1>
+    <p class="lede">Wähle, welche KI die Arbeiten vorbewertet. Die Note entscheidest immer du.</p>
+</div>
+
+<MudGrid Spacing="5">
+    <MudItem xs="12" md="7">
+        <section class="sheet">
+            <div class="choice-grid" role="radiogroup" aria-label="KI-Anbieter">
+                <button type="button" role="radio" aria-checked="@(provider == AiProvider.Anthropic)" class="@($"choice {(provider == AiProvider.Anthropic ? "on" : "")}")"
+                        @onclick="() => provider = AiProvider.Anthropic">
+                    <span class="c-title"><span class="c-icon" style="background:var(--ultramarine-wash);color:var(--ultramarine)"><MudIcon Icon="@Icons.Material.Outlined.Cloud" /></span>Claude</span>
+                    <span class="c-text" style="display:block">Sehr genaue Einschätzungen, 30–60 Sekunden pro Arbeit. Läuft in der Cloud von Anthropic, braucht einen API-Schlüssel und kostet etwa 8 Rappen pro Arbeit.</span>
+                </button>
+                <button type="button" role="radio" aria-checked="@(provider == AiProvider.Ollama)" class="@($"choice {(provider == AiProvider.Ollama ? "on" : "")}")"
+                        @onclick="SelectOllamaAsync">
+                    <span class="c-title"><span class="c-icon" style="background:var(--sage-wash);color:var(--sage)"><MudIcon Icon="@Icons.Material.Outlined.Laptop" /></span>Lokal (Ollama)</span>
+                    <span class="c-text" style="display:block">Alles bleibt auf diesem Computer, kostenlos und offline. Langsamer und weniger genau – braucht viel Arbeitsspeicher (ab 32 GB).</span>
+                </button>
+            </div>
+
+            @if (provider == AiProvider.Anthropic)
+            {
+                <h3 class="sheet-title" style="font-size:1.1rem">Anthropic API-Schlüssel</h3>
+                <p class="sheet-sub">Erstellen unter console.anthropic.com → API Keys. Wird verschlüsselt auf diesem Computer gespeichert.</p>
+                @if (Settings.KeyFromEnvironment)
+                {
+                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> Schlüssel aus der Umgebungsvariable ANTHROPIC_API_KEY</div>
+                }
+                else if (Settings.HasStoredKey)
+                {
+                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> Ein Schlüssel ist gespeichert</div>
+                }
+                <MudTextField @bind-Value="apiKey" Label="@(Settings.HasStoredKey ? "Neuer Schlüssel (leer lassen = behalten)" : "API-Schlüssel")"
+                              Variant="Variant.Outlined" InputType="InputType.Password" Placeholder="sk-ant-…" Class="mb-4" autocomplete="off" />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="7">
+                        <MudSelect T="string" @bind-Value="model" Label="Modell" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@("claude-opus-5-5")">Claude Opus 5.5 (empfohlen)</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("claude-sonnet-5-5")">Claude Sonnet 5.5 (günstiger)</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("claude-fable-5-1")">Claude Fable 5.1 (stärkstes, teuerstes)</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="5">
+                        <MudSelect T="string" @bind-Value="effort" Label="Gründlichkeit" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@("medium")">Mittel</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("high")">Hoch (empfohlen)</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("max")">Maximal</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <h3 class="sheet-title" style="font-size:1.1rem">Lokales Modell</h3>
+                <p class="sheet-sub">
+                    Einmalig <a href="https://ollama.com/download" target="_blank" rel="noopener">Ollama installieren</a> und starten.
+                    Danach hier ein Modell herunterladen und auswählen.
+                </p>
+                @if (ollamaError is not null)
+                {
+                    <div class="banner error mb-3">@ollamaError</div>
+                }
+                else if (ollamaReachable)
+                {
+                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> Ollama läuft</div>
+                }
+
+                <div class="model-list" role="radiogroup" aria-label="Lokales Modell">
+                    @foreach (var entry in LocalModelCatalog.Recommended)
+                    {
+                        var installed = IsInstalled(entry.Name);
+                        var download = Downloads.Get(entry.Name);
+                        <div class="@($"model-card {(ollamaModel == entry.Name ? "on" : "")} {(installed ? "" : "missing")}")">
+                            <button type="button" role="radio" aria-checked="@(ollamaModel == entry.Name)" class="model-pick" disabled="@(!installed)"
+                                    @onclick="() => ollamaModel = entry.Name">
+                                <span class="model-head">
+                                    <span class="model-title">@entry.Title</span>
+                                    <code>@entry.Name</code>
+                                </span>
+                                <span class="model-text">@entry.Description</span>
+                                <span class="model-facts">
+                                    <span>⏱ @(effort == "high" ? entry.MinutesWithThinking : entry.MinutesFast) Min. pro Arbeit</span>
+                                    <span>@entry.DownloadGb.ToString("0.#") GB</span>
+                                    <span>ab @entry.MinMemoryGb GB Arbeitsspeicher</span>
+                                </span>
+                            </button>
+                            <div class="model-action">
+                                @if (installed)
+                                {
+                                    <span class="ok-line"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> installiert</span>
+                                }
+                                else if (download is { Error: { } error })
+                                {
+                                    <span class="work-error">@error</span>
+                                }
+                                else if (download is not null)
+                                {
+                                    var fraction = download.Progress?.Fraction ?? 0;
+                                    <div class="brush-progress" style="min-width:140px"><span style="@($"width:{(fraction * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture)}%")"></span></div>
+                                    <span class="faint" style="font-size:.8rem">@(download.Progress?.Fraction is { } f ? $"{f:P0}" : "startet …")</span>
+                                }
+                                else
+                                {
+                                    <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Download" Disabled="@(!ollamaReachable)"
+                                               OnClick="() => Downloads.Start(entry.Name)">
+                                        Herunterladen
+                                    </MudButton>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @foreach (var other in models.Where(m => LocalModelCatalog.Find(m.Name) is null))
+                    {
+                        <div class="@($"model-card {(ollamaModel == other.Name ? "on" : "")}")">
+                            <button type="button" role="radio" aria-checked="@(ollamaModel == other.Name)" class="model-pick" @onclick="() => ollamaModel = other.Name">
+                                <span class="model-head"><span class="model-title">Weiteres Modell</span><code>@other.Name</code></span>
+                                <span class="model-text">Selbst installiert. Muss Bilder verstehen können (Vision).</span>
+                                <span class="model-facts"><span>@((other.SizeBytes / 1_000_000_000.0).ToString("0.#")) GB</span></span>
+                            </button>
+                            <div class="model-action"><span class="ok-line"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> installiert</span></div>
+                        </div>
+                    }
+                </div>
+
+                <h3 class="sheet-title mt-6" style="font-size:1.1rem">Modus</h3>
+                <div class="choice-grid" role="radiogroup" aria-label="Modus" style="margin-bottom:8px">
+                    <button type="button" role="radio" aria-checked="@(effort == "high")" class="@($"choice {(effort == "high" ? "on" : "")}")" @onclick="@(() => effort = "high")">
+                        <span class="c-title">Gründlich</span>
+                        <span class="c-text">Das Modell denkt nach, bevor es antwortet. Genauer, aber etwa doppelt so lang.</span>
+                    </button>
+                    <button type="button" role="radio" aria-checked="@(effort == "medium")" class="@($"choice {(effort == "medium" ? "on" : "")}")" @onclick="@(() => effort = "medium")">
+                        <span class="c-title">Schnell</span>
+                        <span class="c-text">Antwortet direkt ohne Nachdenken. Gut, wenn viele Arbeiten anstehen.</span>
+                    </button>
+                </div>
+
+                <MudGrid Spacing="2" Class="mt-2">
+                    <MudItem xs="12" sm="8">
+                        <MudTextField @bind-Value="ollamaUrl" Label="Ollama-Adresse" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" Class="d-flex align-center">
+                        <MudButton Class="btn-quiet" StartIcon="@Icons.Material.Outlined.Sync" OnClick="LoadModelsAsync" Disabled="@checking">
+                            @(checking ? "Prüfe …" : "Neu prüfen")
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            }
+
+            <div class="d-flex justify-end gap-2 mt-6">
+                @if (provider == AiProvider.Anthropic && Settings.HasStoredKey)
+                {
+                    <MudButton Class="btn-quiet" Color="Color.Secondary" OnClick="RemoveKey">Schlüssel entfernen</MudButton>
+                }
+                <MudButton Class="btn-ink" OnClick="Save" StartIcon="@Icons.Material.Filled.Check">Speichern</MudButton>
+            </div>
+        </section>
+    </MudItem>
+    <MudItem xs="12" md="5">
+        <section class="sheet">
+            <h2 class="sheet-title">Datenschutz</h2>
+            <p class="muted" style="font-size:.93rem">
+                Prüfungen, Fotos und Noten bleiben auf diesem Computer. Mit Claude gehen nur Aufgabe, Kriterien und Fotos an
+                Anthropic – <b>keine Namen</b>. Mit dem lokalen Modell verlässt nichts den Computer.
+            </p>
+            <p class="faint" style="font-size:.88rem">Auf den Fotos sollten keine Namen zu sehen sein. Kläre die Nutzung mit deiner Schulleitung ab.</p>
+        </section>
+        <section class="sheet">
+            <h2 class="sheet-title">Datenordner</h2>
+            <p style="word-break:break-all"><code>@Paths.Root</code></p>
+            <p class="faint" style="font-size:.88rem">Für ein Backup diesen Ordner kopieren, während ArtGrader geschlossen ist.</p>
+        </section>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private AiProvider provider;
+    private string apiKey = "";
+    private string model = AiSettings.DefaultModel;
+    private string effort = AiSettings.DefaultEffort;
+    private string ollamaUrl = AiSettings.DefaultOllamaUrl;
+    private string? ollamaModel;
+    private IReadOnlyList<OllamaModelInfo> models = [];
+    private string? ollamaError;
+    private bool ollamaReachable;
+    private bool checking;
+    private int completedDownloads;
+
+    private bool IsInstalled(string name) => models.Any(m => m.Name == name);
+
+    private void OnDownloadsChanged() => InvokeAsync(async () =>
+    {
+        var done = LocalModelCatalog.Recommended.Count(m => Downloads.Get(m.Name)?.Done == true);
+        if (done != completedDownloads)
+        {
+            completedDownloads = done;
+            await LoadModelsAsync();
+        }
+        StateHasChanged();
+    });
+
+    public void Dispose() => Downloads.Changed -= OnDownloadsChanged;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Downloads.Changed += OnDownloadsChanged;
+        provider = Settings.Provider;
+        model = Settings.Model;
+        effort = Settings.Effort;
+        ollamaUrl = Settings.OllamaUrl;
+        ollamaModel = Settings.OllamaModel;
+        if (provider == AiProvider.Ollama)
+        {
+            await LoadModelsAsync();
+        }
+    }
+
+    private async Task SelectOllamaAsync()
+    {
+        provider = AiProvider.Ollama;
+        if (effort is not ("medium" or "high"))
+        {
+            effort = "high";
+        }
+        if (models.Count == 0)
+        {
+            await LoadModelsAsync();
+        }
+    }
+
+    private async Task LoadModelsAsync()
+    {
+        checking = true;
+        ollamaError = null;
+        try
+        {
+            models = await Ollama.ListModelsAsync(ollamaUrl, CancellationToken.None);
+            ollamaReachable = true;
+            if (models.Count > 0 && (ollamaModel is null || models.All(m => m.Name != ollamaModel)))
+            {
+                ollamaModel = LocalModelCatalog.Recommended.FirstOrDefault(r => IsInstalled(r.Name))?.Name ?? models[0].Name;
+            }
+        }
+        catch (ModelException ex)
+        {
+            models = [];
+            ollamaReachable = false;
+            ollamaError = ex.Message;
+        }
+        finally
+        {
+            checking = false;
+        }
+    }
+
+    private void Save()
+    {
+        if (provider == AiProvider.Anthropic && !string.IsNullOrWhiteSpace(apiKey) && !apiKey.Trim().StartsWith("sk-ant-", StringComparison.Ordinal))
+        {
+            Snackbar.Add("Das sieht nicht nach einem Anthropic-Schlüssel aus (beginnt mit «sk-ant-»).", Severity.Warning);
+            return;
+        }
+        if (provider == AiProvider.Ollama && string.IsNullOrWhiteSpace(ollamaModel))
+        {
+            Snackbar.Add("Bitte ein lokales Modell auswählen.", Severity.Warning);
+            return;
+        }
+        Settings.Save(new SettingsUpdate(provider, apiKey, model, effort, ollamaUrl, ollamaModel));
+        apiKey = "";
+        Snackbar.Add("Gespeichert.", Severity.Success);
+    }
+
+    private void RemoveKey()
+    {
+        Settings.RemoveKey();
+        Snackbar.Add("Schlüssel entfernt.", Severity.Info);
+    }
+}

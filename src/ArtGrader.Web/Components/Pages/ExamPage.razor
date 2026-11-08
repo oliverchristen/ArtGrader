@@ -1,0 +1,120 @@
+@page "/pruefung/{Id:guid}"
+@inject ExamRepository Repository
+@inject GradingEvents Events
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+@inject FileStore Files
+@implements IDisposable
+
+<PageTitle>@(exam?.Title ?? "Prüfung") · ArtGrader</PageTitle>
+
+@if (notFound)
+{
+    <div class="banner error">Diese Prüfung gibt es nicht (mehr). <a href="/">Zur Übersicht</a></div>
+}
+else if (exam is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Tertiary" />
+}
+else
+{
+    var criteriaCount = exam.OrderedCriteria().Count();
+    var completed = exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen);
+    <nav class="crumbs"><a href="/">Prüfungen</a><span>/</span><span>@exam.Title</span></nav>
+    <div class="review-head" style="margin-bottom:8px">
+        <div>
+            <div class="eyebrow">@(string.IsNullOrWhiteSpace(exam.SchoolClass) ? "Prüfung" : $"Klasse {exam.SchoolClass}") · @exam.Date.ToString("d. MMMM yyyy", culture)</div>
+            <h1 class="page-title">@exam.Title</h1>
+        </div>
+        <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="DeleteAsync">Prüfung löschen</MudButton>
+    </div>
+
+    <div class="steps" role="tablist">
+        <button type="button" role="tab" aria-selected="@(activeTab == 0)" class="@StepClass(0, criteriaCount > 0)" @onclick="() => activeTab = 0">
+            <span class="num">@(criteriaCount > 0 && activeTab != 0 ? "✓" : "1")</span> Aufgabe & Kriterien
+        </button>
+        <button type="button" role="tab" aria-selected="@(activeTab == 1)" class="@StepClass(1, exam.Submissions.Count > 0 && exam.Submissions.All(s => s.GradedAt is not null))" @onclick="() => activeTab = 1">
+            <span class="num">2</span> Arbeiten bewerten
+            @if (running > 0)
+            {
+                <span class="badge">@running läuft</span>
+            }
+        </button>
+        <button type="button" role="tab" aria-selected="@(activeTab == 2)" class="@StepClass(2, exam.Submissions.Count > 0 && completed == exam.Submissions.Count)" @onclick="() => activeTab = 2">
+            <span class="num">3</span> Übersicht & Export
+        </button>
+    </div>
+
+    @switch (activeTab)
+    {
+        case 0:
+            <ExamSetupPanel Exam="exam" Changed="ReloadAsync" Next="() => activeTab = 1" />
+            break;
+        case 1:
+            <SubmissionsPanel Exam="exam" Changed="ReloadAsync" ShowSetup="() => activeTab = 0" />
+            break;
+        default:
+            <OverviewPanel Exam="exam" />
+            break;
+    }
+}
+
+@code {
+    private static readonly System.Globalization.CultureInfo culture = new("de-CH");
+
+    [Parameter] public Guid Id { get; set; }
+
+    private Exam? exam;
+    private bool notFound;
+    private int activeTab;
+    private int running;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Events.SubmissionChanged += OnSubmissionChanged;
+        await ReloadAsync();
+        if (exam is not null)
+        {
+            activeTab = exam.Categories.Count == 0 ? 0 : 1;
+        }
+    }
+
+    private string StepClass(int index, bool done) =>
+        $"step {(activeTab == index ? "active" : "")} {(done ? "done" : "")}";
+
+    private async Task ReloadAsync()
+    {
+        exam = await Repository.GetAsync(Id);
+        notFound = exam is null;
+        if (exam is not null)
+        {
+            running = exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet);
+        }
+        StateHasChanged();
+    }
+
+    private void OnSubmissionChanged(Guid examId, Guid submissionId)
+    {
+        if (examId == Id)
+        {
+            InvokeAsync(ReloadAsync);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Prüfung löschen?",
+            $"«{exam!.Title}» mit allen {exam.Submissions.Count} Arbeiten, Fotos und Bewertungen wird endgültig gelöscht.",
+            yesText: "Löschen",
+            cancelText: "Abbrechen");
+        if (confirmed == true)
+        {
+            await Repository.DeleteExamAsync(exam.Id);
+            Files.DeleteExamFolder(exam.Id);
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    public void Dispose() => Events.SubmissionChanged -= OnSubmissionChanged;
+}

@@ -1,0 +1,112 @@
+﻿@page "/"
+@inject ExamRepository Repository
+@inject NavigationManager Navigation
+@inject SettingsStore Settings
+
+<PageTitle>Prüfungen · ArtGrader</PageTitle>
+
+<div class="page-head">
+    <div class="eyebrow">@Greeting()</div>
+    <h1 class="page-title">Deine <em>Prüfungen</em></h1>
+    <p class="lede">
+        Aufgabe und Beurteilungsbogen hochladen, Fotos der Arbeiten dazulegen – die KI macht einen Vorschlag,
+        du entscheidest.
+    </p>
+</div>
+
+@if (!Settings.IsConfigured)
+{
+    <div class="banner mb-6">
+        <MudIcon Icon="@Icons.Material.Outlined.Lightbulb" />
+        <span>Bevor die KI mitlesen kann, wähle unter <a href="/einstellungen">Einstellungen</a> Claude oder ein lokales Modell.</span>
+    </div>
+}
+
+<div class="home-grid">
+    <section class="sheet new-exam">
+        <h2 class="sheet-title">Neue Prüfung</h2>
+        <p class="sheet-sub">Ein neues Blatt anlegen.</p>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="title" Label="Titel" Placeholder="z. B. Stadt von oben" Variant="Variant.Outlined" Immediate="true" />
+            <MudTextField @bind-Value="schoolClass" Label="Klasse" Placeholder="z. B. 2b" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="date" Label="Datum" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" Culture="@culture" />
+            <MudButton Class="btn-ink mt-1" Disabled="@string.IsNullOrWhiteSpace(title)" OnClick="CreateAsync" StartIcon="@Icons.Material.Filled.Add">
+                Prüfung anlegen
+            </MudButton>
+        </MudStack>
+    </section>
+
+    <section>
+        @if (exams is null)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Tertiary" />
+        }
+        else if (exams.Count == 0)
+        {
+            <div class="sheet empty-state">
+                <img src="img/empty-sketch.svg" alt="" />
+                <h2 class="sheet-title mt-3">Noch ein leeres Skizzenbuch</h2>
+                <p class="muted">Lege links deine erste Prüfung an.</p>
+            </div>
+        }
+        else
+        {
+            <div class="exam-grid">
+                @foreach (var exam in exams)
+                {
+                    var share = exam.SubmissionCount == 0 ? 0 : 100.0 * exam.CompletedCount / exam.SubmissionCount;
+                    <a class="exam-card" href="@($"/pruefung/{exam.Id}")">
+                        <div class="exam-cover">
+                            @if (exam.Covers.Count == 0)
+                            {
+                                <div class="empty-cover"><img src="img/empty-sketch.svg" alt="" style="position:static;width:120px;height:auto;border:none;box-shadow:none;transform:none" /></div>
+                            }
+                            else
+                            {
+                                @foreach (var cover in exam.Covers)
+                                {
+                                    <img src="@($"/files/{cover}")" alt="" loading="lazy" />
+                                }
+                            }
+                        </div>
+                        <div class="exam-body">
+                            <h3 class="exam-title">@exam.Title</h3>
+                            <div class="exam-meta">
+                                @(string.IsNullOrWhiteSpace(exam.SchoolClass) ? "" : $"Klasse {exam.SchoolClass} · ")@exam.Date.ToString("d. MMMM yyyy", culture)
+                            </div>
+                            <div class="progress-line"><span style="@($"width:{share.ToString("0", System.Globalization.CultureInfo.InvariantCulture)}%")"></span></div>
+                            <div class="progress-label">
+                                <span>@exam.SubmissionCount Arbeiten</span>
+                                <span>@exam.CompletedCount abgeschlossen</span>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private static readonly System.Globalization.CultureInfo culture = new("de-CH");
+    private List<ExamSummary>? exams;
+    private string title = "";
+    private string schoolClass = "";
+    private DateTime? date = DateTime.Today;
+
+    protected override async Task OnInitializedAsync() => exams = await Repository.ListAsync();
+
+    private static string Greeting() =>
+        DateTime.Now.Hour switch
+        {
+            < 11 => "Guten Morgen",
+            < 17 => "Guten Tag",
+            _ => "Guten Abend",
+        };
+
+    private async Task CreateAsync()
+    {
+        var exam = await Repository.CreateAsync(title, schoolClass, DateOnly.FromDateTime(date ?? DateTime.Today));
+        Navigation.NavigateTo($"/pruefung/{exam.Id}");
+    }
+}

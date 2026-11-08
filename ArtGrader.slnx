@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ArtGrader.Core/ArtGrader.Core.csproj" />
+    <Project Path="src/ArtGrader.Web/ArtGrader.Web.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/ArtGrader.Core.Tests/ArtGrader.Core.Tests.csproj" />
+    <Project Path="test/ArtGrader.Web.Tests/ArtGrader.Web.Tests.csproj" />
+  </Folder>
+</Solution>
