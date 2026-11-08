@@ -1555,6 +1555,7 @@ table.grades td.name a {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: flex-start;
     text-align: left;
     border: 2px solid var(--line);
     border-radius: var(--radius);
