@@ -156,6 +156,31 @@ public class SubmissionGradingServiceTests
     }
 
     [Fact]
+    public async Task Names_in_image_metadata_are_not_sent()
+    {
+        var claude = new FakeClaude();
+        var photo = WithMetadata(Photo(), "Lena Muster");
+        Assert.True(Contains(photo, "Lena Muster"));
+
+        await new SubmissionGradingService(claude).GradeAsync(GradingContext.From(ExampleExam(), null), [photo], default);
+
+        var sent = claude.Requests[0].Content.OfType<ImagePart>().Single().Jpeg;
+        Assert.False(Contains(sent, "Lena Muster"));
+    }
+
+    private static byte[] WithMetadata(byte[] jpeg, string text)
+    {
+        var payload = System.Text.Encoding.ASCII.GetBytes(text);
+        var exif = System.Text.Encoding.ASCII.GetBytes("Exif\0\0").Concat(payload).ToArray();
+        static byte[] Segment(byte marker, byte[] data) =>
+            [0xFF, marker, (byte)((data.Length + 2) >> 8), (byte)((data.Length + 2) & 0xFF), .. data];
+        return [.. jpeg[..2], .. Segment(0xE1, exif), .. Segment(0xFE, payload), .. jpeg[2..]];
+    }
+
+    private static bool Contains(byte[] haystack, string text) =>
+        haystack.AsSpan().IndexOf(System.Text.Encoding.ASCII.GetBytes(text)) >= 0;
+
+    [Fact]
     public async Task Images_are_downscaled_and_labelled()
     {
         var claude = new FakeClaude();
