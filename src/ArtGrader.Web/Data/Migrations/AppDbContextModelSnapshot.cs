@@ -169,6 +169,9 @@ namespace ArtGrader.Web.Data.Migrations
                     b.Property<long?>("GradedAt")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("HasPlaceholderName")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ModelId")
                         .HasColumnType("TEXT");
 

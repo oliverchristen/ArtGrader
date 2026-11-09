@@ -52,6 +52,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
     await using var db = await factory.CreateDbContextAsync();
     await db.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<ExamRepository>().ReplaceGeneratedNamesAsync();
 }
 
 if (!app.Environment.IsDevelopment())

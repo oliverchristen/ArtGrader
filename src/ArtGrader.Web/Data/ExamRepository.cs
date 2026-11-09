@@ -136,10 +136,11 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         await db.Exams.Where(e => e.Id == id).ExecuteDeleteAsync();
     }
 
-    public async Task<Submission> AddSubmissionAsync(Guid examId, string studentName, IReadOnlyList<SubmissionImage> images)
+    public async Task<Submission> AddSubmissionAsync(Guid examId, string? studentName, IReadOnlyList<SubmissionImage> images)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var submission = new Submission { ExamId = examId, StudentName = studentName.Trim() };
+        var submission = new Submission { ExamId = examId };
+        await ApplyNameAsync(db, submission, studentName);
         foreach (var (image, index) in images.Select((img, i) => (img, i)))
         {
             image.SubmissionId = submission.Id;
@@ -198,11 +199,41 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         await db.SaveChangesAsync();
     }
 
-    public async Task RenameSubmissionAsync(Guid submissionId, string name)
+    public async Task<(string Name, bool Placeholder)> RenameSubmissionAsync(Guid submissionId, string? name)
     {
         await using var db = await factory.CreateDbContextAsync();
-        await db.Submissions.Where(s => s.Id == submissionId)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.StudentName, name.Trim()));
+        var submission = await db.Submissions.FirstAsync(s => s.Id == submissionId);
+        await ApplyNameAsync(db, submission, name);
+        await db.SaveChangesAsync();
+        return (submission.StudentName, submission.HasPlaceholderName);
+    }
+
+    public async Task<int> ReplaceGeneratedNamesAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var candidates = await db.Submissions.Include(s => s.Images).Where(s => !s.HasPlaceholderName).ToListAsync();
+        var replaced = 0;
+        foreach (var submission in candidates.Where(s => Pseudonyms.LooksGenerated(s.StudentName, s.Images.Select(i => i.OriginalName))))
+        {
+            await ApplyNameAsync(db, submission, null);
+            replaced++;
+        }
+        await db.SaveChangesAsync();
+        return replaced;
+    }
+
+    private static async Task ApplyNameAsync(AppDbContext db, Submission submission, string? name)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            submission.StudentName = name.Trim();
+            submission.HasPlaceholderName = false;
+            return;
+        }
+        var taken = await db.Submissions.Where(s => s.ExamId == submission.ExamId && s.Id != submission.Id).Select(s => s.StudentName).ToListAsync();
+        taken.AddRange(db.Submissions.Local.Where(s => s.ExamId == submission.ExamId && s.Id != submission.Id).Select(s => s.StudentName));
+        submission.StudentName = Pseudonyms.Next(taken);
+        submission.HasPlaceholderName = true;
     }
 
     public async Task<List<SubmissionImage>> DeleteSubmissionAsync(Guid submissionId)
@@ -224,7 +255,12 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         var submission = await db.Submissions.Include(s => s.Assessments).FirstAsync(s => s.Id == source.Id);
         submission.TeacherComment = source.TeacherComment;
         submission.FinalGradeOverride = source.FinalGradeOverride;
-        submission.StudentName = source.StudentName.Trim();
+        if (source.StudentName.Trim() != submission.StudentName || string.IsNullOrWhiteSpace(source.StudentName))
+        {
+            await ApplyNameAsync(db, submission, source.StudentName);
+            source.StudentName = submission.StudentName;
+            source.HasPlaceholderName = submission.HasPlaceholderName;
+        }
         foreach (var sourceAssessment in source.Assessments)
         {
             var assessment = submission.Assessments.FirstOrDefault(a => a.CriterionId == sourceAssessment.CriterionId);

@@ -114,9 +114,13 @@
                         </span>
                     }
                 </a>
-                <div class="work-name">
+                <div class="@($"work-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
                     <MudTextField T="string" Value="submission.StudentName" ValueChanged="@(v => RenameAsync(submission, v))"
                                   Variant="Variant.Text" Margin="Margin.Dense" Placeholder="Name" aria-label="Name" />
+                    @if (submission.HasPlaceholderName)
+                    {
+                        <span class="name-hint">Zufallsname</span>
+                    }
                 </div>
                 <div class="work-foot">
                     <span class="@($"status s-{submission.Status}")"><span class="dot"></span>@LevelText.Label(submission.Status)</span>
@@ -177,7 +181,7 @@
         uploadDone = 0;
         uploadTotal = files.Count;
         var errors = new List<string>();
-        var stored = new List<(string Name, SubmissionImage Image)>();
+        var stored = new List<SubmissionImage>();
         StateHasChanged();
 
         foreach (var file in files)
@@ -190,7 +194,7 @@
                 }
                 await using var stream = file.OpenReadStream(MaxImageBytes);
                 var path = await Files.SaveSubmissionImageAsync(Exam.Id, stream, CancellationToken.None);
-                stored.Add((Path.GetFileNameWithoutExtension(file.Name), new SubmissionImage { OriginalName = file.Name, RelativePath = path }));
+                stored.Add(new SubmissionImage { OriginalName = "", RelativePath = path });
             }
             catch (UnsupportedImageException ex)
             {
@@ -204,13 +208,13 @@
         {
             if (oneSubmission)
             {
-                await Repository.AddSubmissionAsync(Exam.Id, $"Arbeit {Exam.Submissions.Count + 1}", stored.Select(s => s.Image).ToList());
+                await Repository.AddSubmissionAsync(Exam.Id, null, stored);
             }
             else
             {
-                foreach (var (name, image) in stored)
+                foreach (var image in stored)
                 {
-                    await Repository.AddSubmissionAsync(Exam.Id, name, [image]);
+                    await Repository.AddSubmissionAsync(Exam.Id, null, [image]);
                 }
             }
         }
@@ -222,15 +226,14 @@
         }
         if (stored.Count > 0)
         {
-            Snackbar.Add($"{stored.Count} Foto(s) hinzugefügt. Namen direkt unter den Bildern anpassen.", Severity.Success);
+            Snackbar.Add($"{stored.Count} Foto(s) hinzugefügt. Die Arbeiten haben Zufallsnamen – echte Namen direkt unter den Bildern eintragen.", Severity.Success);
         }
         await Changed.InvokeAsync();
     }
 
     private async Task RenameAsync(Submission submission, string name)
     {
-        submission.StudentName = name;
-        await Repository.RenameSubmissionAsync(submission.Id, name);
+        (submission.StudentName, submission.HasPlaceholderName) = await Repository.RenameSubmissionAsync(submission.Id, name);
     }
 
     private async Task GradeAsync(IReadOnlyList<Submission> submissions)

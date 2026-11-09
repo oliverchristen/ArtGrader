@@ -49,6 +49,7 @@ public sealed class Submission
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ExamId { get; set; }
     public string StudentName { get; set; } = "";
+    public bool HasPlaceholderName { get; set; }
     public SubmissionStatus Status { get; set; } = SubmissionStatus.Neu;
     public string? ErrorMessage { get; set; }
     public List<SubmissionImage> Images { get; set; } = [];

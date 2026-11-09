@@ -38,8 +38,12 @@ else
     <div class="review-head">
         <div class="student-nav">
             <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : Url(previous))" aria-label="Vorherige Arbeit" />
-            <div class="student-name">
+            <div class="@($"student-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
                 <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" Variant="Variant.Text" aria-label="Name" />
+                @if (submission.HasPlaceholderName)
+                {
+                    <span class="name-hint">Zufallsname – echten Namen eintragen</span>
+                }
             </div>
             <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : Url(next))" aria-label="Nächste Arbeit" />
             <span class="faint">@(index + 1) von @exam.Submissions.Count</span>
@@ -331,7 +335,7 @@ else
                     throw new UnsupportedImageException("grösser als 40 MB");
                 }
                 await using var stream = file.OpenReadStream(MaxImageBytes);
-                images.Add(new SubmissionImage { OriginalName = file.Name, RelativePath = await Files.SaveSubmissionImageAsync(ExamId, stream, CancellationToken.None) });
+                images.Add(new SubmissionImage { OriginalName = "", RelativePath = await Files.SaveSubmissionImageAsync(ExamId, stream, CancellationToken.None) });
             }
             catch (UnsupportedImageException ex)
             {

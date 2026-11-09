@@ -934,6 +934,20 @@ h1:focus {
     padding-left: 2px !important;
 }
 
+.work-name.placeholder-name input,
+.student-name.placeholder-name input {
+    color: var(--ink-soft) !important;
+}
+
+.name-hint {
+    display: block;
+    font-size: .72rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-top: 2px;
+}
+
 .work-foot {
     display: flex;
     align-items: center;
