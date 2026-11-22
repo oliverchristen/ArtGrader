@@ -19,6 +19,11 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         {
             throw new ModelNotConfiguredException("Es ist kein lokales Modell gewählt. Bitte unter «Einstellungen» ein Ollama-Modell auswählen.");
         }
+        if (IsCloudName(settings.OllamaModel))
+        {
+            throw new ModelNotConfiguredException(
+                $"«{settings.OllamaModel}» ist ein Cloud-Modell von Ollama. Damit würden die Fotos den Computer verlassen. Bitte unter «Einstellungen» ein lokales Modell wählen.");
+        }
 
         var text = new StringBuilder();
         var images = new List<string>();
@@ -97,7 +102,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         {
             var tags = await http.GetFromJsonAsync<TagsResponse>(new Uri(new Uri(baseUrl), "/api/tags"), cancellationToken);
             return (tags?.Models ?? [])
-                .Select(m => new OllamaModelInfo(m.Name, m.Size))
+                .Select(m => new OllamaModelInfo(m.Name, m.Size, !string.IsNullOrEmpty(m.RemoteHost) || !string.IsNullOrEmpty(m.RemoteModel) || IsCloudName(m.Name)))
                 .OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
@@ -225,10 +230,18 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
 
     private sealed record TagModel(
         [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("size")] long Size);
+        [property: JsonPropertyName("size")] long Size,
+        [property: JsonPropertyName("remote_host")] string? RemoteHost = null,
+        [property: JsonPropertyName("remote_model")] string? RemoteModel = null);
+
+    public static bool IsCloudName(string model)
+    {
+        var tag = model.Contains(':') ? model[(model.IndexOf(':') + 1)..] : "";
+        return tag.Equals("cloud", StringComparison.OrdinalIgnoreCase) || tag.EndsWith("-cloud", StringComparison.OrdinalIgnoreCase);
+    }
 }
 
-public sealed record OllamaModelInfo(string Name, long SizeBytes);
+public sealed record OllamaModelInfo(string Name, long SizeBytes, bool Cloud = false);
 
 public sealed record PullProgress(string Status, long Completed, long Total)
 {

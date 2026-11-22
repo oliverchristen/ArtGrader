@@ -135,6 +135,13 @@
                         </div>
                     }
                 </div>
+                @if (hiddenCloudModels > 0)
+                {
+                    <div class="banner info mt-3">
+                        <MudIcon Icon="@Icons.Material.Outlined.CloudOff" />
+                        <span>@(hiddenCloudModels == 1 ? "1 Cloud-Modell ist" : $"{hiddenCloudModels} Cloud-Modelle sind") ausgeblendet. Cloud-Modelle von Ollama rechnen auf fremden Servern; die Fotos würden den Computer verlassen.</span>
+                    </div>
+                }
                 <p class="faint mt-2" style="font-size:.8rem">Zeiten gemessen auf dem Testcomputer mit 14 Arbeiten. Je nach Computer schneller oder langsamer.</p>
 
                 <h3 class="sheet-title mt-6" style="font-size:1.1rem">Modus</h3>
@@ -225,6 +232,7 @@
     private string ollamaUrl = AiSettings.DefaultOllamaUrl;
     private string? ollamaModel;
     private IReadOnlyList<OllamaModelInfo> models = [];
+    private int hiddenCloudModels;
     private string? ollamaError;
     private bool ollamaReachable;
     private bool checking;
@@ -280,7 +288,13 @@
         ollamaError = null;
         try
         {
-            models = await Ollama.ListModelsAsync(ollamaUrl, CancellationToken.None);
+            var all = await Ollama.ListModelsAsync(ollamaUrl, CancellationToken.None);
+            models = all.Where(m => !m.Cloud).ToList();
+            hiddenCloudModels = all.Count(m => m.Cloud);
+            if (ollamaModel is not null && all.Any(m => m.Cloud && m.Name == ollamaModel))
+            {
+                ollamaModel = null;
+            }
             ollamaReachable = true;
             if (models.Count > 0 && (ollamaModel is null || models.All(m => m.Name != ollamaModel)))
             {

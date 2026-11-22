@@ -158,4 +158,36 @@ public class OllamaGatewayTests
         await Assert.ThrowsAsync<ModelException>(() =>
             new OllamaGateway(new HttpClient(fake), new Settings()).CompleteJsonAsync(Request(), default));
     }
+
+    [Fact]
+    public async Task Cloud_models_are_flagged_in_the_model_list()
+    {
+        const string tags = """
+            {"models":[
+              {"name":"qwen3.8:27b","size":17700000000},
+              {"name":"gemma4:31b-cloud","size":0},
+              {"name":"kimi-k3.1-pro:latest","size":384,"remote_host":"https://ollama.com:443","remote_model":"kimi-k3.1-pro"}
+            ]}
+            """;
+        var gateway = new OllamaGateway(new HttpClient(new FakeOllama((HttpStatusCode.OK, tags))), new Settings());
+
+        var models = await gateway.ListModelsAsync("http://localhost:11434", default);
+
+        Assert.Equal(["gemma4:31b-cloud", "kimi-k3.1-pro:latest"], models.Where(m => m.Cloud).Select(m => m.Name));
+        Assert.False(models.Single(m => m.Name == "qwen3.8:27b").Cloud);
+    }
+
+    [Theory]
+    [InlineData("gemma4:cloud")]
+    [InlineData("gemma4:31b-cloud")]
+    public async Task A_cloud_model_is_refused_before_anything_is_sent(string model)
+    {
+        var fake = new FakeOllama((HttpStatusCode.OK, Ok));
+
+        var ex = await Assert.ThrowsAsync<ModelNotConfiguredException>(() =>
+            new OllamaGateway(new HttpClient(fake), new Settings(model: model)).CompleteJsonAsync(Request(), default));
+
+        Assert.Contains("Cloud-Modell", ex.Message);
+        Assert.Empty(fake.Requests);
+    }
 }
