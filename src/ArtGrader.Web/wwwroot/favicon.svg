@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="4" y="8" width="46" height="46" rx="5" fill="#ffffff" stroke="#141414" stroke-width="3.5"/>
-  <circle cx="22" cy="26" r="9" fill="#ffc31f" stroke="#141414" stroke-width="3"/>
-  <path d="M8 50 L22 36 L31 44 L39 37 L46 44 L46 50 Z" fill="#1f4fe0" stroke="#141414" stroke-width="3" stroke-linejoin="round"/>
-  <g transform="rotate(40 48 22)">
-    <rect x="43" y="2" width="10" height="30" rx="1.5" fill="#ec3b2c" stroke="#141414" stroke-width="3"/>
-    <path d="M43 32 L48 41 L53 32 Z" fill="#ffffff" stroke="#141414" stroke-width="3" stroke-linejoin="round"/>
-  </g>
+  <!-- Art, grade and AI: a palette whose violet blob of paint is the AI sparkle, with a grade badge. -->
+  <rect width="64" height="64" rx="14" fill="#0e7c66"/>
+  <path d="M30 8 C 13 8, 4 20, 6 33 C 8 47, 20 57, 33 56 C 40 55, 40 48, 36 45 C 32 42, 34 37, 40 37 C 47 38, 56 35, 57 26 C 58 15, 46 8, 30 8 Z" fill="#f3d9a4"/>
+  <circle cx="34" cy="47" r="4" fill="#0e7c66"/>
+  <circle cx="17" cy="23" r="4.5" fill="#e63946"/>
+  <circle cx="29" cy="16" r="4.5" fill="#ffd23f"/>
+  <circle cx="15" cy="37" r="4.5" fill="#2b59c3"/>
+  <path d="M45 13 L47.6 19.4 L54 22 L47.6 24.6 L45 31 L42.4 24.6 L36 22 L42.4 19.4 Z" fill="#7b2cbf"/>
+  <circle cx="48" cy="48" r="11" fill="#ffffff" stroke="#1b1b2f" stroke-width="2.5"/>
+  <text x="48" y="53.5" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="15" fill="#1b1b2f">6</text>
 </svg>
