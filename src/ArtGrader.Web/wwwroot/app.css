@@ -75,6 +75,11 @@ h1:focus {
 
 /* ---------- Layout ---------- */
 
+/* Reserve room for the scrollbar, so the page does not shift when a step is longer or shorter than the window. */
+html {
+    scrollbar-gutter: stable;
+}
+
 .topbar {
     position: sticky;
     top: 0;
@@ -380,7 +385,6 @@ html:has(.exam-head.compact) {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    max-width: 980px;
 }
 
 .flow > .sheet + .sheet {
@@ -1152,10 +1156,6 @@ html:has(.exam-head.compact) {
 
 .work-name.placeholder-name .work-name-text {
     color: var(--ink-soft);
-}
-
-.flow-narrow {
-    max-width: 980px;
 }
 
 .work-name.placeholder-name input,
