@@ -66,10 +66,10 @@ public class OllamaGatewayTests
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
         var gateway = new OllamaGateway(new HttpClient(fake), new RemoteSettings());
 
-        await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.CompleteJsonAsync(Request(new ImagePart([1, 2, 3])), default));
-        await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.ListModelsAsync("http://192.168.1.20:11434", default));
+        await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.CompleteJsonAsync(Request(new ImagePart([1, 2, 3])), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.ListModelsAsync("http://192.168.1.20:11434", TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<ModelNotConfiguredException>(() =>
-            gateway.PullAsync("http://192.168.1.20:11434", "qwen3-vl:32b", new Progress<PullProgress>(), default));
+            gateway.PullAsync("http://192.168.1.20:11434", "qwen3-vl:32b", new Progress<PullProgress>(), TestContext.Current.CancellationToken));
 
         Assert.Equal(0, fake.Calls);
     }
@@ -80,7 +80,7 @@ public class OllamaGatewayTests
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
         var gateway = new OllamaGateway(new HttpClient(fake), new Settings());
 
-        var response = await gateway.CompleteJsonAsync(Request(new TextPart("Bild 1 von 1:"), new ImagePart([1, 2, 3])), default);
+        var response = await gateway.CompleteJsonAsync(Request(new TextPart("Bild 1 von 1:"), new ImagePart([1, 2, 3])), TestContext.Current.CancellationToken);
 
         var body = fake.Requests.Single();
         Assert.Equal("qwen3-vl:32b", body["model"]!.GetValue<string>());
@@ -99,7 +99,7 @@ public class OllamaGatewayTests
     {
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
 
-        await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), default);
+        await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken);
 
         Assert.False(fake.Requests.Single()["think"]!.GetValue<bool>());
     }
@@ -109,7 +109,7 @@ public class OllamaGatewayTests
     {
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
 
-        await new OllamaGateway(new HttpClient(fake), new Settings("high")).CompleteJsonAsync(Request() with { Quick = true }, default);
+        await new OllamaGateway(new HttpClient(fake), new Settings("high")).CompleteJsonAsync(Request() with { Quick = true }, TestContext.Current.CancellationToken);
 
         Assert.False(fake.Requests.Single()["think"]!.GetValue<bool>());
     }
@@ -119,7 +119,7 @@ public class OllamaGatewayTests
     {
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
 
-        var response = await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), default);
+        var response = await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken);
 
         Assert.Equal("qwen3-vl:32b-instruct", fake.Requests.Single()["model"]!.GetValue<string>());
         Assert.Equal("qwen3-vl:32b-instruct", response.Model);
@@ -130,7 +130,7 @@ public class OllamaGatewayTests
     {
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
 
-        await new OllamaGateway(new HttpClient(fake), new Settings("high")).CompleteJsonAsync(Request(), default);
+        await new OllamaGateway(new HttpClient(fake), new Settings("high")).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken);
 
         Assert.Equal("qwen3-vl:32b", fake.Requests.Single()["model"]!.GetValue<string>());
     }
@@ -142,7 +142,7 @@ public class OllamaGatewayTests
             (HttpStatusCode.NotFound, """{"error":"model 'qwen3-vl:32b-instruct' not found"}"""),
             (HttpStatusCode.OK, Ok));
 
-        var response = await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), default);
+        var response = await new OllamaGateway(new HttpClient(fake), new Settings("medium")).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken);
 
         Assert.Equal("qwen3-vl:32b", fake.Requests[1]["model"]!.GetValue<string>());
         Assert.Equal("""{"ok":true}""", response.Json);
@@ -153,7 +153,7 @@ public class OllamaGatewayTests
     {
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
 
-        await new OllamaGateway(new HttpClient(fake), new Settings("medium", "qwen3.8:27b")).CompleteJsonAsync(Request(), default);
+        await new OllamaGateway(new HttpClient(fake), new Settings("medium", "qwen3.8:27b")).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken);
 
         Assert.Equal("qwen3.8:27b", fake.Requests.Single()["model"]!.GetValue<string>());
     }
@@ -165,7 +165,7 @@ public class OllamaGatewayTests
             (HttpStatusCode.BadRequest, """{"error":"\"gemma3:27b\" does not support thinking"}"""),
             (HttpStatusCode.OK, Ok));
 
-        var response = await new OllamaGateway(new HttpClient(fake), new Settings()).CompleteJsonAsync(Request(), default);
+        var response = await new OllamaGateway(new HttpClient(fake), new Settings()).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken);
 
         Assert.Equal(2, fake.Requests.Count);
         Assert.Null(fake.Requests[1]["think"]);
@@ -178,7 +178,7 @@ public class OllamaGatewayTests
         var fake = new FakeOllama((HttpStatusCode.NotFound, """{"error":"model 'qwen3-vl:32b' not found"}"""));
 
         var ex = await Assert.ThrowsAsync<ModelException>(() =>
-            new OllamaGateway(new HttpClient(fake), new Settings()).CompleteJsonAsync(Request(), default));
+            new OllamaGateway(new HttpClient(fake), new Settings()).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken));
 
         Assert.Contains("ollama pull", ex.Message);
     }
@@ -187,7 +187,7 @@ public class OllamaGatewayTests
     public async Task No_model_selected_is_a_configuration_error()
     {
         await Assert.ThrowsAsync<ModelNotConfiguredException>(() =>
-            new OllamaGateway(new HttpClient(new FakeOllama()), new Settings(model: null)).CompleteJsonAsync(Request(), default));
+            new OllamaGateway(new HttpClient(new FakeOllama()), new Settings(model: null)).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -196,7 +196,7 @@ public class OllamaGatewayTests
         var fake = new FakeOllama((HttpStatusCode.OK, """{"message":{"content":"{\"a\":"},"done_reason":"length"}"""));
 
         await Assert.ThrowsAsync<ModelException>(() =>
-            new OllamaGateway(new HttpClient(fake), new Settings()).CompleteJsonAsync(Request(), default));
+            new OllamaGateway(new HttpClient(fake), new Settings()).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class OllamaGatewayTests
             """;
         var gateway = new OllamaGateway(new HttpClient(new FakeOllama((HttpStatusCode.OK, tags))), new Settings());
 
-        var models = await gateway.ListModelsAsync("http://localhost:11434", default);
+        var models = await gateway.ListModelsAsync("http://localhost:11434", TestContext.Current.CancellationToken);
 
         Assert.Equal(["gemma4:31b-cloud", "kimi-k3.1-pro:latest"], models.Where(m => m.Cloud).Select(m => m.Name));
         Assert.False(models.Single(m => m.Name == "qwen3.8:27b").Cloud);
@@ -225,7 +225,7 @@ public class OllamaGatewayTests
         var fake = new FakeOllama((HttpStatusCode.OK, Ok));
 
         var ex = await Assert.ThrowsAsync<ModelNotConfiguredException>(() =>
-            new OllamaGateway(new HttpClient(fake), new Settings(model: model)).CompleteJsonAsync(Request(), default));
+            new OllamaGateway(new HttpClient(fake), new Settings(model: model)).CompleteJsonAsync(Request(), TestContext.Current.CancellationToken));
 
         Assert.Contains("Cloud-Modell", ex.Message);
         Assert.Empty(fake.Requests);

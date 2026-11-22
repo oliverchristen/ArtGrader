@@ -17,7 +17,7 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         public AppDbContext CreateDbContext() => new(options);
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         factory = new Factory(new DbContextOptionsBuilder<AppDbContext>().UseSqlite($"Data Source={databasePath};Pooling=False").Options);
         await using var db = factory.CreateDbContext();
@@ -28,10 +28,10 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         repository = new ExamRepository(factory);
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         File.Delete(databasePath);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     [Fact]
@@ -111,19 +111,19 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.Database.EnsureDeletedAsync();
-            await db.Database.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261122090653_DocumentsLessonAndCrop");
+            await db.Database.EnsureDeletedAsync(TestContext.Current.CancellationToken);
+            await db.Database.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261122090653_DocumentsLessonAndCrop", TestContext.Current.CancellationToken);
             db.Exams.Add(exam = new Exam { Title = "Alt" });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
             // The current model writes the work, so columns of later migrations must exist for the insert.
-            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Submissions ADD COLUMN ModelProvider INTEGER");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Submissions ADD COLUMN ModelProvider INTEGER", TestContext.Current.CancellationToken);
         }
         var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
         await using (var db = factory.CreateDbContext())
         {
-            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Submissions DROP COLUMN ModelProvider");
-            await db.Database.ExecuteSqlRawAsync("UPDATE Images SET Covers = NULL");
-            await db.Database.MigrateAsync();
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Submissions DROP COLUMN ModelProvider", TestContext.Current.CancellationToken);
+            await db.Database.ExecuteSqlRawAsync("UPDATE Images SET Covers = NULL", TestContext.Current.CancellationToken);
+            await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
         }
 
         var image = (await repository.GetAsync(exam.Id))!.Submissions.Single(s => s.Id == work.Id).Images.Single();
@@ -140,7 +140,7 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         await using (var db = factory.CreateDbContext())
         {
             db.Exams.Add(other);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await repository.AddSubmissionAsync(other.Id, null, [Image("c.jpg")]);
 

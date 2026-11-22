@@ -123,7 +123,7 @@ public class SubmissionGradingServiceTests
         var claude = new FakeClaude();
         var exam = ExampleExam();
 
-        var result = await new SubmissionGradingService(claude).GradeAsync(GradingContext.From(exam, null), [Photo()], default);
+        var result = await new SubmissionGradingService(claude).GradeAsync(GradingContext.From(exam, null), [Photo()], TestContext.Current.CancellationToken);
 
         var rubric = string.Join("\n", claude.Requests[0].SharedContext.OfType<TextPart>().Select(p => p.Text));
         Assert.DoesNotContain("Ausdauer", rubric);
@@ -143,7 +143,7 @@ public class SubmissionGradingServiceTests
 
         foreach (var _ in exam.Submissions)
         {
-            await service.GradeAsync(GradingContext.From(exam, null), [Photo(), Photo()], default);
+            await service.GradeAsync(GradingContext.From(exam, null), [Photo(), Photo()], TestContext.Current.CancellationToken);
         }
 
         var all = claude.Requests.SelectMany(r => r.SharedContext.Concat(r.Content)).OfType<TextPart>().Select(p => p.Text).ToList();
@@ -162,7 +162,7 @@ public class SubmissionGradingServiceTests
         var photo = WithMetadata(Photo(), "Lena Muster");
         Assert.True(Contains(photo, "Lena Muster"));
 
-        await new SubmissionGradingService(claude).GradeAsync(GradingContext.From(ExampleExam(), null), [photo], default);
+        await new SubmissionGradingService(claude).GradeAsync(GradingContext.From(ExampleExam(), null), [photo], TestContext.Current.CancellationToken);
 
         var sent = claude.Requests[0].Content.OfType<ImagePart>().Single().Jpeg;
         Assert.False(Contains(sent, "Lena Muster"));
@@ -185,7 +185,7 @@ public class SubmissionGradingServiceTests
     {
         var claude = new FakeClaude();
 
-        await new SubmissionGradingService(claude).GradeAsync(GradingContext.From(ExampleExam(), null), [Photo(), Photo()], default);
+        await new SubmissionGradingService(claude).GradeAsync(GradingContext.From(ExampleExam(), null), [Photo(), Photo()], TestContext.Current.CancellationToken);
 
         var content = claude.Requests[0].Content;
         Assert.Equal("Bild 1 von 2:", ((TextPart)content[0]).Text);

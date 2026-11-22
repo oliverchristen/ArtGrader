@@ -143,7 +143,7 @@ public class AccessGateTests
         var (context, _) = await SendAsync(new AccessGate(Key, new Clock()), "GET", "/", r => r.Headers.Accept = "text/html,application/xhtml+xml");
 
         context.Response.Body.Position = 0;
-        var html = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        var html = await new StreamReader(context.Response.Body).ReadToEndAsync(TestContext.Current.CancellationToken);
         Assert.Contains("ArtGrader", html);
         Assert.StartsWith("text/html", context.Response.ContentType);
         Assert.Equal("no-store", context.Response.Headers.CacheControl.ToString());

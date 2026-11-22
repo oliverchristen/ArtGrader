@@ -48,7 +48,7 @@ public class ImageCoverTests
         var photo = ImagePreprocessorTests.Image(400, 200, SKEncodedImageFormat.Jpeg);
         var covered = ImageCover.Apply(photo, [new CoverArea { X = 0, Y = 0, Width = 1, Height = 1 }]);
 
-        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(OneCriterion(new Exam()), null), [covered], default);
+        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(OneCriterion(new Exam()), null), [covered], TestContext.Current.CancellationToken);
 
         using var sent = SKBitmap.Decode(gateway.LastRequest!.Content.OfType<ImagePart>().Single().Jpeg);
         Assert.True(sent.GetPixel(sent.Width / 2, sent.Height / 2).Red < 20);
@@ -110,7 +110,7 @@ public class LocalOnlyRoutingTests
     {
         var (gateway, ollama) = Create("qwen3.8:27b");
 
-        var response = await gateway.CompleteJsonAsync(Request(localOnly: true), default);
+        var response = await gateway.CompleteJsonAsync(Request(localOnly: true), TestContext.Current.CancellationToken);
 
         Assert.Equal(1, ollama.Calls);
         Assert.Equal("qwen3.8:27b", response.Model);
@@ -121,7 +121,7 @@ public class LocalOnlyRoutingTests
     {
         var (gateway, ollama) = Create(null);
 
-        var ex = await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.CompleteJsonAsync(Request(localOnly: true), default));
+        var ex = await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.CompleteJsonAsync(Request(localOnly: true), TestContext.Current.CancellationToken));
 
         Assert.Equal(RoutingModelGateway.LocalOnlyWithoutModel, ex.Message);
         Assert.Equal(0, ollama.Calls);
@@ -133,7 +133,7 @@ public class LocalOnlyRoutingTests
         var gateway = new RecordingGateway();
         var exam = ImageCoverTests.OneCriterion(new Exam { LocalOnly = true });
 
-        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(exam, null), [ImagePreprocessorTests.Image(20, 20)], default);
+        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(exam, null), [ImagePreprocessorTests.Image(20, 20)], TestContext.Current.CancellationToken);
 
         Assert.True(gateway.LastRequest!.LocalOnly);
     }
@@ -144,7 +144,7 @@ public class LocalOnlyRoutingTests
         var gateway = new RecordingGateway();
 
         await Assert.ThrowsAnyAsync<ModelException>(() =>
-            new RubricImportService(gateway).ImportAsync("Raster", [], null, localOnly: true, default));
+            new RubricImportService(gateway).ImportAsync("Raster", [], null, localOnly: true, TestContext.Current.CancellationToken));
 
         Assert.True(gateway.LastRequest!.LocalOnly);
     }

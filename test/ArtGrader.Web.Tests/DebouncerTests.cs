@@ -14,11 +14,11 @@ public class DebouncerTests
         {
             var value = i;
             debouncer.Schedule(() => { saved.Add(value); return Task.CompletedTask; });
-            await Task.Delay(20);
+            await Task.Delay(20, TestContext.Current.CancellationToken);
         }
         Assert.Empty(saved);
 
-        await Task.Delay(400);
+        await Task.Delay(400, TestContext.Current.CancellationToken);
         Assert.Equal([3], saved);
         Assert.False(debouncer.IsPending);
     }

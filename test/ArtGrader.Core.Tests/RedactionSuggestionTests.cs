@@ -90,7 +90,7 @@ public class RedactionSuggestionTests
         var fake = new FakeOllama("""{"stellen":[{"text":"S. Flückiger","grund":"Lehrperson"},{"text":"Schule Erfunden","grund":"Schulhaus"},{"text":"Frohheim Olten","grund":"Schulhaus"}]}""");
 
         var settings = new ClaudeSelected();
-        var found = await new LocalRedactionFinder(new OllamaGateway(new HttpClient(fake), settings), settings).FindAsync(Exercise, default);
+        var found = await new LocalRedactionFinder(new OllamaGateway(new HttpClient(fake), settings), settings).FindAsync(Exercise, TestContext.Current.CancellationToken);
 
         Assert.Equal([("S. Flückiger", "Lehrperson"), ("Frohheim Olten", "Schulhaus")], found);
         Assert.False((bool)fake.Request!["think"]!);
@@ -106,6 +106,6 @@ public class RedactionSuggestionTests
         var settings = new ClaudeSelected();
         var finder = new LocalRedactionFinder(new OllamaGateway(new HttpClient(new FakeOllama("{}") { Reachable = false }), settings), settings);
 
-        Assert.Null(await finder.AvailableModelAsync(default));
+        Assert.Null(await finder.AvailableModelAsync(TestContext.Current.CancellationToken));
     }
 }

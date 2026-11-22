@@ -90,7 +90,7 @@ public class DocumentTests
         var exam = ImageCoverTests.OneCriterion(new Exam { ExerciseText = "Zeichne eine Stadt.", LessonText = "Folie 1:\nZentralperspektive" });
         var page = ImagePreprocessorTests.Image(100, 140, SKEncodedImageFormat.Jpeg);
 
-        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(exam, [page]), [ImagePreprocessorTests.Image(20, 20)], default);
+        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(exam, [page]), [ImagePreprocessorTests.Image(20, 20)], TestContext.Current.CancellationToken);
 
         var shared = gateway.LastRequest!.SharedContext;
         Assert.Equal("Aufgabenblatt, Seite 1 von 1:", ((TextPart)shared[0]).Text);
@@ -108,7 +108,7 @@ public class DocumentTests
         var slide = ImagePreprocessorTests.Image(160, 90, SKEncodedImageFormat.Jpeg);
 
         await new SubmissionGradingService(gateway).GradeAsync(
-            GradingContext.From(ImageCoverTests.OneCriterion(new Exam()), null, [slide]), [ImagePreprocessorTests.Image(20, 20)], default);
+            GradingContext.From(ImageCoverTests.OneCriterion(new Exam()), null, [slide]), [ImagePreprocessorTests.Image(20, 20)], TestContext.Current.CancellationToken);
 
         var shared = gateway.LastRequest!.SharedContext;
         Assert.Contains(shared, p => p is TextPart { Text: "Unterrichtsmaterial, Seite 1 von 1:" });
@@ -122,7 +122,7 @@ public class DocumentTests
         var gateway = new RecordingGateway();
         var exam = ImageCoverTests.OneCriterion(new Exam { LessonText = new string('x', GradingContext.MaxLessonCharacters + 500) });
 
-        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(exam, null), [ImagePreprocessorTests.Image(20, 20)], default);
+        await new SubmissionGradingService(gateway).GradeAsync(GradingContext.From(exam, null), [ImagePreprocessorTests.Image(20, 20)], TestContext.Current.CancellationToken);
 
         var lesson = gateway.LastRequest!.SharedContext.OfType<TextPart>().Single(t => t.Text.StartsWith("<unterrichtsmaterial>")).Text;
         Assert.Equal(GradingContext.MaxLessonCharacters, lesson.Count(c => c == 'x'));
@@ -134,7 +134,7 @@ public class DocumentTests
         var gateway = new RecordingGateway();
         var page = ImagePreprocessorTests.Image(100, 140, SKEncodedImageFormat.Jpeg);
 
-        await Assert.ThrowsAnyAsync<ModelException>(() => new RubricImportService(gateway).ImportAsync("", [page], null, localOnly: false, default));
+        await Assert.ThrowsAnyAsync<ModelException>(() => new RubricImportService(gateway).ImportAsync("", [page], null, localOnly: false, TestContext.Current.CancellationToken));
 
         Assert.Same(page, gateway.LastRequest!.SharedContext.OfType<ImagePart>().Single().Jpeg);
     }
@@ -144,7 +144,7 @@ public class DocumentTests
     {
         var gateway = new RecordingGateway();
 
-        await Assert.ThrowsAsync<ModelException>(() => new RubricImportService(gateway).ImportAsync(" ", [], null, localOnly: false, default));
+        await Assert.ThrowsAsync<ModelException>(() => new RubricImportService(gateway).ImportAsync(" ", [], null, localOnly: false, TestContext.Current.CancellationToken));
 
         Assert.Null(gateway.LastRequest);
     }
