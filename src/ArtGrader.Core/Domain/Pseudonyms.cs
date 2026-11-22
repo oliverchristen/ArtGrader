@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ArtGrader.Core.Localization;
 
 namespace ArtGrader.Core.Domain;
 
@@ -16,7 +17,22 @@ public static partial class Pseudonyms
         "Safran", "Petrol", "Lavendel", "Bernstein", "Purpur",
     ];
 
-    public static IEnumerable<string> All => Animals.SelectMany(a => Pigments.Select(p => $"{a} {p}"));
+    private static readonly string[] EnglishAnimals =
+    [
+        "Fox", "Crane", "Lynx", "Otter", "Badger", "Owl", "Heron", "Hedgehog", "Beaver", "Falcon", "Hare", "Marten",
+        "Woodpecker", "Raven", "Gull", "Gecko", "Toucan", "Penguin", "Weasel", "Zebra", "Llama", "Panda", "Koala", "Dolphin",
+    ];
+
+    private static readonly string[] EnglishPigments =
+    [
+        "Indigo", "Ochre", "Carmine", "Cobalt", "Sienna", "Umber", "Vermilion", "Turquoise", "Magenta", "Olive", "Emerald",
+        "Saffron", "Teal", "Lavender", "Amber", "Purple",
+    ];
+
+    /// <summary>All random names in the app language: «Fuchs Indigo» in German, «Indigo Fox» in English.</summary>
+    public static IEnumerable<string> All => Language.IsEnglish
+        ? EnglishAnimals.SelectMany(a => EnglishPigments.Select(p => $"{p} {a}"))
+        : Animals.SelectMany(a => Pigments.Select(p => $"{a} {p}"));
 
     public static string Next(IEnumerable<string> taken, Random? random = null)
     {

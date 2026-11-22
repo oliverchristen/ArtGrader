@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Ai;
 
@@ -54,7 +55,7 @@ public sealed class LocalRedactionFinder(OllamaGateway ollama, IAiSettingsSource
             return [];
         }
         var model = await AvailableModelAsync(cancellationToken)
-            ?? throw new ModelNotConfiguredException("Es ist kein lokales Modell installiert oder Ollama läuft nicht.");
+            ?? throw new ModelNotConfiguredException(T("Es ist kein lokales Modell installiert oder Ollama läuft nicht."));
         var document = text.Length > MaxCharacters ? text[..MaxCharacters] : text;
         var response = await ollama.CompleteJsonAsync(
             new ModelJsonRequest(
@@ -79,7 +80,7 @@ public sealed class LocalRedactionFinder(OllamaGateway ollama, IAiSettingsSource
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException)
         {
-            throw new ModelException("Das lokale Modell hat keine lesbare Antwort geliefert. Bitte nochmals versuchen.", ex);
+            throw new ModelException(T("Das lokale Modell hat keine lesbare Antwort geliefert. Bitte nochmals versuchen."), ex);
         }
     }
 

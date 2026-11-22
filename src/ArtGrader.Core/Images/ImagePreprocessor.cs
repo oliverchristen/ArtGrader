@@ -1,4 +1,5 @@
 using SkiaSharp;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Images;
 
@@ -18,16 +19,15 @@ public static class ImagePreprocessor
         if (IsHeif(bytes))
         {
             throw new UnsupportedImageException(
-                "HEIC-Fotos (iPhone) werden nicht unterstützt. Bitte als JPEG exportieren oder auf dem iPhone unter "
-                    + "Einstellungen › Kamera › Formate «Maximale Kompatibilität» wählen.");
+                T("HEIC-Fotos (iPhone) werden nicht unterstützt. Bitte als JPEG exportieren oder auf dem iPhone unter Einstellungen › Kamera › Formate «Maximale Kompatibilität» wählen."));
         }
 
         using var data = SKData.CreateCopy(bytes);
         using var codec = SKCodec.Create(data)
-            ?? throw new UnsupportedImageException("Diese Datei ist kein unterstütztes Bild (JPEG, PNG, WebP, GIF, BMP).");
+            ?? throw new UnsupportedImageException(T("Diese Datei ist kein unterstütztes Bild (JPEG, PNG, WebP, GIF, BMP)."));
 
         using var decoded = SKBitmap.Decode(codec)
-            ?? throw new UnsupportedImageException("Das Bild ist beschädigt und kann nicht gelesen werden.");
+            ?? throw new UnsupportedImageException(T("Das Bild ist beschädigt und kann nicht gelesen werden."));
         using var oriented = ApplyOrigin(decoded, codec.EncodedOrigin);
         using var resized = Downscale(oriented, maxSide);
         using var image = SKImage.FromBitmap(resized);
@@ -46,7 +46,7 @@ public static class ImagePreprocessor
         var width = Math.Max(1, (int)Math.Round(source.Width * scale));
         var height = Math.Max(1, (int)Math.Round(source.Height * scale));
         return source.Resize(new SKImageInfo(width, height), new SKSamplingOptions(SKCubicResampler.Mitchell))
-            ?? throw new UnsupportedImageException("Das Bild konnte nicht verkleinert werden.");
+            ?? throw new UnsupportedImageException(T("Das Bild konnte nicht verkleinert werden."));
     }
 
     private static SKBitmap ApplyOrigin(SKBitmap source, SKEncodedOrigin origin)

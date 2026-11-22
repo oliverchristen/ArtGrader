@@ -1,14 +1,18 @@
+using ArtGrader.Core.Localization;
+using static ArtGrader.Core.Localization.Texts;
+
 namespace ArtGrader.Web.Services;
 
 public static class StoppedPage
 {
-    public const string Html = """
+    /// <summary>The page shown after quitting, in the current language.</summary>
+    public static string Html() => $$"""
         <!doctype html>
-        <html lang="de-CH">
+        <html lang="{{Language.HtmlLang}}">
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>ArtGrader beendet</title>
+          <title>{{T("ArtGrader beendet")}}</title>
           <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
           <style>
             body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #fff; color: #141414;
@@ -32,9 +36,9 @@ public static class StoppedPage
               <circle cx="186" cy="46" r="3.5" fill="#141414" />
               <path d="M198 46 C 214 46, 220 76, 238 76" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round" />
             </svg>
-            <h1>ArtGrader ist beendet</h1>
-            <p>Alles ist gespeichert. Du kannst dieses Fenster schliessen.</p>
-            <p>Zum Weiterarbeiten ArtGrader wieder starten.</p>
+            <h1>{{T("ArtGrader ist beendet")}}</h1>
+            <p>{{T("Alles ist gespeichert. Du kannst dieses Fenster schliessen.")}}</p>
+            <p>{{T("Zum Weiterarbeiten ArtGrader wieder starten.")}}</p>
           </main>
         </body>
         </html>

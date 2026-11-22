@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using PDFtoImage;
 using SkiaSharp;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Documents;
 
@@ -20,11 +21,11 @@ public static class PdfPages
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            throw new UnsupportedDocumentException("Das PDF konnte nicht gelesen werden. Ist es passwortgeschützt oder beschädigt?");
+            throw new UnsupportedDocumentException(T("Das PDF konnte nicht gelesen werden. Ist es passwortgeschützt oder beschädigt?"));
         }
         if (count > MaxPages)
         {
-            throw new UnsupportedDocumentException($"Das PDF hat {count} Seiten. Bitte höchstens {MaxPages} Seiten hochladen.");
+            throw new UnsupportedDocumentException(T("Das PDF hat {0} Seiten. Bitte höchstens {1} Seiten hochladen.", count, MaxPages));
         }
 
         var pages = new List<byte[]>();

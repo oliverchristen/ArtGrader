@@ -1,7 +1,7 @@
 @* The first photo of a work with the photo count, as shown on the work cards. *@
 @if (Submission.Images.Count > 0)
 {
-    <img src="@ImageUrls.Covered(Submission.Images[0])" alt="Foto der Arbeit von @Submission.StudentName" loading="lazy" />
+    <img src="@ImageUrls.Covered(Submission.Images[0])" alt="@T("Foto der Arbeit von {0}", Submission.StudentName)" loading="lazy" />
 }
 else
 {
@@ -9,7 +9,7 @@ else
 }
 @if (Submission.Images.Count > 1)
 {
-    <span class="photo-count">@Submission.Images.Count Fotos</span>
+    <span class="photo-count">@T("{0} Fotos", Submission.Images.Count)</span>
 }
 
 @code {

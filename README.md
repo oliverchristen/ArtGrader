@@ -38,6 +38,9 @@ gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie �
    Rückmeldung (einzeln oder für die ganze Klasse). Das PDF vermerkt, dass die Einschätzung mit KI-Unterstützung
    entstand und ob die Lehrperson sie abgeschlossen hat.
 
+ArtGrader gibt es auf Deutsch und Englisch (**Einstellungen → Sprache**). Die Sprache gilt auch für die
+Beurteilungsbögen und für die Texte, die die KI schreibt.
+
 Alle Eingaben werden etwa eine Sekunde nach der letzten Änderung automatisch gespeichert. Jeder Schritt führt
 von oben nach unten; unten geht es mit einem Knopf zum nächsten Schritt.
 

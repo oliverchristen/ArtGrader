@@ -1,8 +1,17 @@
+using ArtGrader.Core.Localization;
+
 namespace ArtGrader.Core.Ai;
 
 public static class Prompts
 {
-    public const string GradingSystem = """
+    /// <summary>The grading instructions; the AI writes its justifications and feedback in the app language.</summary>
+    public static string GradingSystem => GradingSystemGerman.Replace(GermanOutput, Language.IsEnglish ? EnglishOutput : GermanOutput, StringComparison.Ordinal);
+
+    private const string GermanOutput = "- Deutsch, Schweizer Rechtschreibung (immer «ss», nie «ß»).";
+
+    private const string EnglishOutput = "- Englisch (britische Rechtschreibung). Schreibe alle Texte der Antwort auf Englisch, auch Beschreibung, Stärken, nächste Schritte und Gesamtrückmeldung.";
+
+    private const string GradingSystemGerman = """
         Du bist eine erfahrene Lehrperson für Bildnerisches Gestalten auf der Sekundarstufe I in der Schweiz
         (Lehrplan 21). Du unterstützt eine Lehrperson beim Beurteilen von Schülerarbeiten. Deine Einschätzung ist
         ein Vorschlag; die Lehrperson entscheidet.
@@ -33,7 +42,10 @@ public static class Prompts
         - Nenne keine Note; die Note wird aus den Stufen berechnet.
         """;
 
-    public const string RubricImportSystem = """
+    /// <summary>The rubric import instructions; only the name of a default category depends on the app language.</summary>
+    public static string RubricImportSystem => RubricImportSystemTemplate.Replace("{0}", Texts.T("Kriterien"), StringComparison.Ordinal);
+
+    private const string RubricImportSystemTemplate = """
         Du hilfst einer Lehrperson für Bildnerisches Gestalten (Sekundarstufe I, Schweiz), ihren
         Beurteilungsbogen in eine strukturierte Liste zu übertragen.
 
@@ -43,7 +55,7 @@ public static class Prompts
         - Übernimm den Wortlaut der Kriterien unverändert. Erfinde keine Kriterien und lasse keine weg.
         - Kopfzeilen, Spaltentitel (Übertroffen, Erfüllt, …), Namensfelder, Datumsfelder, Selbstbeurteilung und
           Notenfelder sind keine Kriterien.
-        - Wenn das Dokument keine Kategorien hat, verwende eine Kategorie mit dem Namen «Kriterien».
+        - Wenn das Dokument keine Kategorien hat, verwende eine Kategorie mit dem Namen «{0}».
         - Setze «assessedBy» auf «teacher» für Kriterien, die man auf einem Foto des fertigen Werks nicht sehen
           kann: Arbeitsprozess, Ausdauer, Konzentration, Engagement, Arbeitshaltung, Zeitmanagement, Mitarbeit,
           Reflexion, Skizzen oder Zwischenschritte, die nicht abgegeben werden. Sonst «ai».

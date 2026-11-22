@@ -1301,6 +1301,11 @@ html:has(.exam-head) {
         position: sticky;
         top: 84px;
     }
+
+    /* Below the sticky exam header on the pages of a single work. */
+    html:has(.exam-head) .sticky-side {
+        top: 260px;
+    }
 }
 
 .frame {

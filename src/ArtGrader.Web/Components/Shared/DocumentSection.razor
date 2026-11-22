@@ -10,16 +10,16 @@
         <h2 class="sheet-title">@Title</h2>
         @if (Optional)
         {
-            <span class="tag">optional</span>
+            <span class="tag">@T("optional")</span>
         }
     </div>
     <p class="sheet-sub">@Sub</p>
 
     <div class="dropzone compact mb-3">
-        <InputFile OnChange="UploadAsync" accept="@Accept" aria-label="@($"{Title} hochladen")" disabled="@busy" />
+        <InputFile OnChange="UploadAsync" accept="@Accept" aria-label="@T("{0} hochladen", Title)" disabled="@busy" />
         @if (busy)
         {
-            <span class="file-chip"><MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Tertiary" /> Datei wird gelesen …</span>
+            <span class="file-chip"><MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Tertiary" /> @T("Datei wird gelesen …")</span>
         }
         else
         {
@@ -27,11 +27,11 @@
                 <span class="doc">@DocType(File)</span>
                 @if (File is null)
                 {
-                    <span>@DropText <span class="faint">oder klicken</span></span>
+                    <span>@(DropText ?? T("Datei hierher ziehen")) <span class="faint">@T("oder klicken")</span></span>
                 }
                 else
                 {
-                    <span>@File.OriginalName <span class="faint">· ersetzen</span></span>
+                    <span>@File.OriginalName <span class="faint">· @T("ersetzen")</span></span>
                 }
             </span>
         }
@@ -42,8 +42,7 @@
         <div class="redact-hint">
             <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Size="Size.Small" />
             <span>
-                <b>Das liest die KI.</b> Schwärze, was auf deine Schule hinweist: Schulname, Logo, Adresse, Namen von
-                Lehrpersonen oder Klassen. Für die Beurteilung braucht die KI das nicht.
+                <b>@T("Das liest die KI.")</b> @T("Schwärze, was auf deine Schule hinweist: Schulname, Logo, Adresse, Namen von Lehrpersonen oder Klassen. Für die Beurteilung braucht die KI das nicht.")
             </span>
         </div>
     }
@@ -54,9 +53,9 @@
             @foreach (var page in pages)
             {
                 <div class="doc-page" @key="page.Id">
-                    <div class="doc-page-label">Seite @(page.Order + 1) von @pages.Count</div>
+                    <div class="doc-page-label">@T("Seite {0} von {1}", page.Order + 1, pages.Count)</div>
                     <CoverEditor Src="@ImageUrls.Original(page)" Covers="page.Covers" Crop="page.Crop" ItemId="page.Id"
-                                 CoverLabel="Stelle schwärzen" FrameClass="page-frame" Alt="@($"{Title}, Seite {page.Order + 1}")"
+                                 CoverLabel="@T("Stelle schwärzen")" FrameClass="page-frame" Alt="@T("{0}, Seite {1}", Title, page.Order + 1)"
                                  Save="edits => SavePageAsync(page, edits)" />
                 </div>
             }
@@ -64,14 +63,14 @@
     }
     else
     {
-        <RedactableText Value="@Text" ValueChanged="SaveTextAsync" Label="@TextLabel" Rows="@Rows" Placeholder="@Placeholder"
+        <RedactableText Value="@Text" ValueChanged="SaveTextAsync" Label="@(TextLabel ?? T("Text"))" Rows="@Rows" Placeholder="@Placeholder"
                         Terms="Settings.RedactTerms" CheckWithModel="@(localModel is null ? null : CheckWithModelAsync)" />
     }
 
     <div class="d-flex justify-space-between align-center flex-wrap gap-2 mt-3">
         @if (File is not null || pages.Count > 0)
         {
-            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Delete" OnClick="RemoveAsync">Dokument entfernen</MudButton>
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Delete" OnClick="RemoveAsync">@T("Dokument entfernen")</MudButton>
         }
         else
         {
@@ -88,9 +87,9 @@
     [Parameter, EditorRequired] public DocumentKind Kind { get; set; }
     [Parameter, EditorRequired] public string Title { get; set; } = "";
     [Parameter] public string Sub { get; set; } = "";
-    [Parameter] public string DropText { get; set; } = "Datei hierher ziehen";
+    [Parameter] public string? DropText { get; set; }
     [Parameter] public string Accept { get; set; } = ".docx,.pptx,.pdf,.txt,.md";
-    [Parameter] public string TextLabel { get; set; } = "Text";
+    [Parameter] public string? TextLabel { get; set; }
     [Parameter] public string Placeholder { get; set; } = "";
     [Parameter] public int Rows { get; set; } = 10;
     [Parameter] public bool Optional { get; set; }
@@ -127,7 +126,7 @@
     {
         if (e.File.Size > MaxDocumentBytes)
         {
-            Snackbar.Add("Die Datei ist grösser als 40 MB.", Severity.Error);
+            Snackbar.Add(T("Die Datei ist grösser als 40 MB."), Severity.Error);
             return;
         }
         busy = true;
@@ -155,8 +154,8 @@
             }
             Files.Delete(previous);
             Snackbar.Add(content.Pages.Count > 0
-                ? $"{content.Pages.Count} Seite(n) übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist."
-                : "Text übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist.", Severity.Success);
+                ? T("{0} Seite(n) übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist.", content.Pages.Count)
+                : T("Text übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist."), Severity.Success);
             await Changed.InvokeAsync();
         }
         catch (UnsupportedDocumentException ex)
@@ -165,7 +164,7 @@
         }
         catch (Exception ex) when (ex is DocumentFormat.OpenXml.Packaging.OpenXmlPackageException or InvalidDataException or FileFormatException)
         {
-            Snackbar.Add("Die Datei konnte nicht gelesen werden.", Severity.Error);
+            Snackbar.Add(T("Die Datei konnte nicht gelesen werden."), Severity.Error);
         }
         finally
         {

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Ai;
 
@@ -18,12 +19,12 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         var model = request.Model ?? settings.OllamaModel;
         if (string.IsNullOrWhiteSpace(model))
         {
-            throw new ModelNotConfiguredException("Es ist kein lokales Modell gewählt. Bitte unter «Einstellungen» ein Ollama-Modell auswählen.");
+            throw new ModelNotConfiguredException(T("Es ist kein lokales Modell gewählt. Bitte unter «Einstellungen» ein Ollama-Modell auswählen."));
         }
         if (IsCloudName(model))
         {
             throw new ModelNotConfiguredException(
-                $"«{model}» ist ein Cloud-Modell von Ollama. Damit würden die Fotos den Computer verlassen. Bitte unter «Einstellungen» ein lokales Modell wählen.");
+                T("«{0}» ist ein Cloud-Modell von Ollama. Damit würden die Fotos den Computer verlassen. Bitte unter «Einstellungen» ein lokales Modell wählen.", model));
         }
 
         var text = new StringBuilder();
@@ -78,11 +79,11 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
             }
             if (response.Error is not null)
             {
-                throw new ModelException($"Das lokale Modell meldet einen Fehler: {response.Error}");
+                throw new ModelException(T("Das lokale Modell meldet einen Fehler: {0}", response.Error));
             }
             if (response.DoneReason == "length")
             {
-                throw new ModelException("Die Antwort des lokalen Modells wurde abgeschnitten. Bitte nochmals versuchen.");
+                throw new ModelException(T("Die Antwort des lokalen Modells wurde abgeschnitten. Bitte nochmals versuchen."));
             }
             return new ModelJsonResponse(
                 response.Message?.Content ?? "",
@@ -109,7 +110,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or UriFormatException)
         {
-            throw new ModelException($"Ollama ist unter {baseUrl} nicht erreichbar. Läuft die Ollama-App?", ex);
+            throw new ModelException(T("Ollama ist unter {0} nicht erreichbar. Läuft die Ollama-App?", baseUrl), ex);
         }
     }
 
@@ -126,7 +127,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         }
         catch (HttpRequestException ex)
         {
-            throw new ModelException($"Ollama ist unter {baseUrl} nicht erreichbar. Läuft die Ollama-App?", ex);
+            throw new ModelException(T("Ollama ist unter {0} nicht erreichbar. Läuft die Ollama-App?", baseUrl), ex);
         }
 
         using (response)
@@ -150,7 +151,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
                 }
                 if (update?.Error is { } error)
                 {
-                    throw new ModelException($"Download fehlgeschlagen: {error}");
+                    throw new ModelException(T("Download fehlgeschlagen: {0}", error));
                 }
                 if (update is null)
                 {
@@ -163,7 +164,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
                 }
             }
         }
-        throw new ModelException("Der Download wurde unterbrochen. Bitte nochmals starten – er setzt dort fort, wo er aufgehört hat.");
+        throw new ModelException(T("Der Download wurde unterbrochen. Bitte nochmals starten – er setzt dort fort, wo er aufgehört hat."));
     }
 
     private sealed record PullLine(
@@ -184,11 +185,11 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         }
         catch (HttpRequestException ex)
         {
-            throw new ModelException($"Ollama ist unter {baseUrl} nicht erreichbar. Läuft die Ollama-App?", ex);
+            throw new ModelException(T("Ollama ist unter {0} nicht erreichbar. Läuft die Ollama-App?", baseUrl), ex);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new ModelException("Das lokale Modell hat zu lange nicht geantwortet (Zeitüberschreitung).", ex);
+            throw new ModelException(T("Das lokale Modell hat zu lange nicht geantwortet (Zeitüberschreitung)."), ex);
         }
 
         using (message)
@@ -205,13 +206,13 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
             }
             if (message.StatusCode == HttpStatusCode.NotFound && parsed?.Error is not null)
             {
-                return parsed with { Error = $"Das Modell ist nicht installiert ({parsed.Error}). Im Terminal: ollama pull <modell>", NotFound = true };
+                return parsed with { Error = T("Das Modell ist nicht installiert ({0}). Im Terminal: ollama pull <modell>", parsed.Error), NotFound = true };
             }
             if (!message.IsSuccessStatusCode)
             {
                 return new ChatResponse { Error = parsed?.Error ?? $"HTTP {(int)message.StatusCode}" };
             }
-            return parsed ?? new ChatResponse { Error = "Unverständliche Antwort von Ollama." };
+            return parsed ?? new ChatResponse { Error = T("Unverständliche Antwort von Ollama.") };
         }
     }
 
@@ -254,8 +255,8 @@ public sealed class RoutingModelGateway(
     AnthropicClaudeGateway anthropic,
     OllamaGateway ollama) : IModelGateway
 {
-    public const string LocalOnlyWithoutModel =
-        "Diese Prüfung darf nur lokal bewertet werden, es ist aber kein lokales Modell eingerichtet. Bitte unter «Einstellungen» ein lokales Modell wählen.";
+    public static string LocalOnlyWithoutModel =>
+        T("Diese Prüfung darf nur lokal bewertet werden, es ist aber kein lokales Modell eingerichtet. Bitte unter «Einstellungen» ein lokales Modell wählen.");
 
     public static bool RunsLocally(AiSettings current, bool localOnly) => current.Provider == AiProvider.Ollama || localOnly;
 

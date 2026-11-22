@@ -1,6 +1,7 @@
 using System.Text;
 using ArtGrader.Core.Domain;
 using ArtGrader.Core.Images;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Ai;
 
@@ -51,11 +52,11 @@ public sealed class SubmissionGradingService(IModelGateway claude)
     {
         if (context.Criteria.Count == 0)
         {
-            throw new ModelException("Diese Prüfung hat keine Kriterien, die von der KI beurteilt werden.");
+            throw new ModelException(T("Diese Prüfung hat keine Kriterien, die von der KI beurteilt werden."));
         }
         if (images.Count == 0)
         {
-            throw new ModelException("Für diese Arbeit ist kein Foto vorhanden.");
+            throw new ModelException(T("Für diese Arbeit ist kein Foto vorhanden."));
         }
 
         var keys = CriterionKeys(context.Criteria);

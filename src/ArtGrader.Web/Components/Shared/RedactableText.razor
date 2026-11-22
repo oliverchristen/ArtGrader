@@ -6,7 +6,7 @@
     <label class="redactable-label" for="@id">@Label</label>
     <textarea id="@id" rows="@Rows" placeholder="@Placeholder" value="@text"
               @oninput="OnInput" @onchange="CommitAsync"></textarea>
-    <span class="cover-hint">Namen, Orte und alles, was auf deine Schule hinweist, direkt im Text löschen. Änderungen werden automatisch gespeichert.</span>
+    <span class="cover-hint">@T("Namen, Orte und alles, was auf deine Schule hinweist, direkt im Text löschen. Änderungen werden automatisch gespeichert.")</span>
 
     @{
         var groups = Suggestions();
@@ -15,23 +15,23 @@
     {
         <div class="redact-suggest">
             <div class="redact-suggest-head">
-                <b>Vorschläge zum Schwärzen</b>
+                <b>@T("Vorschläge zum Schwärzen")</b>
                 <span class="topbar-spacer"></span>
                 @if (CheckWithModel is not null)
                 {
                     <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.ManageSearch" Disabled="@checking" OnClick="CheckAsync">
-                        @(checking ? "Das lokale Modell liest …" : "Mit lokalem Modell prüfen")
+                        @(checking ? T("Das lokale Modell liest …") : T("Mit lokalem Modell prüfen"))
                     </MudButton>
                 }
                 @if (groups.Count > 1)
                 {
-                    <MudButton Class="btn-ink" Size="Size.Small" OnClick="() => RedactAsync(groups.SelectMany(g => g))">Alle schwärzen</MudButton>
+                    <MudButton Class="btn-ink" Size="Size.Small" OnClick="() => RedactAsync(groups.SelectMany(g => g))">@T("Alle schwärzen")</MudButton>
                 }
             </div>
             @if (checking)
             {
                 <MudProgressLinear Indeterminate="true" Color="Color.Tertiary" Class="my-2" />
-                <span class="cover-hint">Läuft nur auf diesem Computer. Das kann bis zu einer Minute dauern.</span>
+                <span class="cover-hint">@T("Läuft nur auf diesem Computer. Das kann bis zu einer Minute dauern.")</span>
             }
             @if (checkError is not null)
             {
@@ -45,7 +45,7 @@
                         <span class="redact-chip">
                             <span class="redact-chip-text">@group.Key</span>
                             <span class="redact-chip-reason">@group.First().Reason@(group.Count() > 1 ? $" · {group.Count()}×" : "")</span>
-                            <button type="button" @onclick="() => RedactAsync(group)">Schwärzen</button>
+                            <button type="button" @onclick="() => RedactAsync(group)">@T("Schwärzen")</button>
                         </span>
                     }
                 </div>
@@ -55,15 +55,15 @@
                 <span class="cover-hint">
                     @if (checkedWithModel)
                     {
-                        <text>Keine Stellen gefunden. Bitte trotzdem selbst durchlesen.</text>
+                        @T("Keine Stellen gefunden. Bitte trotzdem selbst durchlesen.")
                     }
                     else if (Terms.Count == 0)
                     {
-                        <text>Tipp: Unter <a href="/einstellungen">Einstellungen</a> bei «Immer schwärzen» Schulhaus, Ort und deinen Namen eintragen. Dann schlägt ArtGrader sie hier vor.</text>
+                        @((MarkupString)T("Tipp: Unter <a href=\"/einstellungen\">Einstellungen</a> bei «Immer schwärzen» Schulhaus, Ort und deinen Namen eintragen. Dann schlägt ArtGrader sie hier vor."))
                     }
                     else
                     {
-                        <text>Keine Begriffe aus deiner Liste gefunden.</text>
+                        @T("Keine Begriffe aus deiner Liste gefunden.")
                     }
                 </span>
             }

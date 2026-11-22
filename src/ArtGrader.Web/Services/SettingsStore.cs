@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using ArtGrader.Core.Ai;
+using ArtGrader.Core.Localization;
 using ArtGrader.Core.Storage;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -25,6 +26,7 @@ public sealed class SettingsStore : IAiSettingsSource
         this.paths = paths;
         protector = protection.CreateProtector("ArtGrader.ApiKey");
         stored = Load();
+        ApplyLanguage(stored.Language);
     }
 
     public event Action? Changed;
@@ -44,6 +46,27 @@ public sealed class SettingsStore : IAiSettingsSource
     public bool RunsLocally(ArtGrader.Core.Domain.Exam exam) => stored.Provider == AiProvider.Ollama || exam.LocalOnly;
 
     public IReadOnlyList<string> RedactTerms => stored.RedactTerms;
+
+    public AppLanguage Language => stored.Language;
+
+    public void SaveLanguage(AppLanguage language)
+    {
+        lock (gate)
+        {
+            stored = stored with { Language = language };
+            Persist();
+        }
+        ApplyLanguage(language);
+        Changed?.Invoke();
+    }
+
+    /// <summary>Switches texts, AI output and date and number formats for the whole app.</summary>
+    private static void ApplyLanguage(AppLanguage language)
+    {
+        ArtGrader.Core.Localization.Language.Current = language;
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = ArtGrader.Core.Localization.Language.Culture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = ArtGrader.Core.Localization.Language.Culture;
+    }
 
     public void SaveRedactTerms(IEnumerable<string> terms)
     {
@@ -173,6 +196,7 @@ public sealed class SettingsStore : IAiSettingsSource
         public string OllamaUrl { get; init; } = AiSettings.DefaultOllamaUrl;
         public string? OllamaModel { get; init; }
         public List<string> RedactTerms { get; init; } = [];
+        public AppLanguage Language { get; init; } = AppLanguage.De;
     }
 }
 

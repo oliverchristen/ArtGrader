@@ -8,6 +8,7 @@ using ArtGrader.Web.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using static ArtGrader.Core.Localization.Texts;
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
@@ -112,7 +113,7 @@ app.MapPost("/beenden", (HttpContext context, IHostApplicationLifetime lifetime)
         await Task.Delay(500);
         lifetime.StopApplication();
     });
-    return Results.Content(StoppedPage.Html, "text/html; charset=utf-8");
+    return Results.Content(StoppedPage.Html(), "text/html; charset=utf-8");
 }).DisableAntiforgery();
 
 app.MapGet("/files/{**path}", (string path, FileStore files) =>
@@ -162,7 +163,7 @@ app.MapGet("/export/{examId:guid}/noten.xlsx", async (Guid examId, ExamRepositor
         : Results.File(
             ExcelExporter.Create(exam),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            FileName(exam.Title, "Noten", "xlsx"));
+            FileName(exam.Title, T("Noten"), "xlsx"));
 });
 
 app.MapGet(
@@ -189,7 +190,7 @@ app.MapGet(
                 images[image.Id] = await ArtGrader.Core.Images.ImagePreprocessor.ToJpegAsync(original, 1200, ct);
             }
         }
-        var name = submission is null ? "Beurteilungen" : selected[0].StudentName;
+        var name = submission is null ? T("Beurteilungen") : selected[0].StudentName;
         return Results.File(
             FeedbackPdf.Create(exam, selected, begruendungen ?? false, images),
             "application/pdf",

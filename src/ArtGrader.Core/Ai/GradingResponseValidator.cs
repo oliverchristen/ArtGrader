@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ArtGrader.Core.Domain;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Ai;
 
@@ -14,11 +15,11 @@ public static class GradingResponseValidator
         }
         catch (JsonException ex)
         {
-            throw new ModelException("Die Antwort der KI konnte nicht gelesen werden. Bitte nochmals bewerten.", ex);
+            throw new ModelException(T("Die Antwort der KI konnte nicht gelesen werden. Bitte nochmals bewerten."), ex);
         }
         if (dto?.Criteria is null)
         {
-            throw new ModelException("Die Antwort der KI enthält keine Kriterien. Bitte nochmals bewerten.");
+            throw new ModelException(T("Die Antwort der KI enthält keine Kriterien. Bitte nochmals bewerten."));
         }
 
         var suggestions = new List<CriterionSuggestion>();
@@ -29,11 +30,11 @@ public static class GradingResponseValidator
             if (!keys.TryGetValue(key, out var criterionId))
             {
                 throw new ModelException(
-                    $"Die KI hat ein unbekanntes Kriterium «{item.CriterionId}» bewertet. Bitte nochmals bewerten.");
+                    T("Die KI hat ein unbekanntes Kriterium «{0}» bewertet. Bitte nochmals bewerten.", item.CriterionId));
             }
             if (!seen.Add(key))
             {
-                throw new ModelException($"Die KI hat das Kriterium {key} doppelt bewertet. Bitte nochmals bewerten.");
+                throw new ModelException(T("Die KI hat das Kriterium {0} doppelt bewertet. Bitte nochmals bewerten.", key));
             }
             suggestions.Add(
                 new CriterionSuggestion(
@@ -47,7 +48,7 @@ public static class GradingResponseValidator
         if (missing.Count > 0)
         {
             throw new ModelException(
-                $"Die KI hat nicht alle Kriterien bewertet (fehlend: {string.Join(", ", missing)}). Bitte nochmals bewerten.");
+                T("Die KI hat nicht alle Kriterien bewertet (fehlend: {0}). Bitte nochmals bewerten.", string.Join(", ", missing)));
         }
 
         return new GradingSuggestion(
@@ -67,7 +68,7 @@ public static class GradingResponseValidator
             "erfuellt" => Level.Erfuellt,
             "teilweise" => Level.Teilweise,
             "nicht" => Level.Nicht,
-            _ => throw new ModelException($"Die KI hat eine ungültige Stufe «{level}» geliefert. Bitte nochmals bewerten."),
+            _ => throw new ModelException(T("Die KI hat eine ungültige Stufe «{0}» geliefert. Bitte nochmals bewerten.", level)),
         };
 
     private static Confidence ParseConfidence(string? confidence) =>

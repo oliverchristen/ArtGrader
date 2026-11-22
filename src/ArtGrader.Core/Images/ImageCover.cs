@@ -1,5 +1,6 @@
 using ArtGrader.Core.Domain;
 using SkiaSharp;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Images;
 
@@ -12,7 +13,7 @@ public static class ImageCover
             return image;
         }
         using var bitmap = SKBitmap.Decode(image)
-            ?? throw new UnsupportedImageException("Das Bild ist beschädigt und kann nicht gelesen werden.");
+            ?? throw new UnsupportedImageException(T("Das Bild ist beschädigt und kann nicht gelesen werden."));
         using (var canvas = new SKCanvas(bitmap))
         using (var paint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Fill })
         {

@@ -11,10 +11,10 @@
 {
     @* Step 2: capture the works. Everything here happens before the AI sees anything. *@
     <div class="dropzone">
-        <InputFile OnChange="UploadAsync" multiple accept="@accept" disabled="@uploading" aria-label="Fotos hochladen" />
+        <InputFile OnChange="UploadAsync" multiple accept="@accept" disabled="@uploading" aria-label="@T("Fotos hochladen")" />
         @if (uploading)
         {
-            <div class="dz-title">Fotos werden vorbereitet …</div>
+            <div class="dz-title">@T("Fotos werden vorbereitet …")</div>
             <div class="d-flex align-center gap-3 justify-center" style="max-width:420px;margin:12px auto 0">
                 <div class="brush-progress"><span style="@($"width:{(uploadTotal == 0 ? 0 : 100 * uploadDone / uploadTotal)}%")"></span></div>
                 <span class="muted">@uploadDone / @uploadTotal</span>
@@ -23,21 +23,23 @@
         else
         {
             <span class="dz-icon"><MudIcon Icon="@Icons.Material.Outlined.AddPhotoAlternate" Size="Size.Large" /></span>
-            <div class="dz-title">Fotos der Arbeiten hierher legen</div>
+            <div class="dz-title">@T("Fotos der Arbeiten hierher legen")</div>
             <div class="muted">
-                @(oneSubmission ? "Alle Fotos werden zu einer Arbeit zusammengefasst." : "Jedes Foto wird eine Arbeit – mehrere Fotos einer Arbeit danach zusammenführen.")
+                @(oneSubmission ? T("Alle Fotos werden zu einer Arbeit zusammengefasst.") : T("Jedes Foto wird eine Arbeit – mehrere Fotos einer Arbeit danach zusammenführen."))
             </div>
         }
     </div>
-    <MudSwitch @bind-Value="oneSubmission" Color="Color.Primary" Label="Alle Fotos dieses Uploads gehören zu einer Arbeit" Class="mt-1" />
+    <MudSwitch @bind-Value="oneSubmission" Color="Color.Primary" Label="@T("Alle Fotos dieses Uploads gehören zu einer Arbeit")" Class="mt-1" />
 
     @if (Exam.Submissions.Count > 0)
     {
         <div class="banner info mb-4">
             <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
             <span>
-                Bereite die Arbeiten vor, bevor die KI sie sieht: Namen eintragen und Fotos derselben Arbeit zusammenführen.
-                Steht ein Name oder eine Signatur auf dem Werk, öffne die Arbeit und decke die Stelle ab@(Exam.LocalOnly ? "." : ", sonst sieht die KI sie.")
+                @(T("Bereite die Arbeiten vor, bevor die KI sie sieht: Namen eintragen und Fotos derselben Arbeit zusammenführen.") + " "
+                    + (Exam.LocalOnly
+                        ? T("Steht ein Name oder eine Signatur auf dem Werk, öffne die Arbeit und decke die Stelle ab.")
+                        : T("Steht ein Name oder eine Signatur auf dem Werk, öffne die Arbeit und decke die Stelle ab, sonst sieht die KI sie.")))
             </span>
         </div>
 
@@ -45,17 +47,17 @@
             @if (selected.Count > 0)
             {
                 <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.CallMerge" Disabled="@(selected.Count < 2)" OnClick="MergeAsync">
-                    Zusammenführen
+                    @T("Zusammenführen")
                 </MudButton>
-                <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="DeleteSelectedAsync">Löschen</MudButton>
-                <MudButton Class="btn-quiet" OnClick="() => selected.Clear()">Auswahl aufheben (@selected.Count)</MudButton>
+                <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="DeleteSelectedAsync">@T("Löschen")</MudButton>
+                <MudButton Class="btn-quiet" OnClick="() => selected.Clear()">@T("Auswahl aufheben ({0})", selected.Count)</MudButton>
             }
             else
             {
-                <span class="muted" style="font-size:.9rem">Zum Zusammenführen oder Löschen Arbeiten oben links anwählen.</span>
+                <span class="muted" style="font-size:.9rem">@T("Zum Zusammenführen oder Löschen Arbeiten oben links anwählen.")</span>
             }
             <span class="topbar-spacer"></span>
-            <span class="muted" style="font-size:.9rem">@Exam.Submissions.Count Arbeiten · @Exam.Submissions.Sum(s => s.Images.Count) Fotos</span>
+            <span class="muted" style="font-size:.9rem">@T("{0} Arbeiten · {1} Fotos", Exam.Submissions.Count, Exam.Submissions.Sum(s => s.Images.Count))</span>
         </div>
 
         <div class="@($"wall {(selected.Count > 0 ? "selecting" : "")}")">
@@ -63,13 +65,13 @@
             {
                 var isSelected = selected.Contains(submission.Id);
                 <div class="@($"work {(isSelected ? "selected" : "")}")" @key="submission.Id">
-                    <button type="button" class="work-select" aria-pressed="@(isSelected ? "true" : "false")" aria-label="Auswählen" @onclick="() => Toggle(submission.Id)">
+                    <button type="button" class="work-select" aria-pressed="@(isSelected ? "true" : "false")" aria-label="@T("Auswählen")" @onclick="() => Toggle(submission.Id)">
                         @if (isSelected)
                         {
                             <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
                         }
                     </button>
-                    <a class="work-photo" href="@ReviewUrl(submission)" title="Öffnen: abdecken, zuschneiden, Fotos abtrennen">
+                    <a class="work-photo" href="@EditUrl(submission)" title="@T("Öffnen: abdecken, zuschneiden, Fotos abtrennen")">
                         <WorkPhoto Submission="submission" />
                     </a>
                     <WorkName Submission="submission" Renamed="OnRenamed" />
@@ -81,10 +83,10 @@
     <div class="next-step">
         @if (Exam.Submissions.Count == 0)
         {
-            <span class="muted">Lege oben die Fotos der Arbeiten ab.</span>
+            <span class="muted">@T("Lege oben die Fotos der Arbeiten ab.")</span>
         }
         <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
-            Weiter zum Bewerten
+            @T("Weiter zum Bewerten")
         </MudButton>
     </div>
 }
@@ -95,7 +97,7 @@ else
     {
         <div class="banner mb-4">
             <MudIcon Icon="@Icons.Material.Outlined.Info" />
-            <span>Lege zuerst die Beurteilungskriterien fest. <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(0)">Zu Schritt 1</a></span>
+            <span>@T("Lege zuerst die Beurteilungskriterien fest.") <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(0)">@T("Zu Schritt 1")</a></span>
         </div>
     }
     else if (!Settings.CanGrade(Exam))
@@ -103,8 +105,8 @@ else
         <div class="banner mb-4">
             <MudIcon Icon="@Icons.Material.Outlined.Lightbulb" />
             <span>
-                @(Exam.LocalOnly ? RoutingModelGateway.LocalOnlyWithoutModel : "Bevor die KI mitlesen kann, wähle Claude oder ein lokales Modell.")
-                <a href="/einstellungen">Zu den Einstellungen</a>
+                @(Exam.LocalOnly ? RoutingModelGateway.LocalOnlyWithoutModel : T("Bevor die KI mitlesen kann, wähle Claude oder ein lokales Modell."))
+                <a href="/einstellungen">@T("Zu den Einstellungen")</a>
             </span>
         </div>
     }
@@ -113,7 +115,7 @@ else
     {
         <div class="banner mb-4">
             <MudIcon Icon="@Icons.Material.Outlined.Info" />
-            <span>Noch keine Arbeiten. <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(1)">Zu Schritt 2</a></span>
+            <span>@T("Noch keine Arbeiten.") <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(1)">@T("Zu Schritt 2")</a></span>
         </div>
     }
     else
@@ -121,18 +123,18 @@ else
         <div class="toolbar">
             <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.AutoAwesome" Disabled="@(ungraded.Count == 0 || !CanGrade)"
                        OnClick="() => GradeAsync(ungraded)">
-                @(ungraded.Count == 0 ? "Alle bewertet" : $"{ungraded.Count} Arbeiten bewerten")
+                @(ungraded.Count == 0 ? T("Alle bewertet") : T("{0} Arbeiten bewerten", ungraded.Count))
             </MudButton>
             @if (selected.Count > 0)
             {
                 <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.Refresh" Disabled="@(!CanGrade)" OnClick="GradeSelectedAsync">
-                    Auswahl neu bewerten
+                    @T("Auswahl neu bewerten")
                 </MudButton>
-                <MudButton Class="btn-quiet" OnClick="() => selected.Clear()">Auswahl aufheben (@selected.Count)</MudButton>
+                <MudButton Class="btn-quiet" OnClick="() => selected.Clear()">@T("Auswahl aufheben ({0})", selected.Count)</MudButton>
             }
             <span class="topbar-spacer"></span>
             <span class="muted" style="font-size:.9rem">
-                @Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen) von @Exam.Submissions.Count abgeschlossen
+                @T("{0} von {1} abgeschlossen", Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen), Exam.Submissions.Count)
             </span>
         </div>
 
@@ -142,9 +144,9 @@ else
             <div class="banner mb-5">
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:var(--ink)" />
                 <span>
-                    Noch @running Arbeit(en) in Bearbeitung · @(Settings.RunsLocally(Exam)
-                        ? "lokal etwa 1–3 Minuten pro Arbeit, eine nach der anderen"
-                        : "etwa 30–60 Sekunden pro Arbeit") – du kannst inzwischen weiterarbeiten.
+                    @(Settings.RunsLocally(Exam)
+                        ? T("Noch {0} Arbeit(en) in Bearbeitung · lokal etwa 1–3 Minuten pro Arbeit, eine nach der anderen – du kannst inzwischen weiterarbeiten.", running)
+                        : T("Noch {0} Arbeit(en) in Bearbeitung · etwa 30–60 Sekunden pro Arbeit – du kannst inzwischen weiterarbeiten.", running))
                 </span>
                 <div class="brush-progress"><span style="@($"width:{(total == 0 ? 0 : 100 * (total - running) / total)}%")"></span></div>
             </div>
@@ -156,7 +158,7 @@ else
                 var isSelected = selected.Contains(submission.Id);
                 var busy = submission.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet;
                 <div class="@($"work {(isSelected ? "selected" : "")}")" @key="submission.Id">
-                    <button type="button" class="work-select" aria-pressed="@(isSelected ? "true" : "false")" aria-label="Auswählen" @onclick="() => Toggle(submission.Id)">
+                    <button type="button" class="work-select" aria-pressed="@(isSelected ? "true" : "false")" aria-label="@T("Auswählen")" @onclick="() => Toggle(submission.Id)">
                         @if (isSelected)
                         {
                             <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
@@ -169,9 +171,9 @@ else
                     <WorkName Submission="submission" Renamed="OnRenamed" />
                     <div class="work-foot">
                         <span class="@($"status s-{submission.Status}")"><span class="dot"></span>@LevelText.Label(submission.Status)</span>
-                        <MudTooltip Text="@(submission.GradedAt is null ? "Von der KI bewerten lassen" : "Neu bewerten")">
+                        <MudTooltip Text="@(submission.GradedAt is null ? T("Von der KI bewerten lassen") : T("Neu bewerten"))">
                             <MudIconButton Icon="@Icons.Material.Outlined.AutoAwesome" Size="Size.Small"
-                                           Disabled="@(!CanGrade || busy)" OnClick="() => GradeAsync([submission])" aria-label="Bewerten" />
+                                           Disabled="@(!CanGrade || busy)" OnClick="() => GradeAsync([submission])" aria-label="@T("Bewerten")" />
                         </MudTooltip>
                     </div>
                     @if (submission.Status == SubmissionStatus.Fehler && !string.IsNullOrWhiteSpace(submission.ErrorMessage))
@@ -186,17 +188,17 @@ else
     <div class="next-step">
         @if (NextToReview() is { } open)
         {
-            <span class="muted">Prüfe jede Arbeit und schliesse sie ab.</span>
-            <MudButton Class="btn-ink" Size="Size.Large" Href="@ReviewUrl(open)" EndIcon="@Icons.Material.Filled.ArrowForward">Arbeiten prüfen</MudButton>
+            <span class="muted">@T("Prüfe jede Arbeit und schliesse sie ab.")</span>
+            <MudButton Class="btn-ink" Size="Size.Large" Href="@ReviewUrl(open)" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Arbeiten prüfen")</MudButton>
         }
         else
         {
             @if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
             {
-                <span class="muted">Lass die Arbeiten zuerst von der KI bewerten.</span>
+                <span class="muted">@T("Lass die Arbeiten zuerst von der KI bewerten.")</span>
             }
             <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
-                Weiter zu den Noten
+                @T("Weiter zu den Noten")
             </MudButton>
         }
     </div>
@@ -237,6 +239,8 @@ else
 
     private string ReviewUrl(Submission submission) => $"/pruefung/{Exam.Id}/arbeit/{submission.Id}";
 
+    private string EditUrl(Submission submission) => $"/pruefung/{Exam.Id}/arbeit/{submission.Id}/bearbeiten";
+
     private void Toggle(Guid id)
     {
         if (!selected.Remove(id))
@@ -260,7 +264,7 @@ else
             {
                 if (file.Size > MaxImageBytes)
                 {
-                    throw new UnsupportedImageException("grösser als 40 MB");
+                    throw new UnsupportedImageException(T("grösser als 40 MB"));
                 }
                 await using var stream = file.OpenReadStream(MaxImageBytes);
                 var path = await Files.SaveSubmissionImageAsync(Exam.Id, stream, CancellationToken.None);
@@ -296,7 +300,7 @@ else
         }
         if (stored.Count > 0)
         {
-            Snackbar.Add($"{stored.Count} Foto(s) hinzugefügt. Die Arbeiten haben Zufallsnamen – echte Namen direkt unter den Bildern eintragen.", Severity.Success);
+            Snackbar.Add(T("{0} Foto(s) hinzugefügt. Die Arbeiten haben Zufallsnamen – echte Namen direkt unter den Bildern eintragen.", stored.Count), Severity.Success);
         }
         await Changed.InvokeAsync();
     }
@@ -314,10 +318,10 @@ else
         if (finished > 0)
         {
             var confirmed = await Dialogs.ShowMessageBoxAsync(
-                "Abgeschlossene Arbeiten neu bewerten?",
-                $"{finished} der gewählten Arbeiten sind abgeschlossen. Die KI-Vorschläge werden ersetzt, deine eigenen Einstufungen bleiben erhalten.",
-                yesText: "Neu bewerten",
-                cancelText: "Abbrechen");
+                T("Abgeschlossene Arbeiten neu bewerten?"),
+                T("{0} der gewählten Arbeiten sind abgeschlossen. Die KI-Vorschläge werden ersetzt, deine eigenen Einstufungen bleiben erhalten.", finished),
+                yesText: T("Neu bewerten"),
+                cancelText: T("Abbrechen"));
             if (confirmed != true)
             {
                 return;
@@ -325,7 +329,7 @@ else
         }
         var ids = submissions.Where(s => s.Images.Count > 0).Select(s => s.Id).ToList();
         await Queue.EnqueueAsync(Exam.Id, ids);
-        Snackbar.Add($"{ids.Count} Arbeit(en) in der Warteschlange.", Severity.Info);
+        Snackbar.Add(T("{0} Arbeit(en) in der Warteschlange.", ids.Count), Severity.Info);
         await Changed.InvokeAsync();
     }
 
@@ -341,12 +345,12 @@ else
             .Select(s => $"«{s.StudentName}»")
             .ToList();
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            "Zu einer Arbeit zusammenführen?",
-            $"Die Fotos von {ordered.Count} Karten werden zur Arbeit «{target.StudentName}» zusammengefasst. Bisherige KI-Vorschläge der anderen Karten gehen verloren."
-                + (lost.Count == 0 ? "" : $" Achtung: Bei {string.Join(", ", lost)} gehen auch der eingetragene Name, deine Einstufungen und deine Rückmeldung verloren.")
-                + " Einzelne Fotos lassen sich später in der Arbeit wieder abtrennen.",
-            yesText: "Zusammenführen",
-            cancelText: "Abbrechen");
+            T("Zu einer Arbeit zusammenführen?"),
+            T("Die Fotos von {0} Karten werden zur Arbeit «{1}» zusammengefasst. Bisherige KI-Vorschläge der anderen Karten gehen verloren.", ordered.Count, target.StudentName)
+                + (lost.Count == 0 ? "" : " " + T("Achtung: Bei {0} gehen auch der eingetragene Name, deine Einstufungen und deine Rückmeldung verloren.", string.Join(", ", lost)))
+                + " " + T("Einzelne Fotos lassen sich später in der Arbeit wieder abtrennen."),
+            yesText: T("Zusammenführen"),
+            cancelText: T("Abbrechen"));
         if (confirmed != true)
         {
             return;
@@ -359,10 +363,10 @@ else
     private async Task DeleteSelectedAsync()
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            "Arbeiten löschen?",
-            $"{selected.Count} Arbeit(en) mit Fotos und Bewertungen werden endgültig gelöscht.",
-            yesText: "Löschen",
-            cancelText: "Abbrechen");
+            T("Arbeiten löschen?"),
+            T("{0} Arbeit(en) mit Fotos und Bewertungen werden endgültig gelöscht.", selected.Count),
+            yesText: T("Löschen"),
+            cancelText: T("Abbrechen"));
         if (confirmed != true)
         {
             return;

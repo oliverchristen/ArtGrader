@@ -1,3 +1,5 @@
+using static ArtGrader.Core.Localization.Texts;
+
 namespace ArtGrader.Core.Domain;
 
 public enum Level
@@ -39,41 +41,41 @@ public static class LevelText
     public static string Label(Level level) =>
         level switch
         {
-            Level.Uebertroffen => "Übertroffen",
-            Level.Erfuellt => "Erfüllt",
-            Level.Teilweise => "Teilweise erfüllt",
-            Level.Nicht => "Nicht erfüllt",
+            Level.Uebertroffen => T("Übertroffen"),
+            Level.Erfuellt => T("Erfüllt"),
+            Level.Teilweise => T("Teilweise erfüllt"),
+            Level.Nicht => T("Nicht erfüllt"),
             _ => level.ToString(),
         };
 
     public static string Short(Level level) =>
         level switch
         {
-            Level.Uebertroffen => "sehr gut",
-            Level.Erfuellt => "gut",
-            Level.Teilweise => "genügend",
-            Level.Nicht => "ungenügend",
+            Level.Uebertroffen => T("sehr gut"),
+            Level.Erfuellt => T("gut"),
+            Level.Teilweise => T("genügend"),
+            Level.Nicht => T("ungenügend"),
             _ => level.ToString(),
         };
 
     public static string Label(Confidence confidence) =>
         confidence switch
         {
-            Confidence.Tief => "unsicher",
-            Confidence.Mittel => "mittel",
-            Confidence.Hoch => "sicher",
+            Confidence.Tief => T("unsicher"),
+            Confidence.Mittel => T("mittel"),
+            Confidence.Hoch => T("sicher"),
             _ => confidence.ToString(),
         };
 
     public static string Label(SubmissionStatus status) =>
         status switch
         {
-            SubmissionStatus.Neu => "Neu",
-            SubmissionStatus.InWarteschlange => "In Warteschlange",
-            SubmissionStatus.WirdBewertet => "Wird bewertet",
-            SubmissionStatus.Vorschlag => "Vorschlag",
-            SubmissionStatus.Abgeschlossen => "Abgeschlossen",
-            SubmissionStatus.Fehler => "Fehler",
+            SubmissionStatus.Neu => T("Neu"),
+            SubmissionStatus.InWarteschlange => T("In Warteschlange"),
+            SubmissionStatus.WirdBewertet => T("Wird bewertet"),
+            SubmissionStatus.Vorschlag => T("Vorschlag"),
+            SubmissionStatus.Abgeschlossen => T("Abgeschlossen"),
+            SubmissionStatus.Fehler => T("Fehler"),
             _ => status.ToString(),
         };
 }

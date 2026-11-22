@@ -4,6 +4,7 @@ using ArtGrader.Core.Domain;
 using ArtGrader.Core.Images;
 using ArtGrader.Web.Data;
 using Microsoft.EntityFrameworkCore;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Web.Services;
 
@@ -68,7 +69,7 @@ public sealed class GradingQueue(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unexpected error while grading submission {SubmissionId}", submissionId);
-                await repository.SetStatusAsync(submissionId, SubmissionStatus.Fehler, "Unerwarteter Fehler: " + ex.Message);
+                await repository.SetStatusAsync(submissionId, SubmissionStatus.Fehler, T("Unerwarteter Fehler: {0}", ex.Message));
             }
             finally
             {

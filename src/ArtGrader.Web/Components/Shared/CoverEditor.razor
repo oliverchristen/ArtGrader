@@ -5,20 +5,20 @@
     @switch (mode)
     {
         case Mode.Cover:
-            <span class="cover-hint">Rechteck über die Stelle ziehen, die schwarz werden soll.</span>
+            <span class="cover-hint">@T("Rechteck über die Stelle ziehen, die schwarz werden soll.")</span>
             <span class="topbar-spacer"></span>
-            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Undo" Disabled="@(Covers.Count == 0)" OnClick="RemoveLastAsync">Letzten Balken entfernen</MudButton>
-            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">Fertig</MudButton>
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Undo" Disabled="@(Covers.Count == 0)" OnClick="RemoveLastAsync">@T("Letzten Balken entfernen")</MudButton>
+            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">@T("Fertig")</MudButton>
             break;
         case Mode.Crop:
-            <span class="cover-hint">Rechteck um den Bereich ziehen, der bleiben soll.</span>
+            <span class="cover-hint">@T("Rechteck um den Bereich ziehen, der bleiben soll.")</span>
             <span class="topbar-spacer"></span>
-            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CropFree" Disabled="@(Crop is null)" OnClick="RemoveCropAsync">Zuschnitt aufheben</MudButton>
-            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">Fertig</MudButton>
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CropFree" Disabled="@(Crop is null)" OnClick="RemoveCropAsync">@T("Zuschnitt aufheben")</MudButton>
+            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">@T("Fertig")</MudButton>
             break;
         default:
-            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="() => Start(Mode.Cover)">@CoverLabel</MudButton>
-            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Crop" OnClick="() => Start(Mode.Crop)">Zuschneiden</MudButton>
+            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="() => Start(Mode.Cover)">@(CoverLabel ?? T("Name oder Signatur abdecken"))</MudButton>
+            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Crop" OnClick="() => Start(Mode.Crop)">@T("Zuschneiden")</MudButton>
             @if (Summary() is { Length: > 0 } summary)
             {
                 <span class="cover-hint">@summary</span>
@@ -58,7 +58,7 @@
     [Parameter] public CoverArea? Crop { get; set; }
     [Parameter, EditorRequired] public Guid ItemId { get; set; }
     [Parameter] public string Alt { get; set; } = "";
-    [Parameter] public string CoverLabel { get; set; } = "Name oder Signatur abdecken";
+    [Parameter] public string? CoverLabel { get; set; }
     [Parameter] public string FrameClass { get; set; } = "";
     [Parameter] public EventCallback<ImageEdits> Save { get; set; }
 
@@ -88,13 +88,13 @@
         var parts = new List<string>();
         if (Covers.Count > 0)
         {
-            parts.Add(Covers.Count == 1 ? "1 Stelle abgedeckt" : $"{Covers.Count} Stellen abgedeckt");
+            parts.Add(Covers.Count == 1 ? T("1 Stelle abgedeckt") : T("{0} Stellen abgedeckt", Covers.Count));
         }
         if (Crop is not null)
         {
-            parts.Add("zugeschnitten");
+            parts.Add(T("zugeschnitten"));
         }
-        return parts.Count == 0 ? "" : string.Join(" · ", parts) + " · die KI sieht nur den hellen Bereich ohne Balken";
+        return parts.Count == 0 ? "" : string.Join(" · ", parts) + " · " + T("die KI sieht nur den hellen Bereich ohne Balken");
     }
 
     private static string Style(CoverArea area) =>

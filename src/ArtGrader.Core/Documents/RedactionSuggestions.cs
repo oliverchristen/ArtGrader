@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Documents;
 
@@ -13,15 +14,15 @@ public static partial class RedactionSuggestions
         var hits = new List<RedactionHit>();
         foreach (var term in terms.Select(t => t.Trim()).Where(t => t.Length >= 2).Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            hits.AddRange(Occurrences(text, term, "Liste"));
+            hits.AddRange(Occurrences(text, term, T("Liste")));
         }
         foreach (var (passage, reason) in modelPassages ?? [])
         {
-            hits.AddRange(Occurrences(text, passage.Trim(), string.IsNullOrWhiteSpace(reason) ? "lokales Modell" : reason));
+            hits.AddRange(Occurrences(text, passage.Trim(), string.IsNullOrWhiteSpace(reason) ? T("lokales Modell") : reason));
         }
-        hits.AddRange(Email().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value, "E-Mail")));
-        hits.AddRange(Phone().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.Trim(), "Telefon")));
-        hits.AddRange(Web().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.TrimEnd('.', ',', ')'), "Webadresse")));
+        hits.AddRange(Email().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value, T("E-Mail"))));
+        hits.AddRange(Phone().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.Trim(), T("Telefon"))));
+        hits.AddRange(Web().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.TrimEnd('.', ',', ')'), T("Webadresse"))));
         return Merge(hits);
     }
 

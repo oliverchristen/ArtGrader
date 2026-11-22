@@ -1,0 +1,151 @@
+@* The sticky exam header: breadcrumb, class, date, title and the five steps. Shown on the exam page and on the pages
+   of a single work, so the teacher always sees which assignment and which step they are in. *@
+@inject ExamRepository Repository
+@inject CurrentExam Current
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<div class="exam-head">
+    <nav class="crumbs">
+        <a href="/">@T("Prüfungen")</a><span>/</span>
+        @if (Work is null)
+        {
+            <span>@Exam.Title</span>
+        }
+        else
+        {
+            <a href="@($"/pruefung/{Exam.Id}")">@Exam.Title</a><span>/</span><span>@Work</span>
+        }
+    </nav>
+    <div class="review-head">
+        <div class="exam-head-main">
+            <div class="exam-meta-edit">
+                <label class="meta-field">
+                    <span>@T("Klasse")</span>
+                    <input value="@schoolClass" @oninput="OnClassInput" placeholder="–" size="@Math.Max(5, schoolClass.Length + 2)" maxlength="40" aria-label="@T("Klasse")" />
+                </label>
+                <span aria-hidden="true">·</span>
+                <label class="meta-field">
+                    <input type="date" value="@date.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" aria-label="@T("Datum")" />
+                </label>
+            </div>
+            <input class="page-title title-input" value="@title" @oninput="OnTitleInput" @onblur="OnTitleBlur"
+                   aria-label="@T("Titel der Prüfung")" placeholder="@T("Titel")" maxlength="200" />
+        </div>
+        @if (DeleteRequested.HasDelegate)
+        {
+            <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteRequested.InvokeAsync()">@T("Prüfung löschen")</MudButton>
+        }
+    </div>
+
+    <div class="steps" role="tablist">
+        @foreach (var (index, stepTitle, done) in Steps())
+        {
+            var step = index;
+            <button type="button" role="tab" aria-selected="@(ActiveStep == step)" class="@($"step {(ActiveStep == step ? "active" : "")} {(done ? "done" : "")}")" @onclick="() => SelectAsync(step)">
+                <span class="num">@(done && ActiveStep != step ? "✓" : (step + 1).ToString())</span> @stepTitle
+                @if (step == 2 && Running > 0)
+                {
+                    <span class="badge">@T("{0} läuft", Running)</span>
+                }
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
+
+    /// <summary>The highlighted step, 0 to 4.</summary>
+    [Parameter] public int ActiveStep { get; set; }
+
+    /// <summary>On the exam page: switch the step in place. Elsewhere unset: open the exam page at that step.</summary>
+    [Parameter] public EventCallback<int> StepSelected { get; set; }
+
+    /// <summary>Set on the exam page only; shows «Prüfung löschen».</summary>
+    [Parameter] public EventCallback DeleteRequested { get; set; }
+
+    /// <summary>The name of the work shown on a work page; adds it to the breadcrumb.</summary>
+    [Parameter] public string? Work { get; set; }
+
+    private readonly Debouncer saver = new();
+    private string title = "";
+    private string schoolClass = "";
+    private DateOnly date;
+
+    private int Running => Exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet);
+
+    protected override void OnParametersSet()
+    {
+        // While an edit waits to be saved, keep what the teacher typed instead of the reloaded values.
+        if (!saver.IsPending)
+        {
+            title = Exam.Title;
+            schoolClass = Exam.SchoolClass;
+            date = Exam.Date;
+        }
+    }
+
+    private IEnumerable<(int Index, string Title, bool Done)> Steps()
+    {
+        var works = Exam.Submissions.Count;
+        yield return (0, T("Aufgabe & Kriterien"), Exam.OrderedCriteria().Any());
+        yield return (1, T("Arbeiten erfassen"), works > 0);
+        yield return (2, T("Arbeiten bewerten"), works > 0 && Exam.Submissions.All(s => s.GradedAt is not null));
+        yield return (3, T("Noten"), works > 0 && Exam.Submissions.All(s => GradeCalculator.FinalGrade(Exam, s) is not null));
+        yield return (4, T("Übersicht & Export"), works > 0 && Exam.Submissions.All(s => s.Status == SubmissionStatus.Abgeschlossen));
+    }
+
+    private async Task SelectAsync(int step)
+    {
+        if (StepSelected.HasDelegate)
+        {
+            await StepSelected.InvokeAsync(step);
+            return;
+        }
+        Current.RememberStep(Exam.Id, step);
+        Navigation.NavigateTo($"/pruefung/{Exam.Id}");
+    }
+
+    private void OnTitleInput(ChangeEventArgs e)
+    {
+        title = e.Value?.ToString() ?? "";
+        ScheduleSave();
+    }
+
+    private void OnTitleBlur()
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            title = Exam.Title;
+        }
+    }
+
+    private void OnClassInput(ChangeEventArgs e)
+    {
+        schoolClass = e.Value?.ToString() ?? "";
+        ScheduleSave();
+    }
+
+    private void OnDateChanged(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var value))
+        {
+            date = value;
+            ScheduleSave();
+        }
+    }
+
+    private void ScheduleSave() => saver.Schedule(() => InvokeAsync(SaveAsync));
+
+    private async Task SaveAsync()
+    {
+        await Repository.SaveExamHeaderAsync(Exam.Id, title, schoolClass, date);
+        Exam.Title = string.IsNullOrWhiteSpace(title) ? Exam.Title : title.Trim();
+        Exam.SchoolClass = schoolClass.Trim();
+        Exam.Date = date;
+        StateHasChanged();
+    }
+
+    public ValueTask DisposeAsync() => saver.DisposeAsync();
+}

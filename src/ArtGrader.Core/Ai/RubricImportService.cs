@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ArtGrader.Core.Documents;
 using ArtGrader.Core.Domain;
+using static ArtGrader.Core.Localization.Texts;
 
 namespace ArtGrader.Core.Ai;
 
@@ -15,7 +16,7 @@ public sealed class RubricImportService(IModelGateway claude)
     {
         if (string.IsNullOrWhiteSpace(rubricText) && rubricPages.Count == 0)
         {
-            throw new ModelException("Der Beurteilungsbogen ist leer.");
+            throw new ModelException(T("Der Beurteilungsbogen ist leer."));
         }
         var shared = new List<ContentPart>();
         for (var i = 0; i < rubricPages.Count; i++)
@@ -50,7 +51,7 @@ public sealed class RubricImportService(IModelGateway claude)
         }
         catch (JsonException ex)
         {
-            throw new ModelException("Die Antwort der KI konnte nicht gelesen werden. Bitte nochmals versuchen.", ex);
+            throw new ModelException(T("Die Antwort der KI konnte nicht gelesen werden. Bitte nochmals versuchen."), ex);
         }
 
         var categories = new List<RubricCategory>();
@@ -83,7 +84,7 @@ public sealed class RubricImportService(IModelGateway claude)
 
         if (categories.Count == 0)
         {
-            throw new ModelException("Im Dokument wurden keine Beurteilungskriterien gefunden.");
+            throw new ModelException(T("Im Dokument wurden keine Beurteilungskriterien gefunden."));
         }
         return categories;
     }

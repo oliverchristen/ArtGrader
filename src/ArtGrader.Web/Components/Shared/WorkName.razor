@@ -1,10 +1,10 @@
 @* The editable student name on a work card; saves a second after the last keystroke. *@
 <div class="@($"work-name {(Submission.HasPlaceholderName ? "placeholder-name" : "")}")">
     <MudTextField T="string" Value="Submission.StudentName" ValueChanged="@(v => Renamed.InvokeAsync((Submission, v)))" DebounceInterval="1000"
-                  Variant="Variant.Text" Margin="Margin.Dense" Placeholder="Name" aria-label="Name" />
+                  Variant="Variant.Text" Margin="Margin.Dense" Placeholder="@T("Name")" aria-label="@T("Name")" />
     @if (Submission.HasPlaceholderName)
     {
-        <span class="name-hint">Zufallsname</span>
+        <span class="name-hint">@T("Zufallsname")</span>
     }
 </div>
 

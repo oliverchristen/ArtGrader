@@ -14,21 +14,21 @@
 
 <header class="topbar">
     <div class="topbar-inner">
-        <a href="/" class="brand" aria-label="ArtGrader – zur Übersicht">
+        <a href="/" class="brand" aria-label="@T("ArtGrader – zur Übersicht")">
             <img src="favicon.svg" alt="" />
             <span>
                 <span class="brand-name">Art<em>Grader</em></span>
-                <span class="brand-sub">Bildnerisches Gestalten</span>
+                <span class="brand-sub">@T("Bildnerisches Gestalten")</span>
             </span>
         </a>
         <span class="topbar-spacer"></span>
-        <a href="/einstellungen" class="@($"provider-pill {(Ready ? "" : "warn")} {(LocalOnly ? "local-only" : "")}")" title="@(LocalOnly ? "Diese Prüfung wird nur lokal bewertet" : "Einstellungen")">
+        <a href="/einstellungen" class="@($"provider-pill {(Ready ? "" : "warn")} {(LocalOnly ? "local-only" : "")}")" title="@(LocalOnly ? T("Diese Prüfung wird nur lokal bewertet") : T("Einstellungen"))">
             <span class="dot"></span>
             <span class="label">@ProviderLabel()</span>
             <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
         </a>
-        <MudTooltip Text="ArtGrader beenden">
-            <MudIconButton Icon="@Icons.Material.Outlined.PowerSettingsNew" Class="quit-button" OnClick="QuitAsync" aria-label="ArtGrader beenden" />
+        <MudTooltip Text="@T("ArtGrader beenden")">
+            <MudIconButton Icon="@Icons.Material.Outlined.PowerSettingsNew" Class="quit-button" OnClick="QuitAsync" aria-label="@T("ArtGrader beenden")" />
         </MudTooltip>
     </div>
 </header>
@@ -38,8 +38,8 @@
 </main>
 
 <div id="blazor-error-ui" data-nosnippet>
-    Ein unerwarteter Fehler ist aufgetreten.
-    <a href="." class="reload">Neu laden</a>
+    @T("Ein unerwarteter Fehler ist aufgetreten.")
+    <a href="." class="reload">@T("Neu laden")</a>
     <span class="dismiss">🗙</span>
 </div>
 
@@ -79,12 +79,12 @@
     private async Task QuitAsync()
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            "ArtGrader beenden?",
+            T("ArtGrader beenden?"),
             Queue.IsBusy
-                ? "Es werden noch Arbeiten bewertet. Sie werden abgebrochen und lassen sich nach dem nächsten Start neu bewerten."
-                : "Alles ist gespeichert. Zum Weiterarbeiten ArtGrader wieder starten.",
-            yesText: "Beenden",
-            cancelText: "Abbrechen");
+                ? T("Es werden noch Arbeiten bewertet. Sie werden abgebrochen und lassen sich nach dem nächsten Start neu bewerten.")
+                : T("Alles ist gespeichert. Zum Weiterarbeiten ArtGrader wieder starten."),
+            yesText: T("Beenden"),
+            cancelText: T("Abbrechen"));
         if (confirmed != true)
         {
             return;
@@ -106,13 +106,13 @@
     {
         if (LocalOnly)
         {
-            return string.IsNullOrWhiteSpace(Settings.OllamaModel) ? "Nur lokal · Modell fehlt" : $"Nur lokal · {Settings.OllamaModel}";
+            return string.IsNullOrWhiteSpace(Settings.OllamaModel) ? T("Nur lokal · Modell fehlt") : T("Nur lokal · {0}", Settings.OllamaModel);
         }
         if (!Settings.IsConfigured)
         {
-            return Settings.Provider == AiProvider.Ollama ? "Lokales Modell wählen" : "API-Schlüssel fehlt";
+            return Settings.Provider == AiProvider.Ollama ? T("Lokales Modell wählen") : T("API-Schlüssel fehlt");
         }
-        return Settings.Provider == AiProvider.Ollama ? $"Lokal · {Settings.OllamaModel}" : "Claude · Cloud";
+        return Settings.Provider == AiProvider.Ollama ? T("Lokal · {0}", Settings.OllamaModel) : "Claude · Cloud";
     }
 
     protected override void OnInitialized()

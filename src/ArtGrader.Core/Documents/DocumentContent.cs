@@ -1,3 +1,5 @@
+using static ArtGrader.Core.Localization.Texts;
+
 namespace ArtGrader.Core.Documents;
 
 public sealed record DocumentContent(string Text, IReadOnlyList<byte[]> Pages)
@@ -15,7 +17,7 @@ public sealed record DocumentContent(string Text, IReadOnlyList<byte[]> Pages)
                 new DocumentContent("", PdfPages.Render(bytes)),
             ".txt" or ".md" => new DocumentContent(System.Text.Encoding.UTF8.GetString(bytes).Trim(), []),
             _ => throw new UnsupportedDocumentException(
-                $"Das Format «{extension}» wird nicht unterstützt. Bitte Word (.docx), PowerPoint (.pptx), PDF oder Text hochladen."),
+                T("Das Format «{0}» wird nicht unterstützt. Bitte Word (.docx), PowerPoint (.pptx), PDF oder Text hochladen.", extension)),
         };
     }
 }

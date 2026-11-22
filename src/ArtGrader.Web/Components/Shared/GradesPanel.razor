@@ -3,36 +3,36 @@
 @implements IAsyncDisposable
 
 <section class="sheet flow-narrow">
-    <h2 class="sheet-title">Notenberechnung</h2>
-    <p class="sheet-sub">So wird aus den Stufen eine Note. Änderungen gelten sofort für alle Arbeiten unten.</p>
+    <h2 class="sheet-title">@T("Notenberechnung")</h2>
+    <p class="sheet-sub">@T("So wird aus den Stufen eine Note. Änderungen gelten sofort für alle Arbeiten unten.")</p>
     <div class="points-grid">
-        <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="settings.PointsUebertroffen" @bind-Value:after="SettingsChanged" Immediate="true" Label="Übertroffen" Variant="Variant.Text" Min="0" Max="10" /></div>
-        <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="settings.PointsErfuellt" @bind-Value:after="SettingsChanged" Immediate="true" Label="Erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
-        <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="settings.PointsTeilweise" @bind-Value:after="SettingsChanged" Immediate="true" Label="Teilweise" Variant="Variant.Text" Min="0" Max="10" /></div>
-        <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="settings.PointsNicht" @bind-Value:after="SettingsChanged" Immediate="true" Label="Nicht erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="settings.PointsUebertroffen" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Übertroffen")" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="settings.PointsErfuellt" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Erfüllt")" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="settings.PointsTeilweise" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Teilweise")" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="settings.PointsNicht" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Nicht erfüllt")" Variant="Variant.Text" Min="0" Max="10" /></div>
     </div>
-    <MudSelect T="decimal" @bind-Value="settings.RoundingStep" @bind-Value:after="SettingsChanged" Label="Runden auf" Variant="Variant.Outlined" Class="mt-4">
-        <MudSelectItem T="decimal" Value="0.5m">Halbe Noten (4.5)</MudSelectItem>
-        <MudSelectItem T="decimal" Value="0.25m">Viertelnoten (4.25)</MudSelectItem>
-        <MudSelectItem T="decimal" Value="0.1m">Zehntel (4.3)</MudSelectItem>
+    <MudSelect T="decimal" @bind-Value="settings.RoundingStep" @bind-Value:after="SettingsChanged" Label="@T("Runden auf")" Variant="Variant.Outlined" Class="mt-4">
+        <MudSelectItem T="decimal" Value="0.5m">@T("Halbe Noten (4.5)")</MudSelectItem>
+        <MudSelectItem T="decimal" Value="0.25m">@T("Viertelnoten (4.25)")</MudSelectItem>
+        <MudSelectItem T="decimal" Value="0.1m">@T("Zehntel (4.3)")</MudSelectItem>
     </MudSelect>
-    <div class="formula">Note = Punkte ÷ Maximum × 5 + 1 &nbsp;·&nbsp; <span class="muted" style="font-style:normal">@Example()</span></div>
+    <div class="formula">@T("Note = Punkte ÷ Maximum × 5 + 1") &nbsp;·&nbsp; <span class="muted" style="font-style:normal">@Example()</span></div>
 </section>
 
 @if (Exam.Submissions.Count == 0)
 {
     <div class="banner mt-5">
         <MudIcon Icon="@Icons.Material.Outlined.Info" />
-        <span>Noch keine Arbeiten. <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(1)">Zu Schritt 2</a></span>
+        <span>@T("Noch keine Arbeiten.") <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(1)">@T("Zu Schritt 2")</a></span>
     </div>
 }
 else
 {
     <div class="toolbar mt-6">
-        <h2 class="sheet-title" style="margin:0">Alle Arbeiten</h2>
+        <h2 class="sheet-title" style="margin:0">@T("Alle Arbeiten")</h2>
         <span class="topbar-spacer"></span>
         <span class="muted" style="font-size:.9rem">
-            @Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen) von @Exam.Submissions.Count abgeschlossen
+            @T("{0} von {1} abgeschlossen", Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen), Exam.Submissions.Count)
         </span>
     </div>
     <div class="wall">
@@ -47,7 +47,7 @@ else
                     <div class="work-name-text">@submission.StudentName</div>
                     @if (submission.HasPlaceholderName)
                     {
-                        <span class="name-hint">Zufallsname</span>
+                        <span class="name-hint">@T("Zufallsname")</span>
                     }
                 </div>
                 <div class="work-foot">
@@ -61,10 +61,10 @@ else
 <div class="next-step">
     @if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
     {
-        <span class="muted">Noch nicht alle Arbeiten sind abgeschlossen. Ein Klick auf ein Bild öffnet die Arbeit.</span>
+        <span class="muted">@T("Noch nicht alle Arbeiten sind abgeschlossen. Ein Klick auf ein Bild öffnet die Arbeit.")</span>
     }
     <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="GoNextAsync" EndIcon="@Icons.Material.Filled.ArrowForward">
-        Weiter zu Übersicht & Export
+        @T("Weiter zu Übersicht & Export")
     </MudButton>
 </div>
 
@@ -118,7 +118,7 @@ else
         }
         var points = count * settings.PointsErfuellt;
         var grade = GradeCalculator.ToGrade(points, max, settings);
-        return $"alles «erfüllt» = {points}/{max} Punkte → {grade:0.0#}";
+        return T("alles «erfüllt» = {0}/{1} Punkte → {2:0.0#}", points, max, grade);
     }
 
     private void SettingsChanged() => saver.Schedule(() => InvokeAsync(SaveAsync));
