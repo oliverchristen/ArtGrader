@@ -7,6 +7,11 @@ Bewertung für fotografierte Schülerarbeiten vor. Die Lehrperson prüft jeden V
 Als KI dient Claude von Anthropic (Cloud) oder ein Modell auf dem eigenen Computer (Ollama). Läuft auf **Windows**
 und **macOS** (Intel und Apple Silicon). Alle Daten bleiben auf dem eigenen Computer.
 
+**Gebaut für die Schweizer Volksschule.** ArtGrader geht von der Sekundarstufe I nach Lehrplan 21 aus, von Noten
+1 bis 6 (Note = Punkte ÷ Maximum × 5 + 1), von Semestern ab 1. August und 1. Februar und von den Vorgaben zum
+Datenschutz des Volksschulamts Solothurn. Auch die Anweisungen an die KI sind darauf ausgerichtet. Für andere
+Länder, Kantone, Schulstufen oder Notensysteme passt ArtGrader deshalb möglicherweise nicht ohne Anpassungen.
+
 Für die Schulleitung: Die Übersicht «ArtGrader für die Schulleitung» beschreibt ohne Technik, welche Daten wohin
 gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie öffnet sich in ArtGrader unter
 **Einstellungen → Datenschutz → Übersicht für die Schulleitung**.
