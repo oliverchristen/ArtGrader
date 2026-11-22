@@ -31,12 +31,16 @@ gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie �
 4. **Arbeiten bewerten** – Mit «… Arbeiten bewerten» schlägt die KI pro Kriterium eine Stufe mit Begründung vor
    (Claude: ca. 30–60 s pro Arbeit, drei gleichzeitig). Dann jede Arbeit prüfen: Foto links, Kriterien rechts. Alles
    von der KI ist blau mit «✦ KI» markiert, farbig gefüllt = gilt. Ein Klick übersteuert den Vorschlag. Unsichere
-   Einschätzungen sind gelb markiert. «Abschliessen & weiter» springt zur nächsten offenen Arbeit.
+   Einschätzungen sind gelb markiert. «Abschliessen & weiter» springt zur nächsten offenen Arbeit. Unter dem
+   Vorschlag steht, welches Modell ihn gemacht hat und ob es Claude (Cloud) oder ein lokales Modell war. Wurden die
+   Arbeiten einer Prüfung von verschiedenen Modellen bewertet, warnt ArtGrader beim Bewerten, bei den Noten und in
+   der Übersicht; für vergleichbare Noten die Arbeiten dann mit einem Modell neu bewerten. Ist Claude ausgelastet,
+   kann Anthropic mit einem anderen Claude-Modell antworten; auch das zeigt die Warnung.
 5. **Noten** – Alle Arbeiten mit ihrer Note auf einen Blick. Oben die Notenberechnung: Punkte pro Stufe und
    Rundung; jede Änderung gilt sofort für alle Noten.
 6. **Übersicht & Export** – Notenliste als Excel, Beurteilungsbögen als PDF mit Foto der Arbeit, Note und
    Rückmeldung (einzeln oder für die ganze Klasse). Das PDF vermerkt, dass die Einschätzung mit KI-Unterstützung
-   entstand und ob die Lehrperson sie abgeschlossen hat.
+   entstand, mit welchem Modell, und ob die Lehrperson sie abgeschlossen hat.
 
 ArtGrader gibt es auf Deutsch und Englisch (**Einstellungen → Sprache**). Die Sprache gilt auch für die
 Beurteilungsbögen und für die Texte, die die KI schreibt.
