@@ -32,7 +32,9 @@ gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie �
    (Claude: ca. 30–60 s pro Arbeit, drei gleichzeitig). Dann jede Arbeit prüfen: Foto links, Kriterien rechts. Alles
    von der KI ist blau mit «✦ KI» markiert, farbig gefüllt = gilt. Ein Klick übersteuert den Vorschlag. Unsichere
    Einschätzungen sind gelb markiert. «Abschliessen & weiter» springt zur nächsten offenen Arbeit.
-5. **Übersicht & Export** – Notenliste als Excel, Beurteilungsbögen als PDF mit Foto der Arbeit, Note und
+5. **Noten** – Alle Arbeiten mit ihrer Note auf einen Blick. Oben die Notenberechnung: Punkte pro Stufe und
+   Rundung; jede Änderung gilt sofort für alle Noten.
+6. **Übersicht & Export** – Notenliste als Excel, Beurteilungsbögen als PDF mit Foto der Arbeit, Note und
    Rückmeldung (einzeln oder für die ganze Klasse). Das PDF vermerkt, dass die Einschätzung mit KI-Unterstützung
    entstand und ob die Lehrperson sie abgeschlossen hat.
 

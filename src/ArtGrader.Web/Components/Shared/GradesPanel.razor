@@ -1,0 +1,139 @@
+@* Step 4: how levels become grades, and all works with their grade. *@
+@inject ExamRepository Repository
+@implements IAsyncDisposable
+
+<section class="sheet flow-narrow">
+    <h2 class="sheet-title">Notenberechnung</h2>
+    <p class="sheet-sub">So wird aus den Stufen eine Note. Änderungen gelten sofort für alle Arbeiten unten.</p>
+    <div class="points-grid">
+        <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="settings.PointsUebertroffen" @bind-Value:after="SettingsChanged" Immediate="true" Label="Übertroffen" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="settings.PointsErfuellt" @bind-Value:after="SettingsChanged" Immediate="true" Label="Erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="settings.PointsTeilweise" @bind-Value:after="SettingsChanged" Immediate="true" Label="Teilweise" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="settings.PointsNicht" @bind-Value:after="SettingsChanged" Immediate="true" Label="Nicht erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
+    </div>
+    <MudSelect T="decimal" @bind-Value="settings.RoundingStep" @bind-Value:after="SettingsChanged" Label="Runden auf" Variant="Variant.Outlined" Class="mt-4">
+        <MudSelectItem T="decimal" Value="0.5m">Halbe Noten (4.5)</MudSelectItem>
+        <MudSelectItem T="decimal" Value="0.25m">Viertelnoten (4.25)</MudSelectItem>
+        <MudSelectItem T="decimal" Value="0.1m">Zehntel (4.3)</MudSelectItem>
+    </MudSelect>
+    <div class="formula">Note = Punkte ÷ Maximum × 5 + 1 &nbsp;·&nbsp; <span class="muted" style="font-style:normal">@Example()</span></div>
+</section>
+
+@if (Exam.Submissions.Count == 0)
+{
+    <div class="banner mt-5">
+        <MudIcon Icon="@Icons.Material.Outlined.Info" />
+        <span>Noch keine Arbeiten. <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(1)">Zu Schritt 2</a></span>
+    </div>
+}
+else
+{
+    <div class="toolbar mt-6">
+        <h2 class="sheet-title" style="margin:0">Alle Arbeiten</h2>
+        <span class="topbar-spacer"></span>
+        <span class="muted" style="font-size:.9rem">
+            @Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen) von @Exam.Submissions.Count abgeschlossen
+        </span>
+    </div>
+    <div class="wall">
+        @foreach (var submission in Exam.Submissions)
+        {
+            <div class="work" @key="submission.Id">
+                <a class="work-photo" href="@($"/pruefung/{Exam.Id}/arbeit/{submission.Id}")">
+                    <WorkPhoto Submission="submission" />
+                    <GradeStamp Exam="shown" Submission="submission" />
+                </a>
+                <div class="@($"work-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
+                    <div class="work-name-text">@submission.StudentName</div>
+                    @if (submission.HasPlaceholderName)
+                    {
+                        <span class="name-hint">Zufallsname</span>
+                    }
+                </div>
+                <div class="work-foot">
+                    <span class="@($"status s-{submission.Status}")"><span class="dot"></span>@LevelText.Label(submission.Status)</span>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<div class="next-step">
+    @if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
+    {
+        <span class="muted">Noch nicht alle Arbeiten sind abgeschlossen. Ein Klick auf ein Bild öffnet die Arbeit.</span>
+    }
+    <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="GoNextAsync" EndIcon="@Icons.Material.Filled.ArrowForward">
+        Weiter zu Übersicht & Export
+    </MudButton>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback<int> ShowStep { get; set; }
+    [Parameter] public EventCallback Next { get; set; }
+
+    private readonly Debouncer saver = new();
+    private GradingSettings settings = new();
+    private Guid loadedFor;
+
+    /// <summary>The exam with the settings as currently edited, so the grades follow each change at once.</summary>
+    private Exam shown = new();
+
+    protected override void OnParametersSet()
+    {
+        if (loadedFor != Exam.Id)
+        {
+            loadedFor = Exam.Id;
+            settings = Copy(Exam.Settings);
+        }
+        shown = new Exam
+        {
+            Id = Exam.Id,
+            Settings = settings,
+            Categories = Exam.Categories,
+            Submissions = Exam.Submissions,
+        };
+    }
+
+    private static GradingSettings Copy(GradingSettings source) => new()
+    {
+        PointsUebertroffen = source.PointsUebertroffen,
+        PointsErfuellt = source.PointsErfuellt,
+        PointsTeilweise = source.PointsTeilweise,
+        PointsNicht = source.PointsNicht,
+        RoundingStep = source.RoundingStep,
+        MinGrade = source.MinGrade,
+        MaxGrade = source.MaxGrade,
+    };
+
+    private string Example()
+    {
+        var count = Math.Max(1, Exam.Categories.Sum(c => c.Criteria.Count(k => k.Weight > 0)));
+        var max = count * settings.MaxLevelPoints;
+        if (max == 0)
+        {
+            return "";
+        }
+        var points = count * settings.PointsErfuellt;
+        var grade = GradeCalculator.ToGrade(points, max, settings);
+        return $"alles «erfüllt» = {points}/{max} Punkte → {grade:0.0#}";
+    }
+
+    private void SettingsChanged() => saver.Schedule(() => InvokeAsync(SaveAsync));
+
+    private async Task SaveAsync()
+    {
+        await Repository.UpdateGradingSettingsAsync(Exam.Id, settings);
+        await Changed.InvokeAsync();
+    }
+
+    private async Task GoNextAsync()
+    {
+        await saver.FlushAsync();
+        await Next.InvokeAsync();
+    }
+
+    public ValueTask DisposeAsync() => saver.DisposeAsync();
+}

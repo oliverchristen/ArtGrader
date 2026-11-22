@@ -153,8 +153,6 @@ else
         <div class="@($"wall {(selected.Count > 0 ? "selecting" : "")}")">
             @foreach (var submission in Exam.Submissions)
             {
-                var result = GradeCalculator.Calculate(Exam, submission);
-                var grade = GradeCalculator.FinalGrade(Exam, submission);
                 var isSelected = selected.Contains(submission.Id);
                 var busy = submission.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet;
                 <div class="@($"work {(isSelected ? "selected" : "")}")" @key="submission.Id">
@@ -166,18 +164,7 @@ else
                     </button>
                     <a class="work-photo" href="@ReviewUrl(submission)">
                         <WorkPhoto Submission="submission" />
-                        @if (grade is not null)
-                        {
-                            <span class="@($"stamp {(submission.Status == SubmissionStatus.Abgeschlossen ? "final" : "")}")" title="@($"{result.Points:0.##} / {result.MaxPoints:0.##} Punkte")">
-                                @grade.Value.ToString("0.0#")<small>Note</small>
-                            </span>
-                        }
-                        else if (result.Provisional is not null)
-                        {
-                            <span class="stamp provisional" title="@($"Vorläufig – noch {result.MissingCount} Kriterium/en der Lehrperson offen")">
-                                @result.Provisional.Value.ToString("0.0#")<small>vorläufig</small>
-                            </span>
-                        }
+                        <GradeStamp Exam="Exam" Submission="submission" />
                     </a>
                     <WorkName Submission="submission" Renamed="OnRenamed" />
                     <div class="work-foot">
@@ -209,7 +196,7 @@ else
                 <span class="muted">Lass die Arbeiten zuerst von der KI bewerten.</span>
             }
             <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
-                Weiter zu Übersicht & Export
+                Weiter zu den Noten
             </MudButton>
         }
     </div>

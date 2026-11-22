@@ -1,0 +1,22 @@
+@* The round grade stamp on a work card: final grade, provisional grade or nothing. *@
+@{
+    var result = GradeCalculator.Calculate(Exam, Submission);
+    var grade = GradeCalculator.FinalGrade(Exam, Submission);
+}
+@if (grade is not null)
+{
+    <span class="@($"stamp {(Submission.Status == SubmissionStatus.Abgeschlossen ? "final" : "")}")" title="@($"{result.Points:0.##} / {result.MaxPoints:0.##} Punkte")">
+        @grade.Value.ToString("0.0#")<small>Note</small>
+    </span>
+}
+else if (result.Provisional is not null)
+{
+    <span class="stamp provisional" title="@($"Vorläufig – noch {result.MissingCount} Kriterium/en der Lehrperson offen")">
+        @result.Provisional.Value.ToString("0.0#")<small>vorläufig</small>
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
+    [Parameter, EditorRequired] public Submission Submission { get; set; } = null!;
+}

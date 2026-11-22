@@ -83,11 +83,18 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         return exam.Title;
     }
 
-    public async Task UpdateGradingAsync(Guid examId, bool localOnly, GradingSettings settings)
+    public async Task SetLocalOnlyAsync(Guid examId, bool localOnly)
     {
         await using var db = await factory.CreateDbContextAsync();
         var exam = await db.Exams.FirstAsync(e => e.Id == examId);
         exam.LocalOnly = localOnly;
+        await db.SaveChangesAsync();
+    }
+
+    public async Task UpdateGradingSettingsAsync(Guid examId, GradingSettings settings)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var exam = await db.Exams.FirstAsync(e => e.Id == examId);
         exam.Settings = new GradingSettings
         {
             PointsUebertroffen = settings.PointsUebertroffen,

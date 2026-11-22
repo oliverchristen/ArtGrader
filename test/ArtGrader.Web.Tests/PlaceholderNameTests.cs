@@ -96,7 +96,7 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
 
         await repository.SetImageEditsAsync(work.Images[0].Id, [new CoverArea { X = 0.7, Y = 0.8, Width = 0.3, Height = 0.2 }], new CoverArea { X = 0.1, Y = 0.1, Width = 0.8, Height = 0.8 });
-        await repository.UpdateGradingAsync(exam.Id, localOnly: true, new GradingSettings());
+        await repository.SetLocalOnlyAsync(exam.Id, localOnly: true);
 
         var stored = (await repository.GetAsync(exam.Id))!;
         Assert.True(stored.LocalOnly);

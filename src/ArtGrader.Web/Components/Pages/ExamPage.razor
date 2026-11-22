@@ -68,6 +68,9 @@ else
         case 2:
             <SubmissionsPanel Exam="exam" Changed="ReloadAsync" Grading="true" ShowStep="GoToTabAsync" Next="() => GoToTabAsync(3)" />
             break;
+        case 3:
+            <GradesPanel Exam="exam" Changed="ReloadAsync" ShowStep="GoToTabAsync" Next="() => GoToTabAsync(4)" />
+            break;
         default:
             <OverviewPanel Exam="exam" />
             break;
@@ -161,7 +164,8 @@ else
         yield return (0, "Aufgabe & Kriterien", criteriaCount > 0);
         yield return (1, "Arbeiten erfassen", works > 0);
         yield return (2, "Arbeiten bewerten", works > 0 && exam.Submissions.All(s => s.GradedAt is not null));
-        yield return (3, "Übersicht & Export", works > 0 && completed == works);
+        yield return (3, "Noten", works > 0 && exam.Submissions.All(s => GradeCalculator.FinalGrade(exam, s) is not null));
+        yield return (4, "Übersicht & Export", works > 0 && completed == works);
     }
 
     private string StepClass(int index, bool done) =>

@@ -108,23 +108,6 @@
         <MudButton Class="btn-soft mt-5" StartIcon="@Icons.Material.Outlined.PlaylistAdd" OnClick="AddCategory">Kategorie</MudButton>
     </section>
 
-    <section class="sheet">
-        <h2 class="sheet-title">Notenberechnung</h2>
-        <p class="sheet-sub">So wird aus den Stufen eine Note.</p>
-        <div class="points-grid">
-            <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="grading.Settings.PointsUebertroffen" @bind-Value:after="GradingChanged" Immediate="true" Label="Übertroffen" Variant="Variant.Text" Min="0" Max="10" /></div>
-            <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="grading.Settings.PointsErfuellt" @bind-Value:after="GradingChanged" Immediate="true" Label="Erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
-            <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="grading.Settings.PointsTeilweise" @bind-Value:after="GradingChanged" Immediate="true" Label="Teilweise" Variant="Variant.Text" Min="0" Max="10" /></div>
-            <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="grading.Settings.PointsNicht" @bind-Value:after="GradingChanged" Immediate="true" Label="Nicht erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
-        </div>
-        <MudSelect T="decimal" @bind-Value="grading.Settings.RoundingStep" @bind-Value:after="GradingChanged" Label="Runden auf" Variant="Variant.Outlined" Class="mt-4">
-            <MudSelectItem T="decimal" Value="0.5m">Halbe Noten (4.5)</MudSelectItem>
-            <MudSelectItem T="decimal" Value="0.25m">Viertelnoten (4.25)</MudSelectItem>
-            <MudSelectItem T="decimal" Value="0.1m">Zehntel (4.3)</MudSelectItem>
-        </MudSelect>
-        <div class="formula">Note = Punkte ÷ Maximum × 5 + 1 &nbsp;·&nbsp; <span class="muted" style="font-style:normal">@Example()</span></div>
-    </section>
-
     <div class="next-step">
         @if (!HasCriteria)
         {
@@ -142,7 +125,6 @@
     [Parameter] public EventCallback Next { get; set; }
 
     private readonly Debouncer rubricSaver = new();
-    private readonly Debouncer gradingSaver = new();
     private Exam grading = new();
     private List<RubricCategory> categories = [];
     private bool importing;
@@ -159,21 +141,7 @@
             return;
         }
         loadedFor = Exam.Id;
-        grading = new Exam
-        {
-            Id = Exam.Id,
-            LocalOnly = Exam.LocalOnly,
-            Settings = new GradingSettings
-            {
-                PointsUebertroffen = Exam.Settings.PointsUebertroffen,
-                PointsErfuellt = Exam.Settings.PointsErfuellt,
-                PointsTeilweise = Exam.Settings.PointsTeilweise,
-                PointsNicht = Exam.Settings.PointsNicht,
-                RoundingStep = Exam.Settings.RoundingStep,
-                MinGrade = Exam.Settings.MinGrade,
-                MaxGrade = Exam.Settings.MaxGrade,
-            },
-        };
+        grading = new Exam { Id = Exam.Id, LocalOnly = Exam.LocalOnly };
         categories = CopyOf(Exam.Categories);
     }
 
@@ -196,19 +164,6 @@
             })
             .ToList();
 
-    private string Example()
-    {
-        var count = Math.Max(1, categories.Sum(c => c.Criteria.Count(k => k.Weight > 0)));
-        var max = count * grading.Settings.MaxLevelPoints;
-        if (max == 0)
-        {
-            return "";
-        }
-        var points = count * grading.Settings.PointsErfuellt;
-        var grade = GradeCalculator.ToGrade(points, max, grading.Settings);
-        return $"alles «erfüllt» = {points}/{max} Punkte → {grade:0.0#}";
-    }
-
     private void SetAssessor(RubricCriterion criterion, AssessedBy assessedBy)
     {
         criterion.AssessedBy = assessedBy;
@@ -223,8 +178,6 @@
 
     private void RubricChanged() => rubricSaver.Schedule(() => InvokeAsync(SaveRubricAsync));
 
-    private void GradingChanged() => gradingSaver.Schedule(() => InvokeAsync(SaveGradingAsync));
-
     private async Task SaveRubricAsync()
     {
         // Empty criteria and categories stay on screen while being filled in, but are not saved.
@@ -238,24 +191,17 @@
         await Changed.InvokeAsync();
     }
 
-    private async Task SaveGradingAsync()
-    {
-        await Repository.UpdateGradingAsync(Exam.Id, grading.LocalOnly, grading.Settings);
-        await Changed.InvokeAsync();
-    }
-
     private async Task SetLocalOnlyAsync(bool value)
     {
         grading.LocalOnly = value;
-        await gradingSaver.FlushAsync();
-        await SaveGradingAsync();
+        await Repository.SetLocalOnlyAsync(Exam.Id, value);
+        await Changed.InvokeAsync();
         Snackbar.Add(value ? "Diese Prüfung wird nur noch lokal bewertet." : "Diese Prüfung darf wieder mit Claude bewertet werden.", Severity.Success);
     }
 
     private async Task GoNextAsync()
     {
         await rubricSaver.FlushAsync();
-        await gradingSaver.FlushAsync();
         await Next.InvokeAsync();
     }
 
@@ -344,6 +290,5 @@
     public async ValueTask DisposeAsync()
     {
         await rubricSaver.DisposeAsync();
-        await gradingSaver.DisposeAsync();
     }
 }
