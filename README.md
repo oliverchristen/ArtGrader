@@ -24,14 +24,14 @@ gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie �
      Kriterien. Kriterien, die man auf einem Foto nicht sehen kann (z. B. «Prozess und Engagement»), werden als «nur
      Lehrperson» markiert. Alles lässt sich anpassen: Wortlaut, Reihenfolge, Gewicht.
    - «Nur lokal bewerten» legt fest, dass für diese Prüfung nichts in die Cloud geht.
-3. **Arbeiten & Bewertung** – Fotos hineinziehen. Jedes Foto wird eine Arbeit mit einem Zufallsnamen wie «Fuchs
+3. **Arbeiten erfassen** – Fotos hineinziehen. Jedes Foto wird eine Arbeit mit einem Zufallsnamen wie «Fuchs
    Indigo»; echte Namen trägt die Lehrperson selbst ein, sie bleiben auf dem Computer. Mehrere Fotos einer Arbeit
-   lassen sich zusammenführen. Mit «… Arbeiten bewerten» schlägt die KI pro Kriterium eine Stufe mit Begründung vor
-   (Claude: ca. 30–60 s pro Arbeit, drei gleichzeitig).
-4. **Prüfen** – Pro Arbeit: Foto links, Kriterien rechts. Gestrichelt = Vorschlag der KI, gefüllt = gilt. Ein Klick
-   übersteuert den Vorschlag. Unsichere Einschätzungen sind gelb markiert. Name oder Signatur auf dem Werk lassen
-   sich mit einem Balken abdecken, das Foto lässt sich zuschneiden; die KI sieht nur das bearbeitete Foto.
-   «Abschliessen & weiter» springt zur nächsten offenen Arbeit.
+   lassen sich zusammenführen und einzelne Fotos wieder als eigene Arbeit abtrennen. Name oder Signatur auf dem Werk
+   lassen sich mit einem Balken abdecken, das Foto lässt sich zuschneiden; die KI sieht nur das bearbeitete Foto.
+4. **Arbeiten bewerten** – Mit «… Arbeiten bewerten» schlägt die KI pro Kriterium eine Stufe mit Begründung vor
+   (Claude: ca. 30–60 s pro Arbeit, drei gleichzeitig). Dann jede Arbeit prüfen: Foto links, Kriterien rechts. Alles
+   von der KI ist blau mit «✦ KI» markiert, farbig gefüllt = gilt. Ein Klick übersteuert den Vorschlag. Unsichere
+   Einschätzungen sind gelb markiert. «Abschliessen & weiter» springt zur nächsten offenen Arbeit.
 5. **Übersicht & Export** – Notenliste als Excel, Beurteilungsbögen als PDF mit Foto der Arbeit, Note und
    Rückmeldung (einzeln oder für die ganze Klasse). Das PDF vermerkt, dass die Einschätzung mit KI-Unterstützung
    entstand und ob die Lehrperson sie abgeschlossen hat.

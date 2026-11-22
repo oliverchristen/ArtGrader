@@ -43,19 +43,17 @@ else
         </div>
 
         <div class="steps" role="tablist">
-            <button type="button" role="tab" aria-selected="@(activeTab == 0)" class="@StepClass(0, criteriaCount > 0)" @onclick="() => activeTab = 0">
-                <span class="num">@(criteriaCount > 0 && activeTab != 0 ? "✓" : "1")</span> Aufgabe & Kriterien
-            </button>
-            <button type="button" role="tab" aria-selected="@(activeTab == 1)" class="@StepClass(1, exam.Submissions.Count > 0 && exam.Submissions.All(s => s.GradedAt is not null))" @onclick="() => activeTab = 1">
-                <span class="num">2</span> Arbeiten bewerten
-                @if (running > 0)
-                {
-                    <span class="badge">@running läuft</span>
-                }
-            </button>
-            <button type="button" role="tab" aria-selected="@(activeTab == 2)" class="@StepClass(2, exam.Submissions.Count > 0 && completed == exam.Submissions.Count)" @onclick="() => activeTab = 2">
-                <span class="num">3</span> Übersicht & Export
-            </button>
+            @foreach (var (index, title, done) in Steps(criteriaCount, completed))
+            {
+                var tab = index;
+                <button type="button" role="tab" aria-selected="@(activeTab == tab)" class="@StepClass(tab, done)" @onclick="() => GoToTabAsync(tab)">
+                    <span class="num">@(done && activeTab != tab ? "✓" : (tab + 1).ToString())</span> @title
+                    @if (tab == 2 && running > 0)
+                    {
+                        <span class="badge">@running läuft</span>
+                    }
+                </button>
+            }
         </div>
     </div>
 
@@ -65,7 +63,10 @@ else
             <ExamSetupPanel Exam="exam" Changed="ReloadAsync" Next="() => GoToTabAsync(1)" />
             break;
         case 1:
-            <SubmissionsPanel Exam="exam" Changed="ReloadAsync" ShowSetup="() => GoToTabAsync(0)" Next="() => GoToTabAsync(2)" />
+            <SubmissionsPanel Exam="exam" Changed="ReloadAsync" ShowStep="GoToTabAsync" Next="() => GoToTabAsync(2)" />
+            break;
+        case 2:
+            <SubmissionsPanel Exam="exam" Changed="ReloadAsync" Grading="true" ShowStep="GoToTabAsync" Next="() => GoToTabAsync(3)" />
             break;
         default:
             <OverviewPanel Exam="exam" />
@@ -134,6 +135,7 @@ else
     private async Task GoToTabAsync(int tab)
     {
         activeTab = tab;
+        Current.RememberStep(Id, tab);
         try
         {
             await JS.InvokeVoidAsync("scrollTo", 0, 0);
@@ -149,8 +151,17 @@ else
         await ReloadAsync();
         if (exam is not null)
         {
-            activeTab = exam.Categories.Count == 0 ? 0 : 1;
+            activeTab = Current.LastStep(Id) ?? (exam.Categories.Count == 0 ? 0 : exam.Submissions.Count == 0 ? 1 : 2);
         }
+    }
+
+    private IEnumerable<(int Index, string Title, bool Done)> Steps(int criteriaCount, int completed)
+    {
+        var works = exam!.Submissions.Count;
+        yield return (0, "Aufgabe & Kriterien", criteriaCount > 0);
+        yield return (1, "Arbeiten erfassen", works > 0);
+        yield return (2, "Arbeiten bewerten", works > 0 && exam.Submissions.All(s => s.GradedAt is not null));
+        yield return (3, "Übersicht & Export", works > 0 && completed == works);
     }
 
     private string StepClass(int index, bool done) =>

@@ -159,6 +159,9 @@ else
                     <h2 class="sheet-title">Beurteilung</h2>
                     <span class="ai-legend"><span class="ai-mark">✦ KI</span> = Vorschlag der KI · farbig gefüllt = gilt</span>
                 </div>
+                <div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-2">
+                    <span class="faint" style="font-size:.8rem">Die Begründungen der KI stehen nur im PDF, wenn du sie beim Export einschliesst.</span>
+                </div>
                 @foreach (var category in exam.Categories)
                 {
                     <div class="cat-label">@category.Name</div>
@@ -212,11 +215,11 @@ else
 
             <section class="sheet">
                 <h2 class="sheet-title">Rückmeldung</h2>
-                <p class="sheet-sub">Erscheint im PDF für die Schülerin oder den Schüler.</p>
+                <p class="sheet-sub">«Deine Rückmeldung» steht im Beurteilungsbogen (PDF) für die Schülerin oder den Schüler. Bleibt sie leer, steht dort die Rückmeldung der KI.</p>
                 @if (!string.IsNullOrWhiteSpace(submission.AiStrengths) || !string.IsNullOrWhiteSpace(submission.AiNextSteps))
                 {
                     <div class="ai-box mb-4">
-                    <div class="ai-label"><span class="ai-mark">✦ KI</span> Vorschlag der KI</div>
+                    <div class="ai-label"><span class="ai-mark">✦ KI</span> Vorschlag der KI · nur für dich, nicht im PDF</div>
                     <div class="notes-grid">
                         <div class="note-col">
                             <h4>Stärken</h4>
@@ -234,7 +237,7 @@ else
                 @if (!string.IsNullOrWhiteSpace(submission.AiOverallComment) && submission.TeacherComment != submission.AiOverallComment)
                 {
                     <div class="ai-box mt-3">
-                        <div class="ai-label"><span class="ai-mark">✦ KI</span> Rückmeldung, wie die KI sie vorschlägt</div>
+                        <div class="ai-label"><span class="ai-mark">✦ KI</span> Rückmeldung, wie die KI sie vorschlägt · steht im PDF, solange «Deine Rückmeldung» leer ist</div>
                         <p>«@submission.AiOverallComment»</p>
                     </div>
                     <MudButton Class="btn-quiet mt-1" Size="Size.Small" StartIcon="@Icons.Material.Outlined.ContentPaste" OnClick="() => SetCommentAsync(submission.AiOverallComment)">

@@ -130,6 +130,10 @@
         <p class="muted mb-3">Noch nicht alle Arbeiten sind abgeschlossen. Offene Arbeiten erscheinen mit vorläufiger Note.</p>
     }
     <MudSwitch @bind-Value="withJustifications" Color="Color.Primary" Label="Begründungen der KI in die Beurteilungsbögen aufnehmen" />
+    <p class="faint" style="font-size:.85rem">
+        Immer im Beurteilungsbogen: Foto, Stufen, Note und deine Rückmeldung. Hast du keine geschrieben, steht dort die
+        Rückmeldung der KI. Begründungen erscheinen nur bei Kriterien, bei denen du die Stufe der KI übernommen hast.
+    </p>
     <div class="next-step">
         <MudButton Class="btn-soft" Size="Size.Large" StartIcon="@Icons.Material.Outlined.GridOn" Href="@($"/export/{Exam.Id}/noten.xlsx")" Target="_blank">Notenliste (Excel)</MudButton>
         <MudButton Class="btn-ink" Size="Size.Large" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"

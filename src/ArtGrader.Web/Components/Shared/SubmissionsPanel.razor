@@ -7,172 +7,213 @@
 @inject IDialogService Dialogs
 @inject SettingsStore Settings
 
-@if (Exam.Categories.Count == 0)
+@if (!Grading)
 {
-    <div class="banner mb-4">
-        <MudIcon Icon="@Icons.Material.Outlined.Info" />
-        <span>Lege zuerst die Beurteilungskriterien fest. <a href="javascript:void(0)" @onclick="() => ShowSetup.InvokeAsync()">Zu Schritt 1</a></span>
-    </div>
-}
-
-<div class="dropzone">
-    <InputFile OnChange="UploadAsync" multiple accept="@accept" disabled="@uploading" aria-label="Fotos hochladen" />
-    @if (uploading)
-    {
-        <div class="dz-title">Fotos werden vorbereitet …</div>
-        <div class="d-flex align-center gap-3 justify-center" style="max-width:420px;margin:12px auto 0">
-            <div class="brush-progress"><span style="@($"width:{(uploadTotal == 0 ? 0 : 100 * uploadDone / uploadTotal)}%")"></span></div>
-            <span class="muted">@uploadDone / @uploadTotal</span>
-        </div>
-    }
-    else
-    {
-        <span class="dz-icon"><MudIcon Icon="@Icons.Material.Outlined.AddPhotoAlternate" Size="Size.Large" /></span>
-        <div class="dz-title">Fotos der Arbeiten hierher legen</div>
-        <div class="muted">
-            @(oneSubmission ? "Alle Fotos werden zu einer Arbeit zusammengefasst." : "Jedes Foto wird eine Arbeit – mehrere Fotos einer Arbeit danach zusammenführen.")
-        </div>
-    }
-</div>
-<MudSwitch @bind-Value="oneSubmission" Color="Color.Primary" Label="Alle Fotos dieses Uploads gehören zu einer Arbeit" Class="mt-1" />
-@if (Exam.LocalOnly)
-{
-    <div class="banner info mb-4">
-        <MudIcon Icon="@Icons.Material.Outlined.Lock" />
-        <span>Diese Prüfung wird nur lokal bewertet. Fotos verlassen den Computer nicht.</span>
-    </div>
-}
-else
-{
-    <div class="banner info mb-4">
-        <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
-        <span>Steht auf einer Arbeit ein Name oder eine Signatur? Öffne die Arbeit und decke die Stelle ab, bevor du bewerten lässt. Sonst sieht die KI sie.</span>
-    </div>
-}
-
-@if (Exam.Submissions.Count > 0)
-{
-    <div class="toolbar">
-        <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.AutoAwesome" Disabled="@(ungraded.Count == 0 || !CanGrade)"
-                   OnClick="() => GradeAsync(ungraded)">
-            @(ungraded.Count == 0 ? "Alle bewertet" : $"{ungraded.Count} Arbeiten bewerten")
-        </MudButton>
-        @if (selected.Count > 0)
+    @* Step 2: capture the works. Everything here happens before the AI sees anything. *@
+    <div class="dropzone">
+        <InputFile OnChange="UploadAsync" multiple accept="@accept" disabled="@uploading" aria-label="Fotos hochladen" />
+        @if (uploading)
         {
-            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.Refresh" Disabled="@(!CanGrade)" OnClick="GradeSelectedAsync">
-                Auswahl neu bewerten
-            </MudButton>
-            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.CallMerge" Disabled="@(selected.Count < 2)" OnClick="MergeAsync">
-                Zusammenführen
-            </MudButton>
-            <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="DeleteSelectedAsync">Löschen</MudButton>
-            <MudButton Class="btn-quiet" OnClick="() => selected.Clear()">Auswahl aufheben (@selected.Count)</MudButton>
+            <div class="dz-title">Fotos werden vorbereitet …</div>
+            <div class="d-flex align-center gap-3 justify-center" style="max-width:420px;margin:12px auto 0">
+                <div class="brush-progress"><span style="@($"width:{(uploadTotal == 0 ? 0 : 100 * uploadDone / uploadTotal)}%")"></span></div>
+                <span class="muted">@uploadDone / @uploadTotal</span>
+            </div>
         }
-        <span class="topbar-spacer"></span>
-        <span class="muted" style="font-size:.9rem">
-            @Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen) von @Exam.Submissions.Count abgeschlossen
-        </span>
-    </div>
-
-    @if (running > 0)
-    {
-        var total = Exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet or SubmissionStatus.Vorschlag or SubmissionStatus.Abgeschlossen);
-        <div class="banner mb-5">
-            <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:var(--ink)" />
-            <span>
-                Noch @running Arbeit(en) in Bearbeitung · @(Settings.RunsLocally(Exam)
-                    ? "lokal etwa 1–3 Minuten pro Arbeit, eine nach der anderen"
-                    : "etwa 30–60 Sekunden pro Arbeit") – du kannst inzwischen weiterarbeiten.
-            </span>
-            <div class="brush-progress"><span style="@($"width:{(total == 0 ? 0 : 100 * (total - running) / total)}%")"></span></div>
-        </div>
-    }
-
-    <div class="@($"wall {(selected.Count > 0 ? "selecting" : "")}")">
-        @foreach (var submission in Exam.Submissions)
+        else
         {
-            var result = GradeCalculator.Calculate(Exam, submission);
-            var grade = GradeCalculator.FinalGrade(Exam, submission);
-            var isSelected = selected.Contains(submission.Id);
-            var busy = submission.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet;
-            <div class="@($"work {(isSelected ? "selected" : "")}")" @key="submission.Id">
-                <button type="button" class="work-select" aria-pressed="@(isSelected ? "true" : "false")" aria-label="Auswählen" @onclick="() => Toggle(submission.Id)">
-                    @if (isSelected)
-                    {
-                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
-                    }
-                </button>
-                <a class="work-photo" href="@ReviewUrl(submission)">
-                    @if (submission.Images.Count > 0)
-                    {
-                        <img src="@ImageUrls.Covered(submission.Images[0])" alt="Foto der Arbeit von @submission.StudentName" loading="lazy" />
-                    }
-                    else
-                    {
-                        <div class="placeholder"></div>
-                    }
-                    @if (submission.Images.Count > 1)
-                    {
-                        <span class="photo-count">@submission.Images.Count Fotos</span>
-                    }
-                    @if (grade is not null)
-                    {
-                        <span class="@($"stamp {(submission.Status == SubmissionStatus.Abgeschlossen ? "final" : "")}")" title="@($"{result.Points:0.##} / {result.MaxPoints:0.##} Punkte")">
-                            @grade.Value.ToString("0.0#")<small>Note</small>
-                        </span>
-                    }
-                    else if (result.Provisional is not null)
-                    {
-                        <span class="stamp provisional" title="@($"Vorläufig – noch {result.MissingCount} Kriterium/en der Lehrperson offen")">
-                            @result.Provisional.Value.ToString("0.0#")<small>vorläufig</small>
-                        </span>
-                    }
-                </a>
-                <div class="@($"work-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
-                    <MudTextField T="string" Value="submission.StudentName" ValueChanged="@(v => RenameAsync(submission, v))" DebounceInterval="1000"
-                                  Variant="Variant.Text" Margin="Margin.Dense" Placeholder="Name" aria-label="Name" />
-                    @if (submission.HasPlaceholderName)
-                    {
-                        <span class="name-hint">Zufallsname</span>
-                    }
-                </div>
-                <div class="work-foot">
-                    <span class="@($"status s-{submission.Status}")"><span class="dot"></span>@LevelText.Label(submission.Status)</span>
-                    <MudTooltip Text="@(submission.GradedAt is null ? "Von der KI bewerten lassen" : "Neu bewerten")">
-                        <MudIconButton Icon="@Icons.Material.Outlined.AutoAwesome" Size="Size.Small"
-                                       Disabled="@(!CanGrade || busy)" OnClick="() => GradeAsync([submission])" aria-label="Bewerten" />
-                    </MudTooltip>
-                </div>
-                @if (submission.Status == SubmissionStatus.Fehler && !string.IsNullOrWhiteSpace(submission.ErrorMessage))
-                {
-                    <div class="work-error">@submission.ErrorMessage</div>
-                }
+            <span class="dz-icon"><MudIcon Icon="@Icons.Material.Outlined.AddPhotoAlternate" Size="Size.Large" /></span>
+            <div class="dz-title">Fotos der Arbeiten hierher legen</div>
+            <div class="muted">
+                @(oneSubmission ? "Alle Fotos werden zu einer Arbeit zusammengefasst." : "Jedes Foto wird eine Arbeit – mehrere Fotos einer Arbeit danach zusammenführen.")
             </div>
         }
     </div>
-}
+    <MudSwitch @bind-Value="oneSubmission" Color="Color.Primary" Label="Alle Fotos dieses Uploads gehören zu einer Arbeit" Class="mt-1" />
 
-<div class="next-step">
-    @if (NextToReview() is { } open)
+    @if (Exam.Submissions.Count > 0)
     {
-        <span class="muted">Prüfe jede Arbeit und schliesse sie ab.</span>
-        <MudButton Class="btn-ink" Size="Size.Large" Href="@ReviewUrl(open)" EndIcon="@Icons.Material.Filled.ArrowForward">Arbeiten prüfen</MudButton>
+        <div class="banner info mb-4">
+            <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
+            <span>
+                Bereite die Arbeiten vor, bevor die KI sie sieht: Namen eintragen und Fotos derselben Arbeit zusammenführen.
+                Steht ein Name oder eine Signatur auf dem Werk, öffne die Arbeit und decke die Stelle ab@(Exam.LocalOnly ? "." : ", sonst sieht die KI sie.")
+            </span>
+        </div>
+
+        <div class="toolbar">
+            @if (selected.Count > 0)
+            {
+                <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.CallMerge" Disabled="@(selected.Count < 2)" OnClick="MergeAsync">
+                    Zusammenführen
+                </MudButton>
+                <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="DeleteSelectedAsync">Löschen</MudButton>
+                <MudButton Class="btn-quiet" OnClick="() => selected.Clear()">Auswahl aufheben (@selected.Count)</MudButton>
+            }
+            else
+            {
+                <span class="muted" style="font-size:.9rem">Zum Zusammenführen oder Löschen Arbeiten oben links anwählen.</span>
+            }
+            <span class="topbar-spacer"></span>
+            <span class="muted" style="font-size:.9rem">@Exam.Submissions.Count Arbeiten · @Exam.Submissions.Sum(s => s.Images.Count) Fotos</span>
+        </div>
+
+        <div class="@($"wall {(selected.Count > 0 ? "selecting" : "")}")">
+            @foreach (var submission in Exam.Submissions)
+            {
+                var isSelected = selected.Contains(submission.Id);
+                <div class="@($"work {(isSelected ? "selected" : "")}")" @key="submission.Id">
+                    <button type="button" class="work-select" aria-pressed="@(isSelected ? "true" : "false")" aria-label="Auswählen" @onclick="() => Toggle(submission.Id)">
+                        @if (isSelected)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
+                        }
+                    </button>
+                    <a class="work-photo" href="@ReviewUrl(submission)" title="Öffnen: abdecken, zuschneiden, Fotos abtrennen">
+                        <WorkPhoto Submission="submission" />
+                    </a>
+                    <WorkName Submission="submission" Renamed="OnRenamed" />
+                </div>
+            }
+        </div>
     }
-    else
-    {
+
+    <div class="next-step">
         @if (Exam.Submissions.Count == 0)
         {
             <span class="muted">Lege oben die Fotos der Arbeiten ab.</span>
         }
-        else if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
-        {
-            <span class="muted">Lass die Arbeiten zuerst von der KI bewerten.</span>
-        }
         <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
-            Weiter zu Übersicht & Export
+            Weiter zum Bewerten
         </MudButton>
+    </div>
+}
+else
+{
+    @* Step 3: let the AI assess the captured works, then check each one. *@
+    @if (Exam.Categories.Count == 0)
+    {
+        <div class="banner mb-4">
+            <MudIcon Icon="@Icons.Material.Outlined.Info" />
+            <span>Lege zuerst die Beurteilungskriterien fest. <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(0)">Zu Schritt 1</a></span>
+        </div>
     }
-</div>
+    else if (!Settings.CanGrade(Exam))
+    {
+        <div class="banner mb-4">
+            <MudIcon Icon="@Icons.Material.Outlined.Lightbulb" />
+            <span>
+                @(Exam.LocalOnly ? RoutingModelGateway.LocalOnlyWithoutModel : "Bevor die KI mitlesen kann, wähle Claude oder ein lokales Modell.")
+                <a href="/einstellungen">Zu den Einstellungen</a>
+            </span>
+        </div>
+    }
+
+    @if (Exam.Submissions.Count == 0)
+    {
+        <div class="banner mb-4">
+            <MudIcon Icon="@Icons.Material.Outlined.Info" />
+            <span>Noch keine Arbeiten. <a href="javascript:void(0)" @onclick="() => ShowStep.InvokeAsync(1)">Zu Schritt 2</a></span>
+        </div>
+    }
+    else
+    {
+        <div class="toolbar">
+            <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.AutoAwesome" Disabled="@(ungraded.Count == 0 || !CanGrade)"
+                       OnClick="() => GradeAsync(ungraded)">
+                @(ungraded.Count == 0 ? "Alle bewertet" : $"{ungraded.Count} Arbeiten bewerten")
+            </MudButton>
+            @if (selected.Count > 0)
+            {
+                <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.Refresh" Disabled="@(!CanGrade)" OnClick="GradeSelectedAsync">
+                    Auswahl neu bewerten
+                </MudButton>
+                <MudButton Class="btn-quiet" OnClick="() => selected.Clear()">Auswahl aufheben (@selected.Count)</MudButton>
+            }
+            <span class="topbar-spacer"></span>
+            <span class="muted" style="font-size:.9rem">
+                @Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen) von @Exam.Submissions.Count abgeschlossen
+            </span>
+        </div>
+
+        @if (running > 0)
+        {
+            var total = Exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet or SubmissionStatus.Vorschlag or SubmissionStatus.Abgeschlossen);
+            <div class="banner mb-5">
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:var(--ink)" />
+                <span>
+                    Noch @running Arbeit(en) in Bearbeitung · @(Settings.RunsLocally(Exam)
+                        ? "lokal etwa 1–3 Minuten pro Arbeit, eine nach der anderen"
+                        : "etwa 30–60 Sekunden pro Arbeit") – du kannst inzwischen weiterarbeiten.
+                </span>
+                <div class="brush-progress"><span style="@($"width:{(total == 0 ? 0 : 100 * (total - running) / total)}%")"></span></div>
+            </div>
+        }
+
+        <div class="@($"wall {(selected.Count > 0 ? "selecting" : "")}")">
+            @foreach (var submission in Exam.Submissions)
+            {
+                var result = GradeCalculator.Calculate(Exam, submission);
+                var grade = GradeCalculator.FinalGrade(Exam, submission);
+                var isSelected = selected.Contains(submission.Id);
+                var busy = submission.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet;
+                <div class="@($"work {(isSelected ? "selected" : "")}")" @key="submission.Id">
+                    <button type="button" class="work-select" aria-pressed="@(isSelected ? "true" : "false")" aria-label="Auswählen" @onclick="() => Toggle(submission.Id)">
+                        @if (isSelected)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
+                        }
+                    </button>
+                    <a class="work-photo" href="@ReviewUrl(submission)">
+                        <WorkPhoto Submission="submission" />
+                        @if (grade is not null)
+                        {
+                            <span class="@($"stamp {(submission.Status == SubmissionStatus.Abgeschlossen ? "final" : "")}")" title="@($"{result.Points:0.##} / {result.MaxPoints:0.##} Punkte")">
+                                @grade.Value.ToString("0.0#")<small>Note</small>
+                            </span>
+                        }
+                        else if (result.Provisional is not null)
+                        {
+                            <span class="stamp provisional" title="@($"Vorläufig – noch {result.MissingCount} Kriterium/en der Lehrperson offen")">
+                                @result.Provisional.Value.ToString("0.0#")<small>vorläufig</small>
+                            </span>
+                        }
+                    </a>
+                    <WorkName Submission="submission" Renamed="OnRenamed" />
+                    <div class="work-foot">
+                        <span class="@($"status s-{submission.Status}")"><span class="dot"></span>@LevelText.Label(submission.Status)</span>
+                        <MudTooltip Text="@(submission.GradedAt is null ? "Von der KI bewerten lassen" : "Neu bewerten")">
+                            <MudIconButton Icon="@Icons.Material.Outlined.AutoAwesome" Size="Size.Small"
+                                           Disabled="@(!CanGrade || busy)" OnClick="() => GradeAsync([submission])" aria-label="Bewerten" />
+                        </MudTooltip>
+                    </div>
+                    @if (submission.Status == SubmissionStatus.Fehler && !string.IsNullOrWhiteSpace(submission.ErrorMessage))
+                    {
+                        <div class="work-error">@submission.ErrorMessage</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <div class="next-step">
+        @if (NextToReview() is { } open)
+        {
+            <span class="muted">Prüfe jede Arbeit und schliesse sie ab.</span>
+            <MudButton Class="btn-ink" Size="Size.Large" Href="@ReviewUrl(open)" EndIcon="@Icons.Material.Filled.ArrowForward">Arbeiten prüfen</MudButton>
+        }
+        else
+        {
+            @if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
+            {
+                <span class="muted">Lass die Arbeiten zuerst von der KI bewerten.</span>
+            }
+            <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
+                Weiter zu Übersicht & Export
+            </MudButton>
+        }
+    </div>
+}
 
 @code {
     private const long MaxImageBytes = 40 * 1024 * 1024;
@@ -181,7 +222,9 @@ else
 
     [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
-    [Parameter] public EventCallback ShowSetup { get; set; }
+    /// <summary>False: step 2, capture the works. True: step 3, let the AI assess them.</summary>
+    [Parameter] public bool Grading { get; set; }
+    [Parameter] public EventCallback<int> ShowStep { get; set; }
     [Parameter] public EventCallback Next { get; set; }
 
     private readonly HashSet<Guid> selected = [];
@@ -270,6 +313,8 @@ else
         }
         await Changed.InvokeAsync();
     }
+
+    private Task OnRenamed((Submission Submission, string Name) change) => RenameAsync(change.Submission, change.Name);
 
     private async Task RenameAsync(Submission submission, string name)
     {

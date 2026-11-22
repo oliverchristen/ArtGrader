@@ -247,6 +247,24 @@ html:has(.exam-head) {
 
 .exam-head .steps {
     margin: 14px 0 12px;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.exam-head .step {
+    flex: none;
+    gap: 9px;
+    padding: 5px 16px 5px 5px;
+    font-size: .9rem;
+    white-space: nowrap;
+}
+
+.exam-head .step .num {
+    width: 28px;
+    height: 28px;
+    font-size: .9rem;
 }
 
 .exam-head .review-head {
