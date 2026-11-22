@@ -46,4 +46,9 @@
     <ProjectReference Include="..\ArtGrader.Core\ArtGrader.Core.csproj" />
   </ItemGroup>
 
+  <!-- The overview for school management lives in docs/ and is served by the app as /schulleitung.html. -->
+  <ItemGroup>
+    <Content Include="..\..\docs\schulleitung.html" Link="wwwroot\schulleitung.html" />
+  </ItemGroup>
+
 </Project>

@@ -7,8 +7,9 @@ Bewertung für fotografierte Schülerarbeiten vor. Die Lehrperson prüft jeden V
 Als KI dient Claude von Anthropic (Cloud) oder ein Modell auf dem eigenen Computer (Ollama). Läuft auf **Windows**
 und **macOS** (Intel und Apple Silicon). Alle Daten bleiben auf dem eigenen Computer.
 
-Für die Schulleitung: [ArtGrader für die Schulleitung](docs/schulleitung.html) beschreibt ohne Technik, welche Daten
-wohin gehen, warum die Lehrperson entscheidet und was die Schule klären sollte (herunterladen und im Browser öffnen).
+Für die Schulleitung: Die Übersicht «ArtGrader für die Schulleitung» beschreibt ohne Technik, welche Daten wohin
+gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie öffnet sich in ArtGrader unter
+**Einstellungen → Datenschutz → Übersicht für die Schulleitung**.
 
 ## So funktioniert es
 
@@ -35,7 +36,7 @@ wohin gehen, warum die Lehrperson entscheidet und was die Schule klären sollte 
    Rückmeldung (einzeln oder für die ganze Klasse). Das PDF vermerkt, dass die Einschätzung mit KI-Unterstützung
    entstand und ob die Lehrperson sie abgeschlossen hat.
 
-Nach Ende des Schuljahres (ab 1. August) erinnert die Startseite an Prüfungen, die noch Fotos von Schülerarbeiten
+Nach Ende des Semesters (ab 1. Februar und ab 1. August) erinnert die Startseite an Prüfungen, die noch Fotos von Schülerarbeiten
 enthalten, und löscht die Fotos auf Knopfdruck. Noten und Beurteilungen bleiben.
 
 ### Notenberechnung
