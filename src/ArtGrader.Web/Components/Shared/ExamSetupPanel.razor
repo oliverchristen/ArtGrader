@@ -113,10 +113,10 @@
     <div class="next-step">
         @if (!HasCriteria)
         {
-            <span class="muted">@T("Sobald es Kriterien gibt, kannst du die Arbeiten erfassen.")</span>
+            <span class="muted">@T("Fotos kannst du schon jetzt erfassen. Für die Bewertung braucht es Kriterien.")</span>
         }
-        <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(!HasCriteria)" OnClick="GoNextAsync" EndIcon="@Icons.Material.Filled.ArrowForward">
-            @T("Weiter zu den Arbeiten")
+        <MudButton Class="btn-ink" Size="Size.Large" OnClick="GoNextAsync" EndIcon="@Icons.Material.Filled.ArrowForward">
+            @T("Weiter zu Arbeiten erfassen")
         </MudButton>
     </div>
 </div>

@@ -245,6 +245,24 @@ html:has(.exam-head) {
     scroll-padding-top: 280px;
 }
 
+.exam-head.compact .steps {
+    margin: 8px 0 6px;
+}
+
+.exam-head .work-bar {
+    margin: 0;
+    padding: 6px 0 8px;
+    border-top: 1px solid var(--stroke);
+}
+
+.exam-head .work-bar .student-name input {
+    font-size: 1.6rem !important;
+}
+
+html:has(.exam-head.compact) {
+    scroll-padding-top: 240px;
+}
+
 .exam-head .steps {
     margin: 14px 0 12px;
     gap: 6px;
@@ -1302,9 +1320,9 @@ html:has(.exam-head) {
         top: 84px;
     }
 
-    /* Below the sticky exam header on the pages of a single work. */
+    /* Below the sticky exam header and work bar on the pages of a single work. */
     html:has(.exam-head) .sticky-side {
-        top: 260px;
+        top: 252px;
     }
 }
 

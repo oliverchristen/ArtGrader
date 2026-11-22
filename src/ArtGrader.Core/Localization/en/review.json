@@ -16,7 +16,7 @@
   "Auswählen": "Select",
   "Öffnen: abdecken, zuschneiden, Fotos abtrennen": "Open: cover, crop, split off photos",
   "Lege oben die Fotos der Arbeiten ab.": "Drop the photos of the works above.",
-  "Weiter zum Bewerten": "Continue to assessing",
+  "Weiter zu Arbeiten bewerten": "Continue to Assess works",
   "Lege zuerst die Beurteilungskriterien fest.": "Set the assessment criteria first.",
   "Zu Schritt 1": "Go to step 1",
   "Bevor die KI mitlesen kann, wähle Claude oder ein lokales Modell.": "Before the AI can read along, choose Claude or a local model.",
@@ -35,7 +35,7 @@
   "Prüfe jede Arbeit und schliesse sie ab.": "Check each work and complete it.",
   "Arbeiten prüfen": "Check works",
   "Lass die Arbeiten zuerst von der KI bewerten.": "Have the AI assess the works first.",
-  "Weiter zu den Noten": "Continue to Grades",
+  "Weiter zu Noten": "Continue to Grades",
   "grösser als 40 MB": "larger than 40 MB",
   "{0} Foto(s) hinzugefügt. Die Arbeiten haben Zufallsnamen – echte Namen direkt unter den Bildern eintragen.": "{0} photo(s) added. The works have random names – enter the real names right below the pictures.",
   "Abgeschlossene Arbeiten neu bewerten?": "Reassess completed works?",
@@ -122,5 +122,6 @@
   "Beurteilt durch": "Assessed by",
   "KI-Vorschlag": "AI suggestion",
   "Unerwarteter Fehler: {0}": "Unexpected error: {0}",
-  "Fotos bearbeiten": "Edit photos"
+  "Fotos bearbeiten": "Edit photos",
+  "Abschliessen & weiter zu Noten": "Complete & continue to Grades"
 }

@@ -5,6 +5,7 @@
 @inject FileStore Files
 @inject ISnackbar Snackbar
 @inject CurrentExam Current
+@inject NavigationManager Navigation
 @implements IDisposable
 
 @* Step 2: prepare one work before the AI sees it – name, cover, crop, add, remove or split off photos. *@
@@ -29,22 +30,22 @@ else
     var next = index < exam.Submissions.Count - 1 ? exam.Submissions[index + 1] : null;
     var current = submission.Images.Count == 0 ? null : submission.Images[Math.Min(imageIndex, submission.Images.Count - 1)];
 
-    <ExamHeader Exam="exam" ActiveStep="1" Work="@submission.StudentName" />
-
-    <div class="review-head">
-        <div class="student-nav">
-            <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : EditUrl(previous))" aria-label="@T("Vorherige Arbeit")" />
-            <div class="@($"student-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
-                <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" DebounceInterval="1000" Variant="Variant.Text" aria-label="@T("Name")" />
-                @if (submission.HasPlaceholderName)
-                {
-                    <span class="name-hint">@T("Zufallsname – echten Namen eintragen")</span>
-                }
+    <ExamHeader Exam="exam" ActiveStep="1" Work="@submission.StudentName">
+        <div class="review-head work-bar">
+            <div class="student-nav">
+                <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : EditUrl(previous))" aria-label="@T("Vorherige Arbeit")" />
+                <div class="@($"student-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
+                    <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" DebounceInterval="1000" Variant="Variant.Text" aria-label="@T("Name")" />
+                    @if (submission.HasPlaceholderName)
+                    {
+                        <span class="name-hint">@T("Zufallsname – echten Namen eintragen")</span>
+                    }
+                </div>
+                <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : EditUrl(next))" aria-label="@T("Nächste Arbeit")" />
+                <span class="faint">@T("{0} von {1}", index + 1, exam.Submissions.Count)</span>
             </div>
-            <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : EditUrl(next))" aria-label="@T("Nächste Arbeit")" />
-            <span class="faint">@T("{0} von {1}", index + 1, exam.Submissions.Count)</span>
         </div>
-    </div>
+    </ExamHeader>
 
     <div class="flow">
         <div class="banner info">
@@ -91,6 +92,10 @@ else
             {
                 <MudButton Class="btn-ink" Size="Size.Large" Href="@EditUrl(next)" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Nächste Arbeit")</MudButton>
             }
+            else
+            {
+                <MudButton Class="btn-ink" Size="Size.Large" OnClick="GoToAssessing" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Weiter zu Arbeiten bewerten")</MudButton>
+            }
         </div>
     </div>
 }
@@ -122,6 +127,13 @@ else
         submission = exam?.Submissions.FirstOrDefault(s => s.Id == SubmissionId);
         loaded = true;
         Current.Set(exam);
+    }
+
+    /// <summary>After the last work: open the exam at step 3, «Arbeiten bewerten».</summary>
+    private void GoToAssessing()
+    {
+        Current.RememberStep(ExamId, 2);
+        Navigation.NavigateTo(ExamUrl);
     }
 
     private async Task RenameAsync(string name)

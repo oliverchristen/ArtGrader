@@ -86,7 +86,7 @@
             <span class="muted">@T("Lege oben die Fotos der Arbeiten ab.")</span>
         }
         <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
-            @T("Weiter zum Bewerten")
+            @T("Weiter zu Arbeiten bewerten")
         </MudButton>
     </div>
 }
@@ -198,7 +198,7 @@ else
                 <span class="muted">@T("Lass die Arbeiten zuerst von der KI bewerten.")</span>
             }
             <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
-                @T("Weiter zu den Noten")
+                @T("Weiter zu Noten")
             </MudButton>
         }
     </div>

@@ -28,47 +28,48 @@ else
     var index = exam.Submissions.FindIndex(s => s.Id == submission.Id);
     var previous = index > 0 ? exam.Submissions[index - 1] : null;
     var next = index < exam.Submissions.Count - 1 ? exam.Submissions[index + 1] : null;
+    var nextOpen = NextOpen();
     var result = GradeCalculator.Calculate(exam, submission);
     var grade = submission.FinalGradeOverride ?? result.Grade;
     var busy = submission.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet;
 
-    <ExamHeader Exam="exam" ActiveStep="2" Work="@submission.StudentName" />
-
-    <div class="review-head">
-        <div class="student-nav">
-            <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : Url(previous))" aria-label="@T("Vorherige Arbeit")" />
-            <div class="@($"student-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
-                <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" DebounceInterval="1000" Variant="Variant.Text" aria-label="@T("Name")" />
-                @if (submission.HasPlaceholderName)
+    <ExamHeader Exam="exam" ActiveStep="2" Work="@submission.StudentName">
+        <div class="review-head work-bar">
+            <div class="student-nav">
+                <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : Url(previous))" aria-label="@T("Vorherige Arbeit")" />
+                <div class="@($"student-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
+                    <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" DebounceInterval="1000" Variant="Variant.Text" aria-label="@T("Name")" />
+                    @if (submission.HasPlaceholderName)
+                    {
+                        <span class="name-hint">@T("Zufallsname – echten Namen eintragen")</span>
+                    }
+                </div>
+                <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : Url(next))" aria-label="@T("Nächste Arbeit")" />
+                <span class="faint">@T("{0} von {1}", index + 1, exam.Submissions.Count)</span>
+            </div>
+            <div class="d-flex align-center flex-wrap gap-2">
+                @if (saved)
                 {
-                    <span class="name-hint">@T("Zufallsname – echten Namen eintragen")</span>
+                    <span class="faint" style="font-size:.85rem">@T("✓ gespeichert")</span>
+                }
+                <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.AutoAwesome" Disabled="@(busy || !Settings.CanGrade(exam))" OnClick="RegradeAsync">
+                    @(submission.GradedAt is null ? T("KI-Vorschlag holen") : T("Neu bewerten"))
+                </MudButton>
+                <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
+                           Href="@($"/export/{exam.Id}/beurteilungen.pdf?submission={submission.Id}")">PDF</MudButton>
+                @if (submission.Status == SubmissionStatus.Abgeschlossen)
+                {
+                    <MudButton Class="btn-quiet" OnClick="() => SaveAsync(complete: false)" StartIcon="@Icons.Material.Outlined.LockOpen">@T("Wieder öffnen")</MudButton>
+                }
+                else
+                {
+                    <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.Check" Disabled="@(grade is null || busy)" OnClick="CompleteAsync">
+                        @(nextOpen is null ? T("Abschliessen & weiter zu Noten") : T("Abschliessen & weiter"))
+                    </MudButton>
                 }
             </div>
-            <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : Url(next))" aria-label="@T("Nächste Arbeit")" />
-            <span class="faint">@T("{0} von {1}", index + 1, exam.Submissions.Count)</span>
         </div>
-        <div class="d-flex align-center flex-wrap gap-2">
-            @if (saved)
-            {
-                <span class="faint" style="font-size:.85rem">@T("✓ gespeichert")</span>
-            }
-            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.AutoAwesome" Disabled="@(busy || !Settings.CanGrade(exam))" OnClick="RegradeAsync">
-                @(submission.GradedAt is null ? T("KI-Vorschlag holen") : T("Neu bewerten"))
-            </MudButton>
-            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
-                       Href="@($"/export/{exam.Id}/beurteilungen.pdf?submission={submission.Id}")">PDF</MudButton>
-            @if (submission.Status == SubmissionStatus.Abgeschlossen)
-            {
-                <MudButton Class="btn-quiet" OnClick="() => SaveAsync(complete: false)" StartIcon="@Icons.Material.Outlined.LockOpen">@T("Wieder öffnen")</MudButton>
-            }
-            else
-            {
-                <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.Check" Disabled="@(grade is null || busy)" OnClick="CompleteAsync">
-                    @(next is null ? T("Abschliessen") : T("Abschliessen & weiter"))
-                </MudButton>
-            }
-        </div>
-    </div>
+    </ExamHeader>
 
     <div class="review-grid">
         <div class="sticky-side">
@@ -248,7 +249,7 @@ else
                     }
                     else
                     {
-                        <MudButton Class="btn-ink" Size="Size.Large" Href="@($"/pruefung/{exam.Id}")" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Zurück zur Prüfung")</MudButton>
+                        <MudButton Class="btn-ink" Size="Size.Large" OnClick="GoToGrades" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Weiter zu Noten")</MudButton>
                     }
                 }
                 else
@@ -258,7 +259,7 @@ else
                         <span class="muted">@T("Noch {0} Kriterium/en für dich offen.", result.MissingCount)</span>
                     }
                     <MudButton Class="btn-ink" Size="Size.Large" StartIcon="@Icons.Material.Filled.Check" Disabled="@(grade is null || busy)" OnClick="CompleteAsync">
-                        @(next is null ? T("Abschliessen") : T("Abschliessen & weiter"))
+                        @(nextOpen is null ? T("Abschliessen & weiter zu Noten") : T("Abschliessen & weiter"))
                     </MudButton>
                 }
             </div>
@@ -355,11 +356,30 @@ else
             submission.TeacherComment = submission.AiOverallComment;
         }
         await SaveAsync(complete: true);
-        var index = exam!.Submissions.FindIndex(s => s.Id == submission.Id);
-        var next = exam.Submissions.Skip(index + 1).FirstOrDefault(s => s.Status != SubmissionStatus.Abgeschlossen)
-            ?? exam.Submissions.Skip(index + 1).FirstOrDefault();
         Snackbar.Add(T("«{0}» abgeschlossen.", submission.StudentName), Severity.Success);
-        Navigation.NavigateTo(next is null ? $"/pruefung/{ExamId}" : Url(next));
+        if (NextOpen() is { } next)
+        {
+            Navigation.NavigateTo(Url(next));
+        }
+        else
+        {
+            GoToGrades();
+        }
+    }
+
+    /// <summary>The next work still to complete: first after this one, then from the start.</summary>
+    private Submission? NextOpen()
+    {
+        var index = exam!.Submissions.FindIndex(s => s.Id == SubmissionId);
+        return exam.Submissions.Skip(index + 1).Concat(exam.Submissions.Take(index))
+            .FirstOrDefault(s => s.Status != SubmissionStatus.Abgeschlossen);
+    }
+
+    /// <summary>All works are done: open the exam at step 4, «Noten».</summary>
+    private void GoToGrades()
+    {
+        Current.RememberStep(ExamId, 3);
+        Navigation.NavigateTo($"/pruefung/{ExamId}");
     }
 
     private async Task RegradeAsync()

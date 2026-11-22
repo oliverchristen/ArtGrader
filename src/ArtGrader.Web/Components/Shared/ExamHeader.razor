@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
 
-<div class="exam-head">
+<div class="@($"exam-head {(Work is null ? "" : "compact")}")">
     <nav class="crumbs">
         <a href="/">@T("Prüfungen")</a><span>/</span>
         @if (Work is null)
@@ -17,6 +17,9 @@
             <a href="@($"/pruefung/{Exam.Id}")">@Exam.Title</a><span>/</span><span>@Work</span>
         }
     </nav>
+    @* On the pages of a single work the title is in the breadcrumb; class, date and title are edited on the exam page. *@
+    @if (Work is null)
+    {
     <div class="review-head">
         <div class="exam-head-main">
             <div class="exam-meta-edit">
@@ -37,6 +40,7 @@
             <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteRequested.InvokeAsync()">@T("Prüfung löschen")</MudButton>
         }
     </div>
+    }
 
     <div class="steps" role="tablist">
         @foreach (var (index, stepTitle, done) in Steps())
@@ -51,6 +55,8 @@
             </button>
         }
     </div>
+
+    @ChildContent
 </div>
 
 @code {
@@ -65,8 +71,11 @@
     /// <summary>Set on the exam page only; shows «Prüfung löschen».</summary>
     [Parameter] public EventCallback DeleteRequested { get; set; }
 
-    /// <summary>The name of the work shown on a work page; adds it to the breadcrumb.</summary>
+    /// <summary>The name of the work shown on a work page; adds it to the breadcrumb and makes the header compact.</summary>
     [Parameter] public string? Work { get; set; }
+
+    /// <summary>The bar of a work page (previous, name, next, actions); stays visible with the header.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private readonly Debouncer saver = new();
     private string title = "";

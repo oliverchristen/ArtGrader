@@ -39,7 +39,7 @@
   "Gewicht erhöhen": "Increase weight",
   "Kriterium entfernen": "Remove criterion",
   "Sobald es Kriterien gibt, kannst du die Arbeiten erfassen.": "Once there are criteria, you can add the works.",
-  "Weiter zu den Arbeiten": "Continue to the works",
+  "Weiter zu Arbeiten erfassen": "Continue to Add works",
   "Diese Prüfung wird nur noch lokal bewertet.": "This assignment is now assessed locally only.",
   "Diese Prüfung darf wieder mit Claude bewertet werden.": "This assignment may be assessed with Claude again.",
   "Bitte zuerst unter «Einstellungen» Claude oder ein lokales Modell einrichten.": "Please first set up Claude or a local model under ‘Settings’.",
@@ -136,5 +136,6 @@
   "Foto der Arbeit von {0}": "Photo of the work by {0}",
   "{0} Fotos": "{0} photos",
   "{0:0.##} / {1:0.##} Punkte": "{0:0.##} / {1:0.##} points",
-  "Vorläufig – noch {0} Kriterium/en der Lehrperson offen": "Provisional – {0} teacher criterion/criteria still open"
+  "Vorläufig – noch {0} Kriterium/en der Lehrperson offen": "Provisional – {0} teacher criterion/criteria still open",
+  "Fotos kannst du schon jetzt erfassen. Für die Bewertung braucht es Kriterien.": "You can already add photos. Assessing needs criteria."
 }
