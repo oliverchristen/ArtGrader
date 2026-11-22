@@ -3,9 +3,34 @@ using System.Text.Json.Nodes;
 
 namespace ArtGrader.Core.Ai;
 
-public sealed class LocalRedactionFinder(OllamaGateway ollama)
+public sealed class LocalRedactionFinder(OllamaGateway ollama, IAiSettingsSource settings)
 {
     public const int MaxCharacters = 20000;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(1);
+    private (DateTimeOffset At, string? Model)? cached;
+
+    public async Task<string?> AvailableModelAsync(CancellationToken cancellationToken)
+    {
+        if (cached is { } hit && DateTimeOffset.UtcNow - hit.At < CacheDuration)
+        {
+            return hit.Model;
+        }
+        var current = settings.Current();
+        string? model;
+        try
+        {
+            var installed = (await ollama.ListModelsAsync(current.OllamaUrl, cancellationToken)).Where(m => !m.Cloud).Select(m => m.Name).ToList();
+            model = installed.FirstOrDefault(m => m == current.OllamaModel)
+                ?? LocalModelCatalog.Recommended.Select(r => r.Name).FirstOrDefault(installed.Contains)
+                ?? installed.FirstOrDefault();
+        }
+        catch (ModelException)
+        {
+            model = null;
+        }
+        cached = (DateTimeOffset.UtcNow, model);
+        return model;
+    }
 
     private const string System = """
         Du hilfst einer Lehrperson, ein Dokument für den Unterricht zu anonymisieren, bevor es an eine KI geht.
@@ -28,6 +53,8 @@ public sealed class LocalRedactionFinder(OllamaGateway ollama)
         {
             return [];
         }
+        var model = await AvailableModelAsync(cancellationToken)
+            ?? throw new ModelNotConfiguredException("Es ist kein lokales Modell installiert oder Ollama läuft nicht.");
         var document = text.Length > MaxCharacters ? text[..MaxCharacters] : text;
         var response = await ollama.CompleteJsonAsync(
             new ModelJsonRequest(
@@ -37,7 +64,8 @@ public sealed class LocalRedactionFinder(OllamaGateway ollama)
                 Schema(),
                 MaxTokens: 2000,
                 Quick: true,
-                LocalOnly: true),
+                LocalOnly: true,
+                Model: model),
             cancellationToken);
 
         try

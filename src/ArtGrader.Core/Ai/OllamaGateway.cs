@@ -15,14 +15,15 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
     public async Task<ModelJsonResponse> CompleteJsonAsync(ModelJsonRequest request, CancellationToken cancellationToken)
     {
         var settings = settingsSource.Current();
-        if (string.IsNullOrWhiteSpace(settings.OllamaModel))
+        var model = request.Model ?? settings.OllamaModel;
+        if (string.IsNullOrWhiteSpace(model))
         {
             throw new ModelNotConfiguredException("Es ist kein lokales Modell gewählt. Bitte unter «Einstellungen» ein Ollama-Modell auswählen.");
         }
-        if (IsCloudName(settings.OllamaModel))
+        if (IsCloudName(model))
         {
             throw new ModelNotConfiguredException(
-                $"«{settings.OllamaModel}» ist ein Cloud-Modell von Ollama. Damit würden die Fotos den Computer verlassen. Bitte unter «Einstellungen» ein lokales Modell wählen.");
+                $"«{model}» ist ein Cloud-Modell von Ollama. Damit würden die Fotos den Computer verlassen. Bitte unter «Einstellungen» ein lokales Modell wählen.");
         }
 
         var text = new StringBuilder();
@@ -42,10 +43,10 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         }
 
         var think = !request.Quick && UsesThinking(settings.Effort);
-        var fastVariant = think ? null : LocalModelCatalog.FastVariantOf(settings.OllamaModel);
+        var fastVariant = think || request.Model is not null ? null : LocalModelCatalog.FastVariantOf(model);
         var body = new JsonObject
         {
-            ["model"] = fastVariant ?? settings.OllamaModel,
+            ["model"] = fastVariant ?? model,
             ["stream"] = false,
             ["format"] = request.Schema.DeepClone(),
             ["keep_alive"] = "15m",
@@ -67,7 +68,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
             var response = await SendAsync(settings.OllamaUrl, body, cancellationToken);
             if (fastVariant is not null && response.NotFound)
             {
-                body["model"] = settings.OllamaModel;
+                body["model"] = model;
                 response = await SendAsync(settings.OllamaUrl, body, cancellationToken);
             }
             if (response.Error?.Contains("does not support thinking", StringComparison.OrdinalIgnoreCase) == true)

@@ -65,7 +65,7 @@
     else
     {
         <RedactableText Value="@Text" ValueChanged="SaveTextAsync" Label="@TextLabel" Rows="@Rows" Placeholder="@Placeholder"
-                        Terms="Settings.RedactTerms" CheckWithModel="@(string.IsNullOrWhiteSpace(Settings.OllamaModel) ? null : CheckWithModelAsync)" />
+                        Terms="Settings.RedactTerms" CheckWithModel="@(localModel is null ? null : CheckWithModelAsync)" />
     }
 
     <div class="d-flex justify-space-between align-center flex-wrap gap-2 mt-3">
@@ -114,7 +114,11 @@
         _ => Exam.LessonText,
     };
 
+    private string? localModel;
+
     protected override void OnParametersSet() => pages = Exam.PagesOf(Kind).ToList();
+
+    protected override async Task OnInitializedAsync() => localModel = await RedactionFinder.AvailableModelAsync(CancellationToken.None);
 
     private static string DocType(StoredFile? file) =>
         file is null ? "+" : Path.GetExtension(file.OriginalName).TrimStart('.').ToUpperInvariant();

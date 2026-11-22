@@ -15,7 +15,8 @@ public sealed record ModelJsonRequest(
     JsonObject Schema,
     int MaxTokens = 16000,
     bool Quick = false,
-    bool LocalOnly = false);
+    bool LocalOnly = false,
+    string? Model = null);
 
 public sealed record ModelJsonResponse(string Json, string Model, ModelUsage Usage);
 

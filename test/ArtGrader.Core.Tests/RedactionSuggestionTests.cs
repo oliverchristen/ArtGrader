@@ -54,8 +54,19 @@ public class RedactionSuggestionTests
     {
         public JsonObject? Request { get; private set; }
 
+        public bool Reachable { get; init; } = true;
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            if (!Reachable)
+            {
+                throw new HttpRequestException("connection refused");
+            }
+            if (request.RequestUri!.AbsolutePath == "/api/tags")
+            {
+                const string tags = """{"models":[{"name":"gemma4:31b-cloud","size":0},{"name":"llama3:8b","size":4000000000},{"name":"qwen3.8:27b","size":17700000000}]}""";
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(tags, Encoding.UTF8, "application/json") };
+            }
             Request = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))!.AsObject();
             var body = new JsonObject
             {
@@ -70,7 +81,7 @@ public class RedactionSuggestionTests
     private sealed class ClaudeSelected : IAiSettingsSource
     {
         public AiSettings Current() =>
-            new(AiProvider.Anthropic, "sk-test", AiSettings.DefaultModel, "high", AiSettings.DefaultOllamaUrl, "qwen3.8:27b");
+            new(AiProvider.Anthropic, "sk-test", AiSettings.DefaultModel, "high", AiSettings.DefaultOllamaUrl, null);
     }
 
     [Fact]
@@ -78,12 +89,23 @@ public class RedactionSuggestionTests
     {
         var fake = new FakeOllama("""{"stellen":[{"text":"S. Flückiger","grund":"Lehrperson"},{"text":"Schule Erfunden","grund":"Schulhaus"},{"text":"Frohheim Olten","grund":"Schulhaus"}]}""");
 
-        var found = await new LocalRedactionFinder(new OllamaGateway(new HttpClient(fake), new ClaudeSelected())).FindAsync(Exercise, default);
+        var settings = new ClaudeSelected();
+        var found = await new LocalRedactionFinder(new OllamaGateway(new HttpClient(fake), settings), settings).FindAsync(Exercise, default);
 
         Assert.Equal([("S. Flückiger", "Lehrperson"), ("Frohheim Olten", "Schulhaus")], found);
         Assert.False((bool)fake.Request!["think"]!);
+        Assert.Equal("qwen3.8:27b", (string)fake.Request["model"]!);
         Assert.Contains("Frohheim Olten", (string)fake.Request["messages"]![1]!["content"]!);
         var hits = RedactionSuggestions.Find(Exercise, [], found);
         Assert.Contains(hits, h => h is { Text: "S. Flückiger", Reason: "Lehrperson" });
+    }
+
+    [Fact]
+    public async Task No_local_model_is_offered_when_ollama_is_not_running()
+    {
+        var settings = new ClaudeSelected();
+        var finder = new LocalRedactionFinder(new OllamaGateway(new HttpClient(new FakeOllama("{}") { Reachable = false }), settings), settings);
+
+        Assert.Null(await finder.AvailableModelAsync(default));
     }
 }
