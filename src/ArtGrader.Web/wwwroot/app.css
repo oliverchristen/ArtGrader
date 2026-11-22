@@ -1026,6 +1026,18 @@ h1:focus {
     color: var(--error-ink);
 }
 
+.banner.year-end {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.year-end-text {
+    flex: 1;
+    min-width: 240px;
+    display: grid;
+    gap: 4px;
+}
+
 .brush-progress {
     flex: 1;
     min-width: 120px;

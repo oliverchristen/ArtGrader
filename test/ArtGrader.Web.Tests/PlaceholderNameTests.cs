@@ -1,4 +1,4 @@
-using ArtGrader.Core.Domain;
+﻿using ArtGrader.Core.Domain;
 using ArtGrader.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -103,6 +103,29 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         var image = (await repository.GetAsync(exam.Id))!.Submissions.Single(s => s.Id == work.Id).Images.Single();
 
         Assert.Empty(image.Covers);
+    }
+
+    [Fact]
+    public async Task Deleting_photos_keeps_grades_and_other_exams()
+    {
+        var work = await repository.AddSubmissionAsync(exam.Id, "Lena Muster", [Image("a.jpg"), Image("b.jpg")]);
+        var other = new Exam { Title = "Andere" };
+        await using (var db = factory.CreateDbContext())
+        {
+            db.Exams.Add(other);
+            await db.SaveChangesAsync();
+        }
+        await repository.AddSubmissionAsync(other.Id, null, [Image("c.jpg")]);
+
+        var deleted = await repository.DeletePhotosAsync([exam.Id]);
+
+        Assert.Equal(2, deleted.Count);
+        var stored = (await repository.GetAsync(exam.Id))!.Submissions.Single();
+        Assert.Equal("Lena Muster", stored.StudentName);
+        Assert.Empty(stored.Images);
+        var summaries = await repository.ListAsync();
+        Assert.Equal(0, summaries.Single(e => e.Id == exam.Id).PhotoCount);
+        Assert.Equal(1, summaries.Single(e => e.Id == other.Id).PhotoCount);
     }
 
     private static SubmissionImage Image(string originalName) => new() { OriginalName = originalName, RelativePath = $"x/{Guid.NewGuid():N}.jpg" };

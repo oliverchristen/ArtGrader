@@ -2,6 +2,8 @@
 @inject ExamRepository Repository
 @inject NavigationManager Navigation
 @inject SettingsStore Settings
+@inject FileStore Files
+@inject IDialogService Dialogs
 
 <PageTitle>Prüfungen · ArtGrader</PageTitle>
 
@@ -19,6 +21,24 @@
     <div class="banner mb-6">
         <MudIcon Icon="@Icons.Material.Outlined.Lightbulb" />
         <span>Bevor die KI mitlesen kann, wähle unter <a href="/einstellungen">Einstellungen</a> Claude oder ein lokales Modell.</span>
+    </div>
+}
+
+@if (pastYears.Count > 0)
+{
+    var photos = pastYears.Sum(e => e.PhotoCount);
+    <div class="banner year-end mb-6">
+        <MudIcon Icon="@Icons.Material.Outlined.EventAvailable" />
+        <div class="year-end-text">
+            <b>Schuljahr vorbei – Fotos löschen?</b>
+            <span>
+                @(pastYears.Count == 1 ? "1 Prüfung" : $"{pastYears.Count} Prüfungen") aus früheren Schuljahren
+                (@string.Join(", ", pastYears.Select(e => e.Title))) @(pastYears.Count == 1 ? "hat" : "haben") noch @photos @(photos == 1 ? "Foto" : "Fotos") von Schülerarbeiten.
+                Schülerarbeiten gehören den Schülerinnen und Schülern und werden am Ende des Schuljahres zurückgegeben.
+                Noten und Beurteilungen bleiben erhalten.
+            </span>
+        </div>
+        <MudButton Class="btn-ink" StartIcon="@Icons.Material.Outlined.DeleteSweep" OnClick="DeletePastPhotosAsync">Fotos löschen</MudButton>
     </div>
 }
 
@@ -94,7 +114,35 @@
     private string schoolClass = "";
     private DateTime? date = DateTime.Today;
 
-    protected override async Task OnInitializedAsync() => exams = await Repository.ListAsync();
+    private List<ExamSummary> pastYears = [];
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        exams = await Repository.ListAsync();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        pastYears = exams.Where(e => e.PhotoCount > 0 && SchoolYear.HasEnded(e.Date, today)).ToList();
+    }
+
+    private async Task DeletePastPhotosAsync()
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Fotos endgültig löschen?",
+            $"Die Fotos von {string.Join(", ", pastYears.Select(e => $"«{e.Title}»"))} werden gelöscht. Noten, Stufen und Kommentare bleiben. "
+                + "Wer die Rückmeldeblätter mit Fotos braucht, exportiert sie vorher als PDF.",
+            yesText: "Fotos löschen",
+            cancelText: "Abbrechen");
+        if (confirmed != true)
+        {
+            return;
+        }
+        foreach (var path in await Repository.DeletePhotosAsync(pastYears.Select(e => e.Id).ToList()))
+        {
+            Files.Delete(path);
+        }
+        await LoadAsync();
+    }
 
     private static string Greeting() =>
         DateTime.Now.Hour switch

@@ -1,4 +1,4 @@
-using ArtGrader.Core.Domain;
+﻿using ArtGrader.Core.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArtGrader.Web.Data;
@@ -16,6 +16,7 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
                 e.Date,
                 e.Submissions.Count,
                 e.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen),
+                e.Submissions.SelectMany(s => s.Images).Count(),
                 new List<string>()))
             .ToListAsync();
 
@@ -129,6 +130,17 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         }
 
         await db.SaveChangesAsync();
+    }
+
+    public async Task<List<string>> DeletePhotosAsync(IReadOnlyCollection<Guid> examIds)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var images = await db.Images
+            .Where(i => db.Submissions.Any(s => s.Id == i.SubmissionId && examIds.Contains(s.ExamId)))
+            .ToListAsync();
+        db.Images.RemoveRange(images);
+        await db.SaveChangesAsync();
+        return images.Select(i => i.RelativePath).ToList();
     }
 
     public async Task DeleteExamAsync(Guid id)
@@ -322,4 +334,5 @@ public sealed record ExamSummary(
     DateOnly Date,
     int SubmissionCount,
     int CompletedCount,
+    int PhotoCount,
     List<string> Covers);
