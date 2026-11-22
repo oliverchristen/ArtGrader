@@ -5,6 +5,7 @@
   "schedule": ["before 6am on monday"],
   "labels": ["dependencies"],
   "prConcurrentLimit": 5,
+  "dependencyDashboardApproval": false,
   "packageRules": [
     {
       "description": "Keep the EF Core packages on the same version.",
