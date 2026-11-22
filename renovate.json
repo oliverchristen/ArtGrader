@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard", ":semanticCommitsDisabled"],
+  "timezone": "Europe/Zurich",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "description": "Keep the EF Core packages on the same version.",
+      "groupName": "EF Core",
+      "matchPackageNames": ["Microsoft.EntityFrameworkCore{/,}**"]
+    },
+    {
+      "description": "Update the test tools together.",
+      "groupName": "test tools",
+      "matchPackageNames": ["xunit{/,}**", "Microsoft.NET.Test.Sdk", "coverlet.collector"]
+    },
+    {
+      "description": "Update the GitHub Actions together.",
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "description": "SDK in global.json: only follow updates of the same major version (net11).",
+      "matchManagers": ["nuget"],
+      "matchDepNames": ["dotnet-sdk"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
