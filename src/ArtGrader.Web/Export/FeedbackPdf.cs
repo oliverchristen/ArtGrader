@@ -16,6 +16,11 @@ public static class FeedbackPdf
     private const string LineColor = "#e2d6c2";
     private const string Paper = "#f4ede1";
     private const string Terracotta = "#c0533a";
+
+    // Everything from the AI is blue, as in the app.
+    private const string Ultramarine = "#1f4fe0";
+    private const string UltramarineWash = "#e5ecff";
+    private const string AiInk = "#2b3f86";
     private const float PhotoColumnWidth = 160;
 
     /// <summary>Declares the AI use and names the model; null if no AI assessed the work.</summary>
@@ -93,6 +98,18 @@ public static class FeedbackPdf
             });
 
             column.Item().Element(c => ComposeTable(c, exam, submission, includeJustifications));
+
+            if (HasAiContent(submission, includeJustifications))
+            {
+                column.Item().Row(legend =>
+                {
+                    legend.AutoItem().AlignMiddle().Element(AiBadge);
+                    legend.ConstantItem(5);
+                    legend.RelativeItem().AlignMiddle()
+                        .Text(T("Suggested by the AI: texts marked like this and levels with a blue ring."))
+                        .FontSize(7.5f).FontColor(AiInk);
+                });
+            }
         });
 
         page.Footer().Column(footer =>
@@ -150,13 +167,22 @@ public static class FeedbackPdf
                 });
         });
 
-        var comment = string.IsNullOrWhiteSpace(submission.TeacherComment) ? submission.AiOverallComment : submission.TeacherComment;
+        var fromAi = string.IsNullOrWhiteSpace(submission.TeacherComment);
+        var comment = fromAi ? submission.AiOverallComment : submission.TeacherComment;
         if (!string.IsNullOrWhiteSpace(comment))
         {
-            column.Item().Background(Paper).CornerRadius(6).Padding(10).Column(feedback =>
+            column.Item().Background(fromAi ? UltramarineWash : Paper).CornerRadius(6).Padding(10).Column(feedback =>
             {
-                feedback.Item().Text(T("Feedback")).Bold().FontSize(9.5f);
-                feedback.Item().PaddingTop(3).Text(comment).LineHeight(1.35f);
+                feedback.Item().Row(head =>
+                {
+                    if (fromAi)
+                    {
+                        head.AutoItem().AlignMiddle().Element(AiBadge);
+                        head.ConstantItem(5);
+                    }
+                    head.AutoItem().AlignMiddle().Text(T("Feedback")).Bold().FontSize(9.5f).FontColor(fromAi ? Ultramarine : Ink);
+                });
+                feedback.Item().PaddingTop(3).Text(comment).LineHeight(1.35f).FontColor(fromAi ? AiInk : Ink);
             });
         }
     }
@@ -202,14 +228,26 @@ public static class FeedbackPdf
                             && assessment is { AiJustification.Length: > 0 }
                             && (assessment.TeacherLevel is null || assessment.TeacherLevel == assessment.AiLevel))
                         {
-                            cell.Item().PaddingTop(1).Text(assessment.AiJustification).FontSize(7.5f).Italic().FontColor(InkSoft);
+                            cell.Item().PaddingTop(2).Row(justification =>
+                            {
+                                justification.AutoItem().PaddingTop(1).Element(AiBadge);
+                                justification.ConstantItem(4);
+                                justification.RelativeItem().Text(assessment.AiJustification).FontSize(7.5f).Italic().FontColor(AiInk);
+                            });
                         }
                     });
                     foreach (var level in LevelText.AllDescending)
                     {
                         var chosen = assessment?.EffectiveLevel == level;
                         var cell = table.Cell().Element(BodyCell).AlignCenter().AlignMiddle();
-                        if (chosen)
+                        if (chosen && FromAi(assessment!))
+                        {
+                            // The teacher kept the AI's level: a blue ring around the mark, like the dashed blue border in the app.
+                            cell.Width(24).Height(24).Border(1.5f).BorderColor(Ultramarine).CornerRadius(12).Padding(2)
+                                .Background(LevelColor(level)).CornerRadius(10)
+                                .AlignCenter().AlignMiddle().Text("X").FontSize(9).Bold().FontColor("#ffffff");
+                        }
+                        else if (chosen)
                         {
                             cell.Width(18).Height(18).Background(LevelColor(level)).CornerRadius(9)
                                 .AlignCenter().AlignMiddle().Text("X").FontSize(9).Bold().FontColor("#ffffff");
@@ -219,6 +257,19 @@ public static class FeedbackPdf
             }
         });
     }
+
+    /// <summary>The small blue «KI» / «AI» tag that marks what the AI wrote or suggested.</summary>
+    private static void AiBadge(IContainer container) =>
+        container.Background(Ultramarine).CornerRadius(3).PaddingHorizontal(3).PaddingVertical(0.5f)
+            .Text(T("AI")).FontSize(6).Bold().LetterSpacing(0.05f).FontColor("#ffffff");
+
+    /// <summary>The level comes from the AI and the teacher did not change it.</summary>
+    private static bool FromAi(CriterionAssessment assessment) => assessment.TeacherLevel is null && assessment.AiLevel is not null;
+
+    private static bool HasAiContent(Submission submission, bool includeJustifications) =>
+        submission.Assessments.Any(FromAi)
+        || (string.IsNullOrWhiteSpace(submission.TeacherComment) && !string.IsNullOrWhiteSpace(submission.AiOverallComment))
+        || (includeJustifications && submission.Assessments.Any(a => a.AiJustification.Length > 0 && (a.TeacherLevel is null || a.TeacherLevel == a.AiLevel)));
 
     private static string LevelColor(Level level) =>
         level switch
