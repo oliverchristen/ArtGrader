@@ -1,4 +1,4 @@
-@page "/einstellungen"
+﻿@page "/einstellungen"
 @using ArtGrader.Core.Ai
 @using ArtGrader.Core.Storage
 @inject SettingsStore Settings
@@ -209,6 +209,18 @@
     </MudItem>
     <MudItem xs="12" md="5">
         <section class="sheet">
+            <h2 class="sheet-title">Immer schwärzen</h2>
+            <p class="sheet-sub">
+                Begriffe, die auf deine Schule hinweisen: Schulhaus, Ort, dein Name und dein Kürzel. ArtGrader schlägt sie in
+                jedem Dokument zum Schwärzen vor. E-Mail-Adressen, Telefonnummern und Webadressen erkennt ArtGrader selbst.
+            </p>
+            <MudTextField T="string" @bind-Value="redactTerms" Label="Ein Begriff pro Zeile" Variant="Variant.Outlined"
+                          Lines="5" Placeholder="@TermsPlaceholder" />
+            <div class="d-flex justify-end mt-3">
+                <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.Check" OnClick="SaveRedactTerms">Speichern</MudButton>
+            </div>
+        </section>
+        <section class="sheet">
             <h2 class="sheet-title">Datenschutz</h2>
             <p class="muted" style="font-size:.93rem">
                 Prüfungen, Fotos und Noten bleiben auf diesem Computer. Mit Claude gehen nur Aufgabe, Kriterien und Fotos an
@@ -233,6 +245,15 @@
     private string? ollamaModel;
     private IReadOnlyList<OllamaModelInfo> models = [];
     private int hiddenCloudModels;
+    private const string TermsPlaceholder = "z. B. Schulhaus Musterdorf, Musterdorf, A. Beispiel – je eine Zeile";
+    private string redactTerms = "";
+
+    private void SaveRedactTerms()
+    {
+        Settings.SaveRedactTerms(redactTerms.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        redactTerms = string.Join("\n", Settings.RedactTerms);
+        Snackbar.Add("Gespeichert. ArtGrader schlägt diese Begriffe in allen Dokumenten zum Schwärzen vor.", Severity.Success);
+    }
     private string? ollamaError;
     private bool ollamaReachable;
     private bool checking;
@@ -262,6 +283,7 @@
         model = Settings.Model;
         effort = Settings.Effort;
         ollamaUrl = Settings.OllamaUrl;
+        redactTerms = string.Join("\n", Settings.RedactTerms);
         ollamaModel = Settings.OllamaModel;
         if (provider == AiProvider.Ollama)
         {

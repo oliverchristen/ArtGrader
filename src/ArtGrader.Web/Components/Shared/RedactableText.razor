@@ -1,3 +1,5 @@
+@using ArtGrader.Core.Ai
+@using ArtGrader.Core.Documents
 @inject IJSRuntime JS
 
 <div class="redactable">
@@ -10,21 +12,89 @@
         </MudButton>
         <span class="cover-hint">Text markieren, dann schwärzen. Oder direkt im Text löschen.</span>
     </div>
+
+    @{
+        var groups = Suggestions();
+    }
+    @if (!string.IsNullOrWhiteSpace(text))
+    {
+        <div class="redact-suggest">
+            <div class="redact-suggest-head">
+                <b>Vorschläge zum Schwärzen</b>
+                <span class="topbar-spacer"></span>
+                @if (CheckWithModel is not null)
+                {
+                    <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.ManageSearch" Disabled="@checking" OnClick="CheckAsync">
+                        @(checking ? "Das lokale Modell liest …" : "Mit lokalem Modell prüfen")
+                    </MudButton>
+                }
+                @if (groups.Count > 1)
+                {
+                    <MudButton Class="btn-ink" Size="Size.Small" OnClick="() => RedactAsync(groups.SelectMany(g => g))">Alle schwärzen</MudButton>
+                }
+            </div>
+            @if (checking)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Tertiary" Class="my-2" />
+                <span class="cover-hint">Läuft nur auf diesem Computer. Das kann bis zu einer Minute dauern.</span>
+            }
+            @if (checkError is not null)
+            {
+                <div class="banner error mt-2">@checkError</div>
+            }
+            @if (groups.Count > 0)
+            {
+                <div class="redact-chips">
+                    @foreach (var group in groups)
+                    {
+                        <span class="redact-chip">
+                            <span class="redact-chip-text">@group.Key</span>
+                            <span class="redact-chip-reason">@group.First().Reason@(group.Count() > 1 ? $" · {group.Count()}×" : "")</span>
+                            <button type="button" @onclick="() => RedactAsync(group)">Schwärzen</button>
+                        </span>
+                    }
+                </div>
+            }
+            else if (!checking)
+            {
+                <span class="cover-hint">
+                    @if (checkedWithModel)
+                    {
+                        <text>Keine Stellen gefunden. Bitte trotzdem selbst durchlesen.</text>
+                    }
+                    else if (Terms.Count == 0)
+                    {
+                        <text>Tipp: Unter <a href="/einstellungen">Einstellungen</a> bei «Immer schwärzen» Schulhaus, Ort und deinen Namen eintragen. Dann schlägt ArtGrader sie hier vor.</text>
+                    }
+                    else
+                    {
+                        <text>Keine Begriffe aus deiner Liste gefunden.</text>
+                    }
+                </span>
+            }
+        </div>
+    }
 </div>
 
 @code {
-    public const string Redacted = "[geschwärzt]";
+    public const string Redacted = RedactionSuggestions.Marker;
 
     [Parameter] public string Value { get; set; } = "";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string Placeholder { get; set; } = "";
     [Parameter] public int Rows { get; set; } = 10;
+    [Parameter] public IReadOnlyList<string> Terms { get; set; } = [];
+    [Parameter] public Func<string, Task<IReadOnlyList<(string Text, string Reason)>>>? CheckWithModel { get; set; }
 
     private readonly string id = $"redact-{Guid.NewGuid():N}";
+    private readonly List<(string Text, string Reason)> modelPassages = [];
     private ElementReference area;
     private string text = "";
     private string lastValue = "";
+    private bool checking;
+    private bool checkedWithModel;
+    private string? checkError;
 
     protected override void OnParametersSet()
     {
@@ -35,9 +105,47 @@
         }
     }
 
+    private List<IGrouping<string, RedactionHit>> Suggestions() =>
+        RedactionSuggestions.Find(text, Terms, modelPassages)
+            .GroupBy(h => h.Text, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
     private async Task CommitAsync(ChangeEventArgs e)
     {
         text = e.Value?.ToString() ?? string.Empty;
+        await PublishAsync();
+    }
+
+    private async Task CheckAsync()
+    {
+        if (CheckWithModel is null)
+        {
+            return;
+        }
+        checking = true;
+        checkError = null;
+        try
+        {
+            var found = await CheckWithModel(text);
+            modelPassages.Clear();
+            modelPassages.AddRange(found);
+            checkedWithModel = true;
+        }
+        catch (ModelException ex)
+        {
+            checkError = ex.Message;
+        }
+        finally
+        {
+            checking = false;
+        }
+    }
+
+    private async Task RedactAsync(IEnumerable<RedactionHit> hits)
+    {
+        var current = RedactionSuggestions.Find(text, Terms, modelPassages);
+        var chosen = hits.Select(h => h.Text).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        text = RedactionSuggestions.Apply(text, current.Where(h => chosen.Contains(h.Text)));
         await PublishAsync();
     }
 

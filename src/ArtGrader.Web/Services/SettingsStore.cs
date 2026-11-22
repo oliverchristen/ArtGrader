@@ -43,6 +43,21 @@ public sealed class SettingsStore : IAiSettingsSource
 
     public bool RunsLocally(ArtGrader.Core.Domain.Exam exam) => stored.Provider == AiProvider.Ollama || exam.LocalOnly;
 
+    public IReadOnlyList<string> RedactTerms => stored.RedactTerms;
+
+    public void SaveRedactTerms(IEnumerable<string> terms)
+    {
+        lock (gate)
+        {
+            stored = stored with
+            {
+                RedactTerms = terms.Select(t => t.Trim()).Where(t => t.Length >= 2).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+            };
+            Persist();
+        }
+        Changed?.Invoke();
+    }
+
     public string Model => stored.Model;
 
     public string Effort => stored.Effort;
@@ -157,6 +172,7 @@ public sealed class SettingsStore : IAiSettingsSource
         public string Effort { get; init; } = AiSettings.DefaultEffort;
         public string OllamaUrl { get; init; } = AiSettings.DefaultOllamaUrl;
         public string? OllamaModel { get; init; }
+        public List<string> RedactTerms { get; init; } = [];
     }
 }
 

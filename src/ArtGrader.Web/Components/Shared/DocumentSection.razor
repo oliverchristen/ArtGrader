@@ -2,6 +2,8 @@
 @inject ExamRepository Repository
 @inject FileStore Files
 @inject ISnackbar Snackbar
+@inject SettingsStore Settings
+@inject ArtGrader.Core.Ai.LocalRedactionFinder RedactionFinder
 
 <section class="sheet">
     <div class="d-flex align-center justify-space-between gap-2">
@@ -62,7 +64,8 @@
     }
     else
     {
-        <RedactableText Value="@Text" ValueChanged="SaveTextAsync" Label="@TextLabel" Rows="@Rows" Placeholder="@Placeholder" />
+        <RedactableText Value="@Text" ValueChanged="SaveTextAsync" Label="@TextLabel" Rows="@Rows" Placeholder="@Placeholder"
+                        Terms="Settings.RedactTerms" CheckWithModel="@(string.IsNullOrWhiteSpace(Settings.OllamaModel) ? null : CheckWithModelAsync)" />
     }
 
     <div class="d-flex justify-space-between align-center flex-wrap gap-2 mt-3">
@@ -165,6 +168,9 @@
             busy = false;
         }
     }
+
+    private Task<IReadOnlyList<(string Text, string Reason)>> CheckWithModelAsync(string text) =>
+        RedactionFinder.FindAsync(text, CancellationToken.None);
 
     private async Task SaveTextAsync(string text)
     {

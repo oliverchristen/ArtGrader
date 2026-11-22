@@ -35,6 +35,7 @@ builder.Services.AddSingleton(sp => new OllamaGateway(
 builder.Services.AddSingleton<IModelGateway, RoutingModelGateway>();
 builder.Services.AddSingleton<ModelDownloads>();
 builder.Services.AddSingleton<RubricImportService>();
+builder.Services.AddSingleton<LocalRedactionFinder>();
 builder.Services.AddSingleton<SubmissionGradingService>();
 builder.Services.AddSingleton<GradingEvents>();
 builder.Services.AddScoped<CurrentExam>();
