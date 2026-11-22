@@ -1,4 +1,4 @@
-@using ArtGrader.Core.Ai
+﻿@using ArtGrader.Core.Ai
 @using ArtGrader.Core.Images
 @inject ExamRepository Repository
 @inject FileStore Files
@@ -78,7 +78,7 @@ else
     {
         var total = Exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet or SubmissionStatus.Vorschlag or SubmissionStatus.Abgeschlossen);
         <div class="banner mb-5">
-            <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:#8a5f0c" />
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:var(--ink)" />
             <span>
                 Noch @running Arbeit(en) in Bearbeitung · @(Settings.RunsLocally(Exam)
                     ? "lokal etwa 1–3 Minuten pro Arbeit, eine nach der anderen"

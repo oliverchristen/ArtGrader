@@ -1,4 +1,4 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @using ArtGrader.Core.Ai
 @inject SettingsStore Settings
 @inject CurrentExam Current
@@ -39,33 +39,32 @@
 
 @code {
     private static readonly string[] Sans = ["DM Sans", "Segoe UI", "-apple-system", "BlinkMacSystemFont", "Helvetica Neue", "Arial", "sans-serif"];
-    private static readonly string[] Serif = ["Fraunces", "Georgia", "serif"];
 
     private readonly MudTheme theme = new()
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#2c4a9a",
-            Secondary = "#c0533a",
-            Tertiary = "#d39b2f",
-            Success = "#4f7b5c",
-            Warning = "#b77f12",
-            Error = "#b3402a",
-            Info = "#2c4a9a",
-            Background = "#f4ede1",
-            Surface = "#fffcf6",
-            TextPrimary = "#262019",
-            TextSecondary = "#6a6157",
-            LinesInputs = "#cdbda4",
-            Divider = "#e2d6c2",
-            ActionDefault = "#6a6157",
+            Primary = "#1f4fe0",
+            Secondary = "#ec3b2c",
+            Tertiary = "#ffc31f",
+            Success = "#0f9a63",
+            Warning = "#c98a00",
+            Error = "#d42a1c",
+            Info = "#1f4fe0",
+            Background = "#ffffff",
+            Surface = "#ffffff",
+            TextPrimary = "#141414",
+            TextSecondary = "#55534f",
+            LinesInputs = "#c4c1b9",
+            Divider = "#e4e2dc",
+            ActionDefault = "#55534f",
         },
         Typography = new Typography
         {
             Default = new DefaultTypography { FontFamily = Sans },
-            H4 = new H4Typography { FontFamily = Serif, FontWeight = "600" },
-            H5 = new H5Typography { FontFamily = Serif, FontWeight = "600" },
-            H6 = new H6Typography { FontFamily = Serif, FontWeight = "600" },
+            H4 = new H4Typography { FontFamily = Sans, FontWeight = "800" },
+            H5 = new H5Typography { FontFamily = Sans, FontWeight = "800" },
+            H6 = new H6Typography { FontFamily = Sans, FontWeight = "800" },
             Button = new ButtonTypography { FontFamily = Sans, FontWeight = "600", TextTransform = "none" },
         },
         LayoutProperties = new LayoutProperties { DefaultBorderRadius = "10px" },

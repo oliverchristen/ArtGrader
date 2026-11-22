@@ -1,4 +1,4 @@
-@page "/pruefung/{ExamId:guid}/arbeit/{SubmissionId:guid}"
+﻿@page "/pruefung/{ExamId:guid}/arbeit/{SubmissionId:guid}"
 @using ArtGrader.Core.Images
 @inject ExamRepository Repository
 @inject GradingEvents Events
@@ -128,7 +128,7 @@ else
                     </div>
                     @if (busy)
                     {
-                        <div class="banner mt-3"><MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:#8a5f0c" /> Die KI schaut sich die Arbeit an …</div>
+                        <div class="banner mt-3"><MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:var(--ink)" /> Die KI schaut sich die Arbeit an …</div>
                     }
                     @if (submission.Status == SubmissionStatus.Fehler)
                     {
