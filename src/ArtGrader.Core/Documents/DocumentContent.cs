@@ -17,7 +17,7 @@ public sealed record DocumentContent(string Text, IReadOnlyList<byte[]> Pages)
                 new DocumentContent("", PdfPages.Render(bytes)),
             ".txt" or ".md" => new DocumentContent(System.Text.Encoding.UTF8.GetString(bytes).Trim(), []),
             _ => throw new UnsupportedDocumentException(
-                T("Das Format «{0}» wird nicht unterstützt. Bitte Word (.docx), PowerPoint (.pptx), PDF oder Text hochladen.", extension)),
+                T("The format ‘{0}’ is not supported. Please upload Word (.docx), PowerPoint (.pptx), PDF or text.", extension)),
         };
     }
 }

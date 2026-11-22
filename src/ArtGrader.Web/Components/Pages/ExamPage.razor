@@ -8,11 +8,11 @@
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
-<PageTitle>@(exam?.Title ?? T("Prüfung")) · ArtGrader</PageTitle>
+<PageTitle>@(exam?.Title ?? T("Assignment")) · ArtGrader</PageTitle>
 
 @if (notFound)
 {
-    <div class="banner error">@T("Diese Prüfung gibt es nicht (mehr).") <a href="/">@T("Zur Übersicht")</a></div>
+    <div class="banner error">@T("This assignment does not exist (any more).") <a href="/">@T("Back to the overview")</a></div>
 }
 else if (exam is null)
 {
@@ -94,10 +94,10 @@ else
     private async Task DeleteAsync()
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            T("Prüfung löschen?"),
-            T("«{0}» mit allen {1} Arbeiten, Fotos und Bewertungen wird endgültig gelöscht.", exam!.Title, exam.Submissions.Count),
-            yesText: T("Löschen"),
-            cancelText: T("Abbrechen"));
+            T("Delete assignment?"),
+            T("‘{0}’ and all its {1} works, photos and assessments will be permanently deleted.", exam!.Title, exam.Submissions.Count),
+            yesText: T("Delete"),
+            cancelText: T("Cancel"));
         if (confirmed == true)
         {
             await Repository.DeleteExamAsync(exam.Id);

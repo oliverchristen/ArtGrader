@@ -15,11 +15,11 @@ public static class GradingResponseValidator
         }
         catch (JsonException ex)
         {
-            throw new ModelException(T("Die Antwort der KI konnte nicht gelesen werden. Bitte nochmals bewerten."), ex);
+            throw new ModelException(T("The AI's answer could not be read. Please assess again."), ex);
         }
         if (dto?.Criteria is null)
         {
-            throw new ModelException(T("Die Antwort der KI enthält keine Kriterien. Bitte nochmals bewerten."));
+            throw new ModelException(T("The AI's answer contains no criteria. Please assess again."));
         }
 
         var suggestions = new List<CriterionSuggestion>();
@@ -30,11 +30,11 @@ public static class GradingResponseValidator
             if (!keys.TryGetValue(key, out var criterionId))
             {
                 throw new ModelException(
-                    T("Die KI hat ein unbekanntes Kriterium «{0}» bewertet. Bitte nochmals bewerten.", item.CriterionId));
+                    T("The AI assessed an unknown criterion ‘{0}’. Please assess again.", item.CriterionId));
             }
             if (!seen.Add(key))
             {
-                throw new ModelException(T("Die KI hat das Kriterium {0} doppelt bewertet. Bitte nochmals bewerten.", key));
+                throw new ModelException(T("The AI assessed criterion {0} twice. Please assess again.", key));
             }
             suggestions.Add(
                 new CriterionSuggestion(
@@ -48,7 +48,7 @@ public static class GradingResponseValidator
         if (missing.Count > 0)
         {
             throw new ModelException(
-                T("Die KI hat nicht alle Kriterien bewertet (fehlend: {0}). Bitte nochmals bewerten.", string.Join(", ", missing)));
+                T("The AI did not assess all criteria (missing: {0}). Please assess again.", string.Join(", ", missing)));
         }
 
         return new GradingSuggestion(
@@ -68,7 +68,7 @@ public static class GradingResponseValidator
             "erfuellt" => Level.Erfuellt,
             "teilweise" => Level.Teilweise,
             "nicht" => Level.Nicht,
-            _ => throw new ModelException(T("Die KI hat eine ungültige Stufe «{0}» geliefert. Bitte nochmals bewerten.", level)),
+            _ => throw new ModelException(T("The AI returned an invalid level ‘{0}’. Please assess again.", level)),
         };
 
     private static Confidence ParseConfidence(string? confidence) =>

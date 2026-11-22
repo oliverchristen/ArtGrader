@@ -10,13 +10,13 @@
 
 @* Step 2: prepare one work before the AI sees it – name, cover, crop, add, remove or split off photos. *@
 
-<PageTitle>@(submission?.StudentName ?? T("Arbeit")) · ArtGrader</PageTitle>
+<PageTitle>@(submission?.StudentName ?? T("Work")) · ArtGrader</PageTitle>
 
 @if (exam is null || submission is null)
 {
     @if (loaded)
     {
-        <div class="banner error">@T("Diese Arbeit gibt es nicht (mehr).") <a href="@ExamUrl">@T("Zur Prüfung")</a></div>
+        <div class="banner error">@T("This work no longer exists.") <a href="@ExamUrl">@T("Back to the assignment")</a></div>
     }
     else
     {
@@ -33,16 +33,16 @@ else
     <ExamHeader Exam="exam" ActiveStep="1" Work="@submission.StudentName">
         <div class="review-head work-bar">
             <div class="student-nav">
-                <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : EditUrl(previous))" aria-label="@T("Vorherige Arbeit")" />
+                <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : EditUrl(previous))" aria-label="@T("Previous work")" />
                 <div class="@($"student-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
                     <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" DebounceInterval="1000" Variant="Variant.Text" aria-label="@T("Name")" />
                     @if (submission.HasPlaceholderName)
                     {
-                        <span class="name-hint">@T("Zufallsname – echten Namen eintragen")</span>
+                        <span class="name-hint">@T("Random name – enter the real name")</span>
                     }
                 </div>
-                <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : EditUrl(next))" aria-label="@T("Nächste Arbeit")" />
-                <span class="faint">@T("{0} von {1}", index + 1, exam.Submissions.Count)</span>
+                <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight" Disabled="@(next is null)" Href="@(next is null ? null : EditUrl(next))" aria-label="@T("Next work")" />
+                <span class="faint">@T("{0} of {1}", index + 1, exam.Submissions.Count)</span>
             </div>
         </div>
     </ExamHeader>
@@ -50,26 +50,26 @@ else
     <div class="flow">
         <div class="banner info">
             <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
-            <span>@T("Steht ein Name oder eine Signatur auf dem Werk? Decke die Stelle ab. Die KI sieht nur das bearbeitete Foto.")</span>
+            <span>@T("Is there a name or signature on the work? Cover it. The AI only sees the edited photo.")</span>
         </div>
 
         @if (current is not null)
         {
             <CoverEditor @key="current.Id" Src="@ImageUrls.Original(current)" Covers="current.Covers" Crop="current.Crop" ItemId="current.Id"
-                         Alt="@T("Foto {0} der Arbeit", imageIndex + 1)" Save="edits => SaveImageEditsAsync(current, edits)" />
+                         Alt="@T("Photo {0} of the work", imageIndex + 1)" Save="edits => SaveImageEditsAsync(current, edits)" />
         }
 
         <section class="sheet">
-            <h2 class="sheet-title">@T("Fotos dieser Arbeit")</h2>
-            <p class="sheet-sub">@T("Weitere Fotos hinzufügen, zum Beispiel Details oder die Rückseite. Ein Foto, das zu einer anderen Arbeit gehört, als eigene Arbeit abtrennen.")</p>
+            <h2 class="sheet-title">@T("Photos of this work")</h2>
+            <p class="sheet-sub">@T("Add more photos, for example details or the back. Split off a photo that belongs to another work as a separate work.")</p>
             <div class="thumbs">
                 @for (var i = 0; i < submission.Images.Count; i++)
                 {
                     var n = i;
-                    <img src="@ImageUrls.Covered(submission.Images[n])" class="@(n == imageIndex ? "current" : "")" alt="@T("Foto {0}", n + 1)" @onclick="() => imageIndex = n" />
+                    <img src="@ImageUrls.Covered(submission.Images[n])" class="@(n == imageIndex ? "current" : "")" alt="@T("Photo {0}", n + 1)" @onclick="() => imageIndex = n" />
                 }
-                <label class="add-photo" title="@T("Weiteres Foto (Detail, Rückseite …)")">
-                    <InputFile OnChange="AddPhotosAsync" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.heic" aria-label="@T("Foto hinzufügen")" />
+                <label class="add-photo" title="@T("Another photo (detail, back …)")">
+                    <InputFile OnChange="AddPhotosAsync" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.heic" aria-label="@T("Add photo")" />
                     <MudIcon Icon="@Icons.Material.Outlined.Add" />
                 </label>
             </div>
@@ -77,24 +77,24 @@ else
             {
                 <div class="d-flex flex-wrap gap-2 mt-3">
                     <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CallSplit" OnClick="SplitCurrentPhotoAsync">
-                        @T("Als eigene Arbeit abtrennen")
+                        @T("Split off as separate work")
                     </MudButton>
                     <MudButton Class="btn-quiet" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.DeleteOutline" OnClick="RemoveCurrentPhotoAsync">
-                        @T("Dieses Foto entfernen")
+                        @T("Remove this photo")
                     </MudButton>
                 </div>
             }
         </section>
 
         <div class="next-step">
-            <MudButton Class="btn-quiet" Href="@ExamUrl" StartIcon="@Icons.Material.Filled.ArrowBack">@T("Zurück zu den Arbeiten")</MudButton>
+            <MudButton Class="btn-quiet" Href="@ExamUrl" StartIcon="@Icons.Material.Filled.ArrowBack">@T("Back to the works")</MudButton>
             @if (next is not null)
             {
-                <MudButton Class="btn-ink" Size="Size.Large" Href="@EditUrl(next)" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Nächste Arbeit")</MudButton>
+                <MudButton Class="btn-ink" Size="Size.Large" Href="@EditUrl(next)" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Next work")</MudButton>
             }
             else
             {
-                <MudButton Class="btn-ink" Size="Size.Large" OnClick="GoToAssessing" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Weiter zu Arbeiten bewerten")</MudButton>
+                <MudButton Class="btn-ink" Size="Size.Large" OnClick="GoToAssessing" EndIcon="@Icons.Material.Filled.ArrowForward">@T("Continue to Assess works")</MudButton>
             }
         </div>
     </div>
@@ -159,7 +159,7 @@ else
             {
                 if (file.Size > MaxImageBytes)
                 {
-                    throw new UnsupportedImageException(T("grösser als 40 MB"));
+                    throw new UnsupportedImageException(T("larger than 40 MB"));
                 }
                 await using var stream = file.OpenReadStream(MaxImageBytes);
                 images.Add(new SubmissionImage { OriginalName = "", RelativePath = await Files.SaveSubmissionImageAsync(ExamId, stream, CancellationToken.None) });
@@ -191,8 +191,8 @@ else
         Events.Raise(ExamId, split.Id);
         Snackbar.Add(
             submission.GradedAt is null
-                ? T("Das Foto ist jetzt die eigene Arbeit «{0}».", split.StudentName)
-                : T("Das Foto ist jetzt die eigene Arbeit «{0}». Diese Arbeit bei Bedarf neu bewerten lassen; der KI-Vorschlag bezog beide Fotos ein.", split.StudentName),
+                ? T("The photo is now the separate work ‘{0}’.", split.StudentName)
+                : T("The photo is now the separate work ‘{0}’. Have this work reassessed if needed; the AI suggestion included both photos.", split.StudentName),
             Severity.Success);
     }
 

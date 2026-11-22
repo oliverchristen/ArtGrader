@@ -16,10 +16,10 @@
     <p class="sheet-sub">@Sub</p>
 
     <div class="dropzone compact mb-3">
-        <InputFile OnChange="UploadAsync" accept="@Accept" aria-label="@T("{0} hochladen", Title)" disabled="@busy" />
+        <InputFile OnChange="UploadAsync" accept="@Accept" aria-label="@T("Upload {0}", Title)" disabled="@busy" />
         @if (busy)
         {
-            <span class="file-chip"><MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Tertiary" /> @T("Datei wird gelesen …")</span>
+            <span class="file-chip"><MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Tertiary" /> @T("Reading file …")</span>
         }
         else
         {
@@ -27,11 +27,11 @@
                 <span class="doc">@DocType(File)</span>
                 @if (File is null)
                 {
-                    <span>@(DropText ?? T("Datei hierher ziehen")) <span class="faint">@T("oder klicken")</span></span>
+                    <span>@(DropText ?? T("Drag a file here")) <span class="faint">@T("or click")</span></span>
                 }
                 else
                 {
-                    <span>@File.OriginalName <span class="faint">· @T("ersetzen")</span></span>
+                    <span>@File.OriginalName <span class="faint">· @T("replace")</span></span>
                 }
             </span>
         }
@@ -42,7 +42,7 @@
         <div class="redact-hint">
             <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Size="Size.Small" />
             <span>
-                <b>@T("Das liest die KI.")</b> @T("Schwärze, was auf deine Schule hinweist: Schulname, Logo, Adresse, Namen von Lehrpersonen oder Klassen. Für die Beurteilung braucht die KI das nicht.")
+                <b>@T("The AI reads this.")</b> @T("Redact anything that points to your school: school name, logo, address, names of teachers or classes. The AI does not need this for the assessment.")
             </span>
         </div>
     }
@@ -53,9 +53,9 @@
             @foreach (var page in pages)
             {
                 <div class="doc-page" @key="page.Id">
-                    <div class="doc-page-label">@T("Seite {0} von {1}", page.Order + 1, pages.Count)</div>
+                    <div class="doc-page-label">@T("Page {0} of {1}", page.Order + 1, pages.Count)</div>
                     <CoverEditor Src="@ImageUrls.Original(page)" Covers="page.Covers" Crop="page.Crop" ItemId="page.Id"
-                                 CoverLabel="@T("Stelle schwärzen")" FrameClass="page-frame" Alt="@T("{0}, Seite {1}", Title, page.Order + 1)"
+                                 CoverLabel="@T("Redact an area")" FrameClass="page-frame" Alt="@T("{0}, page {1}", Title, page.Order + 1)"
                                  Save="edits => SavePageAsync(page, edits)" />
                 </div>
             }
@@ -70,7 +70,7 @@
     <div class="d-flex justify-space-between align-center flex-wrap gap-2 mt-3">
         @if (File is not null || pages.Count > 0)
         {
-            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Delete" OnClick="RemoveAsync">@T("Dokument entfernen")</MudButton>
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Delete" OnClick="RemoveAsync">@T("Remove document")</MudButton>
         }
         else
         {
@@ -126,7 +126,7 @@
     {
         if (e.File.Size > MaxDocumentBytes)
         {
-            Snackbar.Add(T("Die Datei ist grösser als 40 MB."), Severity.Error);
+            Snackbar.Add(T("The file is larger than 40 MB."), Severity.Error);
             return;
         }
         busy = true;
@@ -154,8 +154,8 @@
             }
             Files.Delete(previous);
             Snackbar.Add(content.Pages.Count > 0
-                ? T("{0} Seite(n) übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist.", content.Pages.Count)
-                : T("Text übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist."), Severity.Success);
+                ? T("{0} page(s) added. Please check them and redact anything that points to the school.", content.Pages.Count)
+                : T("Text added. Please check it and redact anything that points to the school."), Severity.Success);
             await Changed.InvokeAsync();
         }
         catch (UnsupportedDocumentException ex)
@@ -164,7 +164,7 @@
         }
         catch (Exception ex) when (ex is DocumentFormat.OpenXml.Packaging.OpenXmlPackageException or InvalidDataException or FileFormatException)
         {
-            Snackbar.Add(T("Die Datei konnte nicht gelesen werden."), Severity.Error);
+            Snackbar.Add(T("The file could not be read."), Severity.Error);
         }
         finally
         {

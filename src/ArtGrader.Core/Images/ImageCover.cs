@@ -13,7 +13,7 @@ public static class ImageCover
             return image;
         }
         using var bitmap = SKBitmap.Decode(image)
-            ?? throw new UnsupportedImageException(T("Das Bild ist beschädigt und kann nicht gelesen werden."));
+            ?? throw new UnsupportedImageException(T("The image is damaged and cannot be read."));
         using (var canvas = new SKCanvas(bitmap))
         using (var paint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Fill })
         {

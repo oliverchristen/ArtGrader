@@ -19,16 +19,16 @@ public static class LocalModelCatalog
     [
         new(
             "qwen3.8:27b",
-            T("Empfohlen"),
-            T("Im Vergleich am nächsten an Claude: ordnet die Arbeiten am ähnlichsten ein. Neueres Modell, etwas kleiner."),
+            T("Recommended"),
+            T("Closest to Claude in our comparison: places the works most similarly. Newer model, slightly smaller."),
             17.7,
             32,
-            T("mehr als 2"),
+            T("more than 2"),
             "2"),
         new(
             "qwen3-vl:32b",
-            T("Genau"),
-            T("Das stärkste Bildmodell, das auf einem Mac mit 48 GB läuft. Liest alle Bildteile mit voller Rechenleistung."),
+            T("Accurate"),
+            T("The strongest image model that runs on a Mac with 48 GB. Reads every part of the image with full computing power."),
             20.9,
             32,
             "9–10",
@@ -36,12 +36,12 @@ public static class LocalModelCatalog
             "qwen3-vl:32b-instruct"),
         new(
             "qwen3-vl:30b",
-            T("Flink"),
-            T("Gleich gross, aber pro Wort rechnet nur ein kleiner Teil des Modells mit (Mixture of Experts). Deutlich schneller, etwas ungenauer."),
+            T("Quick"),
+            T("Same size, but only a small part of the model works on each word (mixture of experts). Much faster, slightly less accurate."),
             19.6,
             32,
             "2–3",
-            T("unter 1"),
+            T("under 1"),
             "qwen3-vl:30b-a3b-instruct"),
     ];
 

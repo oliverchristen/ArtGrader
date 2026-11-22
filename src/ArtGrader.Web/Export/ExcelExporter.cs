@@ -14,26 +14,26 @@ public static class ExcelExporter
         var criteria = exam.OrderedCriteria().ToList();
         var categoryNames = exam.Categories.SelectMany(c => c.Criteria.Select(k => (k.Id, c.Name))).ToDictionary(x => x.Id, x => x.Name);
 
-        var sheet = workbook.Worksheets.Add(T("Noten"));
+        var sheet = workbook.Worksheets.Add(T("Grades"));
         sheet.Cell(1, 1).Value = exam.Title;
         sheet.Cell(1, 1).Style.Font.Bold = true;
         sheet.Cell(1, 1).Style.Font.FontSize = 14;
-        sheet.Cell(2, 1).Value = $"{exam.SchoolClass} · {exam.Date.ToString(T("dd.MM.yyyy"), Language.Culture)}";
+        sheet.Cell(2, 1).Value = $"{exam.SchoolClass} · {exam.Date.ToString(T("dd/MM/yyyy"), Language.Culture)}";
 
         const int headerRow = 4;
         var column = 1;
         sheet.Cell(headerRow, column++).Value = T("Name");
         for (var i = 0; i < criteria.Count; i++)
         {
-            sheet.Cell(headerRow, column).Value = T("K{0}", i + 1);
+            sheet.Cell(headerRow, column).Value = T("C{0}", i + 1);
             sheet.Cell(headerRow, column).GetComment().AddText($"{categoryNames[criteria[i].Id]}: {criteria[i].Text}");
             column++;
         }
         var pointsColumn = column++;
         var gradeColumn = column++;
         var statusColumn = column;
-        sheet.Cell(headerRow, pointsColumn).Value = T("Punkte");
-        sheet.Cell(headerRow, gradeColumn).Value = T("Note");
+        sheet.Cell(headerRow, pointsColumn).Value = T("Points");
+        sheet.Cell(headerRow, gradeColumn).Value = T("Grade");
         sheet.Cell(headerRow, statusColumn).Value = T("Status");
         sheet.Row(headerRow).Style.Font.Bold = true;
 
@@ -66,20 +66,20 @@ public static class ExcelExporter
         table.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
         sheet.Columns().AdjustToContents();
 
-        var legend = workbook.Worksheets.Add(T("Kriterien"));
-        legend.Cell(1, 1).Value = T("Kürzel");
-        legend.Cell(1, 2).Value = T("Kategorie");
-        legend.Cell(1, 3).Value = T("Kriterium");
-        legend.Cell(1, 4).Value = T("Gewicht");
-        legend.Cell(1, 5).Value = T("Beurteilt durch");
+        var legend = workbook.Worksheets.Add(T("Criteria"));
+        legend.Cell(1, 1).Value = T("Code");
+        legend.Cell(1, 2).Value = T("Category");
+        legend.Cell(1, 3).Value = T("Criterion");
+        legend.Cell(1, 4).Value = T("Weight");
+        legend.Cell(1, 5).Value = T("Assessed by");
         legend.Row(1).Style.Font.Bold = true;
         for (var i = 0; i < criteria.Count; i++)
         {
-            legend.Cell(i + 2, 1).Value = T("K{0}", i + 1);
+            legend.Cell(i + 2, 1).Value = T("C{0}", i + 1);
             legend.Cell(i + 2, 2).Value = categoryNames[criteria[i].Id];
             legend.Cell(i + 2, 3).Value = criteria[i].Text;
             legend.Cell(i + 2, 4).Value = criteria[i].Weight;
-            legend.Cell(i + 2, 5).Value = criteria[i].AssessedBy == AssessedBy.Teacher ? T("Lehrperson") : T("KI-Vorschlag");
+            legend.Cell(i + 2, 5).Value = criteria[i].AssessedBy == AssessedBy.Teacher ? T("Teacher") : T("AI suggestion");
         }
         legend.Column(3).Width = 90;
         legend.Column(3).Style.Alignment.WrapText = true;

@@ -5,47 +5,47 @@ using System.Text.Json;
 namespace ArtGrader.Core.Localization;
 
 /// <summary>
-/// Looks up user-facing texts. The German text is written in the code and serves as the key;
-/// the English translations live in Localization/en/*.json (one file per area), embedded into this assembly.
-/// A missing translation falls back to German, and a test makes sure none is missing.
+/// Looks up user-facing texts. The English text is written in the code and serves as the key;
+/// the German translations live in Localization/de/*.json (one file per area), embedded into this assembly.
+/// A missing translation falls back to English, and a test makes sure none is missing.
 /// </summary>
 public static class Texts
 {
-    private static readonly Lazy<FrozenDictionary<string, string>> English = new(LoadEnglish);
+    private static readonly Lazy<FrozenDictionary<string, string>> German = new(LoadGerman);
 
     /// <summary>The text in the current language.</summary>
-    public static string T(string german) =>
-        Language.IsEnglish && English.Value.TryGetValue(german, out var english) ? english : german;
+    public static string T(string english) =>
+        !Language.IsEnglish && German.Value.TryGetValue(english, out var german) ? german : english;
 
     /// <summary>The text in the current language with {0}, {1} … filled in, formatted for the current language.</summary>
-    public static string T(string german, params object?[] args) => string.Format(Language.Culture, T(german), args);
+    public static string T(string english, params object?[] args) => string.Format(Language.Culture, T(english), args);
 
-    /// <summary>All English translations, keyed by the German text. For tests.</summary>
-    public static IReadOnlyDictionary<string, string> EnglishTexts => English.Value;
+    /// <summary>All German translations, keyed by the English text. For tests.</summary>
+    public static IReadOnlyDictionary<string, string> GermanTexts => German.Value;
 
-    /// <summary>Translation files whose keys appear in more than one file with a different English text. For tests.</summary>
+    /// <summary>Translation files whose keys appear in more than one file with a different German text. For tests.</summary>
     public static IReadOnlyList<string> Conflicts { get; private set; } = [];
 
-    private static FrozenDictionary<string, string> LoadEnglish()
+    private static FrozenDictionary<string, string> LoadGerman()
     {
         var assembly = typeof(Texts).Assembly;
         var merged = new Dictionary<string, string>(StringComparer.Ordinal);
         var conflicts = new List<string>();
-        foreach (var name in assembly.GetManifestResourceNames().Where(n => n.Contains(".Localization.en.", StringComparison.Ordinal) && n.EndsWith(".json", StringComparison.Ordinal)).Order())
+        foreach (var name in assembly.GetManifestResourceNames().Where(n => n.Contains(".Localization.de.", StringComparison.Ordinal) && n.EndsWith(".json", StringComparison.Ordinal)).Order())
         {
             using var stream = assembly.GetManifestResourceStream(name)!;
             var entries = JsonSerializer.Deserialize<Dictionary<string, string>>(stream) ?? [];
-            foreach (var (german, english) in entries)
+            foreach (var (english, german) in entries)
             {
-                if (merged.TryGetValue(german, out var existing))
+                if (merged.TryGetValue(english, out var existing))
                 {
-                    if (existing != english)
+                    if (existing != german)
                     {
-                        conflicts.Add($"{name}: «{german}»");
+                        conflicts.Add($"{name}: «{english}»");
                     }
                     continue;
                 }
-                merged[german] = english;
+                merged[english] = german;
             }
         }
         Conflicts = conflicts;

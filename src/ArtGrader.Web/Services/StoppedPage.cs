@@ -12,7 +12,7 @@ public static class StoppedPage
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>{{T("ArtGrader beendet")}}</title>
+          <title>{{T("ArtGrader closed")}}</title>
           <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
           <style>
             body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #fff; color: #141414;
@@ -36,9 +36,9 @@ public static class StoppedPage
               <circle cx="186" cy="46" r="3.5" fill="#141414" />
               <path d="M198 46 C 214 46, 220 76, 238 76" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round" />
             </svg>
-            <h1>{{T("ArtGrader ist beendet")}}</h1>
-            <p>{{T("Alles ist gespeichert. Du kannst dieses Fenster schliessen.")}}</p>
-            <p>{{T("Zum Weiterarbeiten ArtGrader wieder starten.")}}</p>
+            <h1>{{T("ArtGrader has been closed")}}</h1>
+            <p>{{T("Everything is saved. You can close this window.")}}</p>
+            <p>{{T("To keep working, start ArtGrader again.")}}</p>
           </main>
         </body>
         </html>

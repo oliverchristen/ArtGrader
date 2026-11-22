@@ -41,41 +41,41 @@ public static class LevelText
     public static string Label(Level level) =>
         level switch
         {
-            Level.Uebertroffen => T("Übertroffen"),
-            Level.Erfuellt => T("Erfüllt"),
-            Level.Teilweise => T("Teilweise erfüllt"),
-            Level.Nicht => T("Nicht erfüllt"),
+            Level.Uebertroffen => T("Exceeded"),
+            Level.Erfuellt => T("Met"),
+            Level.Teilweise => T("Partly met"),
+            Level.Nicht => T("Not met"),
             _ => level.ToString(),
         };
 
     public static string Short(Level level) =>
         level switch
         {
-            Level.Uebertroffen => T("sehr gut"),
-            Level.Erfuellt => T("gut"),
-            Level.Teilweise => T("genügend"),
-            Level.Nicht => T("ungenügend"),
+            Level.Uebertroffen => T("very good"),
+            Level.Erfuellt => T("good"),
+            Level.Teilweise => T("sufficient"),
+            Level.Nicht => T("insufficient"),
             _ => level.ToString(),
         };
 
     public static string Label(Confidence confidence) =>
         confidence switch
         {
-            Confidence.Tief => T("unsicher"),
-            Confidence.Mittel => T("mittel"),
-            Confidence.Hoch => T("sicher"),
+            Confidence.Tief => T("unsure"),
+            Confidence.Mittel => T("fairly sure"),
+            Confidence.Hoch => T("sure"),
             _ => confidence.ToString(),
         };
 
     public static string Label(SubmissionStatus status) =>
         status switch
         {
-            SubmissionStatus.Neu => T("Neu"),
-            SubmissionStatus.InWarteschlange => T("In Warteschlange"),
-            SubmissionStatus.WirdBewertet => T("Wird bewertet"),
-            SubmissionStatus.Vorschlag => T("Vorschlag"),
-            SubmissionStatus.Abgeschlossen => T("Abgeschlossen"),
-            SubmissionStatus.Fehler => T("Fehler"),
+            SubmissionStatus.Neu => T("New"),
+            SubmissionStatus.InWarteschlange => T("Queued"),
+            SubmissionStatus.WirdBewertet => T("Being assessed"),
+            SubmissionStatus.Vorschlag => T("Suggested"),
+            SubmissionStatus.Abgeschlossen => T("Completed"),
+            SubmissionStatus.Fehler => T("Error"),
             _ => status.ToString(),
         };
 }

@@ -7,7 +7,7 @@
 
 <div class="@($"exam-head {(Work is null ? "" : "compact")}")">
     <nav class="crumbs">
-        <a href="/">@T("Prüfungen")</a><span>/</span>
+        <a href="/">@T("Assignments")</a><span>/</span>
         @if (Work is null)
         {
             <span>@Exam.Title</span>
@@ -24,20 +24,20 @@
         <div class="exam-head-main">
             <div class="exam-meta-edit">
                 <label class="meta-field">
-                    <span>@T("Klasse")</span>
-                    <input value="@schoolClass" @oninput="OnClassInput" placeholder="–" size="@Math.Max(5, schoolClass.Length + 2)" maxlength="40" aria-label="@T("Klasse")" />
+                    <span>@T("Class")</span>
+                    <input value="@schoolClass" @oninput="OnClassInput" placeholder="–" size="@Math.Max(5, schoolClass.Length + 2)" maxlength="40" aria-label="@T("Class")" />
                 </label>
                 <span aria-hidden="true">·</span>
                 <label class="meta-field">
-                    <input type="date" value="@date.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" aria-label="@T("Datum")" />
+                    <input type="date" value="@date.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" aria-label="@T("Date")" />
                 </label>
             </div>
             <input class="page-title title-input" value="@title" @oninput="OnTitleInput" @onblur="OnTitleBlur"
-                   aria-label="@T("Titel der Prüfung")" placeholder="@T("Titel")" maxlength="200" />
+                   aria-label="@T("Assignment title")" placeholder="@T("Title")" maxlength="200" />
         </div>
         @if (DeleteRequested.HasDelegate)
         {
-            <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteRequested.InvokeAsync()">@T("Prüfung löschen")</MudButton>
+            <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteRequested.InvokeAsync()">@T("Delete assignment")</MudButton>
         }
     </div>
     }
@@ -50,7 +50,7 @@
                 <span class="num">@(done && ActiveStep != step ? "✓" : (step + 1).ToString())</span> @stepTitle
                 @if (step == 2 && Running > 0)
                 {
-                    <span class="badge">@T("{0} läuft", Running)</span>
+                    <span class="badge">@T("{0} running", Running)</span>
                 }
             </button>
         }
@@ -98,11 +98,11 @@
     private IEnumerable<(int Index, string Title, bool Done)> Steps()
     {
         var works = Exam.Submissions.Count;
-        yield return (0, T("Aufgabe & Kriterien"), Exam.OrderedCriteria().Any());
-        yield return (1, T("Arbeiten erfassen"), works > 0);
-        yield return (2, T("Arbeiten bewerten"), works > 0 && Exam.Submissions.All(s => s.GradedAt is not null));
-        yield return (3, T("Noten"), works > 0 && Exam.Submissions.All(s => GradeCalculator.FinalGrade(Exam, s) is not null));
-        yield return (4, T("Übersicht & Export"), works > 0 && Exam.Submissions.All(s => s.Status == SubmissionStatus.Abgeschlossen));
+        yield return (0, T("Task & criteria"), Exam.OrderedCriteria().Any());
+        yield return (1, T("Add works"), works > 0);
+        yield return (2, T("Assess works"), works > 0 && Exam.Submissions.All(s => s.GradedAt is not null));
+        yield return (3, T("Grades"), works > 0 && Exam.Submissions.All(s => GradeCalculator.FinalGrade(Exam, s) is not null));
+        yield return (4, T("Overview & export"), works > 0 && Exam.Submissions.All(s => s.Status == SubmissionStatus.Abgeschlossen));
     }
 
     private async Task SelectAsync(int step)

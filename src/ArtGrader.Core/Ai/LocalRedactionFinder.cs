@@ -55,7 +55,7 @@ public sealed class LocalRedactionFinder(OllamaGateway ollama, IAiSettingsSource
             return [];
         }
         var model = await AvailableModelAsync(cancellationToken)
-            ?? throw new ModelNotConfiguredException(T("Es ist kein lokales Modell installiert oder Ollama läuft nicht."));
+            ?? throw new ModelNotConfiguredException(T("No local model is installed, or Ollama is not running."));
         var document = text.Length > MaxCharacters ? text[..MaxCharacters] : text;
         var response = await ollama.CompleteJsonAsync(
             new ModelJsonRequest(
@@ -80,7 +80,7 @@ public sealed class LocalRedactionFinder(OllamaGateway ollama, IAiSettingsSource
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException)
         {
-            throw new ModelException(T("Das lokale Modell hat keine lesbare Antwort geliefert. Bitte nochmals versuchen."), ex);
+            throw new ModelException(T("The local model did not return a readable answer. Please try again."), ex);
         }
     }
 

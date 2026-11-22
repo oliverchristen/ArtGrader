@@ -14,15 +14,15 @@ public static partial class RedactionSuggestions
         var hits = new List<RedactionHit>();
         foreach (var term in terms.Select(t => t.Trim()).Where(t => t.Length >= 2).Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            hits.AddRange(Occurrences(text, term, T("Liste")));
+            hits.AddRange(Occurrences(text, term, T("Your list")));
         }
         foreach (var (passage, reason) in modelPassages ?? [])
         {
-            hits.AddRange(Occurrences(text, passage.Trim(), string.IsNullOrWhiteSpace(reason) ? T("lokales Modell") : reason));
+            hits.AddRange(Occurrences(text, passage.Trim(), string.IsNullOrWhiteSpace(reason) ? T("local model") : reason));
         }
-        hits.AddRange(Email().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value, T("E-Mail"))));
-        hits.AddRange(Phone().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.Trim(), T("Telefon"))));
-        hits.AddRange(Web().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.TrimEnd('.', ',', ')'), T("Webadresse"))));
+        hits.AddRange(Email().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value, T("Email"))));
+        hits.AddRange(Phone().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.Trim(), T("Phone"))));
+        hits.AddRange(Web().Matches(text).Select(m => new RedactionHit(m.Index, m.Length, m.Value.TrimEnd('.', ',', ')'), T("Web address"))));
         return Merge(hits);
     }
 

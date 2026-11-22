@@ -131,9 +131,9 @@ public sealed class AccessGate(string key, TimeProvider clock)
         </head>
         <body>
           <main>
-            <h1>{{T("Bitte ArtGrader neu öffnen")}}</h1>
-            <p>{{T("Damit niemand sonst an deine Prüfungen kommt, öffnet sich ArtGrader nur über das Programm selbst.")}}</p>
-            <p>{{T("Doppelklicke das ArtGrader-Symbol. Der Browser öffnet sich dann von selbst.")}}</p>
+            <h1>{{T("Please open ArtGrader again")}}</h1>
+            <p>{{T("So that nobody else can get to your exams, ArtGrader only opens through the app itself.")}}</p>
+            <p>{{T("Double-click the ArtGrader icon. The browser then opens by itself.")}}</p>
           </main>
         </body>
         </html>

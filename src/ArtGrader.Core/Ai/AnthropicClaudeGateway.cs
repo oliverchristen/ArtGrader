@@ -15,7 +15,7 @@ public sealed class AnthropicClaudeGateway(IAiSettingsSource settingsSource) : I
         if (string.IsNullOrWhiteSpace(settings.ApiKey))
         {
             throw new ModelNotConfiguredException(
-                T("Es ist kein Anthropic API-Schlüssel hinterlegt. Bitte unter «Einstellungen» eintragen oder das lokale Modell wählen."));
+                T("No Anthropic API key has been saved. Please enter one in ‘Settings’ or choose the local model."));
         }
 
         var client = new AnthropicClient { ApiKey = settings.ApiKey, MaxRetries = 3 };
@@ -57,33 +57,33 @@ public sealed class AnthropicClaudeGateway(IAiSettingsSource settingsSource) : I
         }
         catch (AnthropicRateLimitException ex)
         {
-            throw new ModelException(T("Zu viele Anfragen an Claude (Rate Limit). Bitte später nochmals versuchen."), ex);
+            throw new ModelException(T("Too many requests to Claude (rate limit). Please try again later."), ex);
         }
         catch (AnthropicBadRequestException ex)
         {
-            throw new ModelException(T("Claude hat die Anfrage abgelehnt: {0}", ex.Message), ex);
+            throw new ModelException(T("Claude rejected the request: {0}", ex.Message), ex);
         }
         catch (Anthropic5xxException ex)
         {
-            throw new ModelException(T("Claude ist gerade nicht erreichbar (Serverfehler). Bitte später nochmals versuchen."), ex);
+            throw new ModelException(T("Claude cannot be reached right now (server error). Please try again later."), ex);
         }
         catch (AnthropicApiException ex)
         {
-            throw new ModelException(T("Fehler bei der Anfrage an Claude: {0}", ex.Message), ex);
+            throw new ModelException(T("Error in the request to Claude: {0}", ex.Message), ex);
         }
         catch (HttpRequestException ex)
         {
-            throw new ModelException(T("Keine Verbindung zu Claude. Bitte die Internetverbindung prüfen."), ex);
+            throw new ModelException(T("No connection to Claude. Please check the internet connection."), ex);
         }
 
         var stopReason = response.StopReason?.ToString();
         if (stopReason is "refusal")
         {
-            throw new ModelException(T("Claude hat diese Bewertung abgelehnt. Bitte die Arbeit selbst beurteilen."));
+            throw new ModelException(T("Claude declined to assess this. Please assess the work yourself."));
         }
         if (stopReason is "max_tokens")
         {
-            throw new ModelException(T("Die Antwort von Claude wurde abgeschnitten. Bitte nochmals versuchen."));
+            throw new ModelException(T("Claude's answer was cut off. Please try again."));
         }
 
         var text = new StringBuilder();

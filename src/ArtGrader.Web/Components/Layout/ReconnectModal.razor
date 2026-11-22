@@ -20,30 +20,30 @@
         </svg>
 
         <div class="components-reconnect-first-attempt-visible">
-            <h2 id="reconnect-title">@T("Einen Moment …")</h2>
-            <p>@T("Die Verbindung zu ArtGrader ist kurz unterbrochen. Sie wird wiederhergestellt.")</p>
+            <h2 id="reconnect-title">@T("One moment …")</h2>
+            <p>@T("The connection to ArtGrader was briefly interrupted. It is being restored.")</p>
         </div>
         <div class="components-reconnect-repeated-attempt-visible">
-            <h2>@T("Noch keine Verbindung")</h2>
-            <p>@((MarkupString)T("Neuer Versuch in {0} Sekunden.", "<span id=\"components-seconds-to-next-attempt\"></span>"))</p>
+            <h2>@T("No connection yet")</h2>
+            <p>@((MarkupString)T("Trying again in {0} seconds.", "<span id=\"components-seconds-to-next-attempt\"></span>"))</p>
         </div>
         <div class="components-reconnect-failed-visible">
-            <h2>@T("ArtGrader antwortet nicht")</h2>
-            <p>@T("Vielleicht wurde ArtGrader beendet. Starte ArtGrader und versuche es dann nochmals. Deine Arbeit ist gespeichert.")</p>
+            <h2>@T("ArtGrader is not responding")</h2>
+            <p>@T("ArtGrader may have been closed. Start ArtGrader and then try again. Your work is saved.")</p>
         </div>
         <div class="components-pause-visible">
-            <h2>@T("Pause")</h2>
-            <p>@T("Die Sitzung ruht. Mit «Fortsetzen» geht es weiter, wo du warst.")</p>
+            <h2>@T("Paused")</h2>
+            <p>@T("The session is paused. Click ‘Resume’ to carry on where you left off.")</p>
         </div>
         <div class="components-resume-failed-visible">
-            <h2>@T("Bitte neu laden")</h2>
-            <p>@T("Die Sitzung konnte nicht fortgesetzt werden. Nach dem Neuladen ist alles wieder da.")</p>
+            <h2>@T("Please reload")</h2>
+            <p>@T("The session could not be resumed. Reload the page and everything will be back.")</p>
         </div>
 
         <div class="reconnect-actions">
-            <button id="components-reconnect-button" class="components-reconnect-failed-visible reconnect-primary">@T("Nochmals versuchen")</button>
-            <button id="components-resume-button" class="components-pause-visible reconnect-primary">@T("Fortsetzen")</button>
-            <button type="button" class="components-reconnect-failed-visible components-resume-failed-visible reconnect-secondary" onclick="location.reload()">@T("Seite neu laden")</button>
+            <button id="components-reconnect-button" class="components-reconnect-failed-visible reconnect-primary">@T("Try again")</button>
+            <button id="components-resume-button" class="components-pause-visible reconnect-primary">@T("Resume")</button>
+            <button type="button" class="components-reconnect-failed-visible components-resume-failed-visible reconnect-secondary" onclick="location.reload()">@T("Reload page")</button>
         </div>
     </div>
 </dialog>

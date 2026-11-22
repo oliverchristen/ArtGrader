@@ -52,11 +52,11 @@ public sealed class SubmissionGradingService(IModelGateway claude)
     {
         if (context.Criteria.Count == 0)
         {
-            throw new ModelException(T("Diese Prüfung hat keine Kriterien, die von der KI beurteilt werden."));
+            throw new ModelException(T("This assignment has no criteria that the AI assesses."));
         }
         if (images.Count == 0)
         {
-            throw new ModelException(T("Für diese Arbeit ist kein Foto vorhanden."));
+            throw new ModelException(T("There is no photo for this work."));
         }
 
         var keys = CriterionKeys(context.Criteria);

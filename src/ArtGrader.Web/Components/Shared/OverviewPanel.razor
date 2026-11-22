@@ -2,33 +2,33 @@
 {
     <div class="sheet empty-state">
         <img src="img/empty-sketch.svg" alt="" />
-        <p class="muted mt-3">@T("Noch keine Arbeiten.")</p>
+        <p class="muted mt-3">@T("No works yet.")</p>
     </div>
     return;
 }
 
 <section class="sheet">
-    <h2 class="sheet-title">@T("Auswertung")</h2>
+    <h2 class="sheet-title">@T("Results")</h2>
 <div class="stats stats-inline">
     <div class="stat">
-        <div class="k">@T("Durchschnitt")</div>
+        <div class="k">@T("Average")</div>
         <div class="v">@(average?.ToString("0.00") ?? "–")</div>
-        <div class="faint" style="font-size:.8rem">@(provisionalOnly ? T("vorläufig") : T("{0} feste Noten", finalCount))</div>
+        <div class="faint" style="font-size:.8rem">@(provisionalOnly ? T("provisional") : T("{0} final grades", finalCount))</div>
     </div>
     <div class="stat">
-        <div class="k">@T("Spannweite")</div>
+        <div class="k">@T("Range")</div>
         <div class="v">@(min is null ? "–" : $"{min:0.0#} – {max:0.0#}")</div>
     </div>
     <div class="stat">
-        <div class="k">@T("Abgeschlossen")</div>
+        <div class="k">@T("Completed")</div>
         <div class="v">@Exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen)<span class="faint" style="font-size:1rem"> / @Exam.Submissions.Count</span></div>
     </div>
     <div class="stat">
-        <div class="k">@T("Verteilung")</div>
-        <div class="histogram" aria-label="@T("Notenverteilung")">
+        <div class="k">@T("Distribution")</div>
+        <div class="histogram" aria-label="@T("Grade distribution")">
             @foreach (var (grade, count) in histogram)
             {
-                <div title="@T("{0}× Note {1}", count, grade)">
+                <div title="@T("{0}× grade {1}", count, grade)">
                     <i style="@($"height:{(histogramMax == 0 ? 0 : 100 * count / histogramMax)}%")"></i>
                     <span>@grade</span>
                 </div>
@@ -40,7 +40,7 @@
 </section>
 
 <section class="sheet">
-    <h2 class="sheet-title mb-4">@T("Notenliste")</h2>
+    <h2 class="sheet-title mb-4">@T("Grade list")</h2>
     <div class="table-wrap">
         <table class="grades">
             <thead>
@@ -48,10 +48,10 @@
                     <th>@T("Name")</th>
                     @foreach (var (criterion, number) in criteria.Select((c, i) => (c, i + 1)))
                     {
-                        <th title="@criterion.Text">@T("K{0}", number)@(criterion.AssessedBy == AssessedBy.Teacher ? "*" : "")</th>
+                        <th title="@criterion.Text">@T("C{0}", number)@(criterion.AssessedBy == AssessedBy.Teacher ? "*" : "")</th>
                     }
-                    <th>@T("Punkte")</th>
-                    <th>@T("Note")</th>
+                    <th>@T("Points")</th>
+                    <th>@T("Grade")</th>
                     <th>@T("Status")</th>
                 </tr>
             </thead>
@@ -72,7 +72,7 @@
                                 }
                                 else
                                 {
-                                    <span class="lv-dot none" title="@T("offen")"></span>
+                                    <span class="lv-dot none" title="@T("open")"></span>
                                 }
                             </td>
                         }
@@ -84,7 +84,7 @@
                             }
                             else if (result.Provisional is not null)
                             {
-                                <span class="faint" title="@T("vorläufig")">≈ @result.Provisional.Value.ToString("0.0#")</span>
+                                <span class="faint" title="@T("provisional")">≈ @result.Provisional.Value.ToString("0.0#")</span>
                             }
                             else
                             {
@@ -102,42 +102,42 @@
         {
             <span><i class="@($"lv-dot lv-{(int)level}")"></i>@LevelText.Label(level)</span>
         }
-        <span><i class="lv-dot none"></i>@T("offen")</span>
-        <span>✎ @T("Note selbst gesetzt")</span>
-        <span>≈ @T("vorläufig")</span>
+        <span><i class="lv-dot none"></i>@T("open")</span>
+        <span>✎ @T("grade set by you")</span>
+        <span>≈ @T("provisional")</span>
     </div>
 </section>
 
 <section class="sheet">
-    <h2 class="sheet-title">@T("Kriterien")</h2>
+    <h2 class="sheet-title">@T("Criteria")</h2>
     @foreach (var (criterion, number) in criteria.Select((c, i) => (c, i + 1)))
     {
         <div class="muted" style="font-size:.92rem;margin-top:6px">
-            <b style="color:var(--ink)">@T("K{0}", number)</b> @criterion.Text
+            <b style="color:var(--ink)">@T("C{0}", number)</b> @criterion.Text
             @if (criterion.AssessedBy == AssessedBy.Teacher)
             {
-                <span class="tag teacher ml-1">@T("Lehrperson")</span>
+                <span class="tag teacher ml-1">@T("Teacher")</span>
             }
         </div>
     }
 </section>
 
 <section class="sheet export-step">
-    <h2 class="sheet-title">@T("Exportieren")</h2>
-    <p class="sheet-sub">@T("Die Notenliste für deine Unterlagen und die Beurteilungsbögen für die Klasse. Beides bleibt auf diesem Computer.")</p>
+    <h2 class="sheet-title">@T("Export")</h2>
+    <p class="sheet-sub">@T("The grade list for your records and the assessment sheets for the class. Both stay on this computer.")</p>
     @if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
     {
-        <p class="muted mb-3">@T("Noch nicht alle Arbeiten sind abgeschlossen. Offene Arbeiten erscheinen mit vorläufiger Note.")</p>
+        <p class="muted mb-3">@T("Not all works are completed yet. Open works appear with a provisional grade.")</p>
     }
-    <MudSwitch @bind-Value="withJustifications" Color="Color.Primary" Label="@T("Begründungen der KI in die Beurteilungsbögen aufnehmen")" />
+    <MudSwitch @bind-Value="withJustifications" Color="Color.Primary" Label="@T("Include the AI's justifications in the assessment sheets")" />
     <p class="faint" style="font-size:.85rem">
-        @T("Immer im Beurteilungsbogen: Foto, Stufen, Note und deine Rückmeldung. Hast du keine geschrieben, steht dort die Rückmeldung der KI. Begründungen erscheinen nur bei Kriterien, bei denen du die Stufe der KI übernommen hast.")
+        @T("Always on the assessment sheet: photo, levels, grade and your feedback. If you have not written any, the AI's feedback is shown instead. Justifications only appear for criteria where you accepted the AI's level.")
     </p>
     <div class="next-step">
-        <MudButton Class="btn-soft" Size="Size.Large" StartIcon="@Icons.Material.Outlined.GridOn" Href="@($"/export/{Exam.Id}/noten.xlsx")" Target="_blank">@T("Notenliste (Excel)")</MudButton>
+        <MudButton Class="btn-soft" Size="Size.Large" StartIcon="@Icons.Material.Outlined.GridOn" Href="@($"/export/{Exam.Id}/noten.xlsx")" Target="_blank">@T("Grade list (Excel)")</MudButton>
         <MudButton Class="btn-ink" Size="Size.Large" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
                    Href="@($"/export/{Exam.Id}/beurteilungen.pdf?begruendungen={withJustifications.ToString().ToLowerInvariant()}")">
-            @T("Beurteilungsbögen (PDF)")
+            @T("Assessment sheets (PDF)")
         </MudButton>
     </div>
 </section>

@@ -176,7 +176,7 @@ app.MapGet("/export/{examId:guid}/noten.xlsx", async (Guid examId, ExamRepositor
         : Results.File(
             ExcelExporter.Create(exam),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            FileName(exam.Title, T("Noten"), "xlsx"));
+            FileName(exam.Title, T("Grades"), "xlsx"));
 });
 
 app.MapGet(
@@ -203,7 +203,7 @@ app.MapGet(
                 images[image.Id] = await ArtGrader.Core.Images.ImagePreprocessor.ToJpegAsync(original, 1200, ct);
             }
         }
-        var name = submission is null ? T("Beurteilungen") : selected[0].StudentName;
+        var name = submission is null ? T("Assessments") : selected[0].StudentName;
         return Results.File(
             FeedbackPdf.Create(exam, selected, begruendungen ?? false, images),
             "application/pdf",

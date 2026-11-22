@@ -5,13 +5,13 @@
 @inject FileStore Files
 @inject IDialogService Dialogs
 
-<PageTitle>@T("Prüfungen") · ArtGrader</PageTitle>
+<PageTitle>@T("Assignments") · ArtGrader</PageTitle>
 
 <div class="page-head">
     <div class="eyebrow">@Greeting()</div>
-    <h1 class="page-title">@((MarkupString)T("Deine <em>Prüfungen</em>"))</h1>
+    <h1 class="page-title">@((MarkupString)T("Your <em>assignments</em>"))</h1>
     <p class="lede">
-        @T("Aufgabe und Beurteilungsbogen hochladen, Fotos der Arbeiten dazulegen – die KI macht einen Vorschlag, du entscheidest.")
+        @T("Upload the task and assessment sheet, add photos of the works – the AI makes a suggestion, you decide.")
     </p>
 </div>
 
@@ -19,7 +19,7 @@
 {
     <div class="banner mb-6">
         <MudIcon Icon="@Icons.Material.Outlined.Lightbulb" />
-        <span>@((MarkupString)T("Bevor die KI mitlesen kann, wähle unter {0} Claude oder ein lokales Modell.", SettingsLink))</span>
+        <span>@((MarkupString)T("Before the AI can read along, choose Claude or a local model in {0}.", SettingsLink))</span>
     </div>
 }
 
@@ -27,20 +27,20 @@
 {
     var photos = pastSemesters.Sum(e => e.PhotoCount);
     var pastTitles = string.Join(", ", pastSemesters.Select(e => e.Title));
-    var photoText = photos == 1 ? T("1 Foto") : T("{0} Fotos", photos);
+    var photoText = photos == 1 ? T("1 photo") : T("{0} photos", photos);
     <div class="banner year-end mb-6">
         <MudIcon Icon="@Icons.Material.Outlined.EventAvailable" />
         <div class="year-end-text">
-            <b>@T("Semester vorbei – Fotos löschen?")</b>
+            <b>@T("Semester over – delete photos?")</b>
             <span>
                 @(pastSemesters.Count == 1
-                    ? T("1 Prüfung aus früheren Semestern ({0}) hat noch {1} von Schülerarbeiten.", pastTitles, photoText)
-                    : T("{0} Prüfungen aus früheren Semestern ({1}) haben noch {2} von Schülerarbeiten.", pastSemesters.Count, pastTitles, photoText))
-                @T("Schülerarbeiten gehören den Schülerinnen und Schülern und werden nach dem Semester gelöscht.")
-                @T("Noten und Beurteilungen bleiben erhalten.")
+                    ? T("1 assignment from earlier semesters ({0}) still has {1} of student work.", pastTitles, photoText)
+                    : T("{0} assignments from earlier semesters ({1}) still have {2} of student work.", pastSemesters.Count, pastTitles, photoText))
+                @T("Student works belong to the students and are deleted after the semester.")
+                @T("Grades and assessments are kept.")
             </span>
         </div>
-        <MudButton Class="btn-ink" StartIcon="@Icons.Material.Outlined.DeleteSweep" OnClick="DeletePastPhotosAsync">@T("Fotos löschen")</MudButton>
+        <MudButton Class="btn-ink" StartIcon="@Icons.Material.Outlined.DeleteSweep" OnClick="DeletePastPhotosAsync">@T("Delete photos")</MudButton>
     </div>
 }
 
@@ -54,8 +54,8 @@
         {
             <div class="sheet empty-state">
                 <img src="img/empty-sketch.svg" alt="" />
-                <h2 class="sheet-title mt-3">@T("Noch ein leeres Skizzenbuch")</h2>
-                <p class="muted">@T("Lege unten deine erste Prüfung an.")</p>
+                <h2 class="sheet-title mt-3">@T("Still an empty sketchbook")</h2>
+                <p class="muted">@T("Create your first assignment below.")</p>
             </div>
         }
         else
@@ -81,12 +81,12 @@
                         <div class="exam-body">
                             <h3 class="exam-title">@exam.Title</h3>
                             <div class="exam-meta">
-                                @(string.IsNullOrWhiteSpace(exam.SchoolClass) ? "" : T("Klasse {0} · ", exam.SchoolClass))@exam.Date.ToString(T("d. MMMM yyyy"), culture)
+                                @(string.IsNullOrWhiteSpace(exam.SchoolClass) ? "" : T("Class {0} · ", exam.SchoolClass))@exam.Date.ToString(T("d MMMM yyyy"), culture)
                             </div>
                             <div class="progress-line"><span style="@($"width:{share.ToString("0", System.Globalization.CultureInfo.InvariantCulture)}%")"></span></div>
                             <div class="progress-label">
-                                <span>@T("{0} Arbeiten", exam.SubmissionCount)</span>
-                                <span>@T("{0} abgeschlossen", exam.CompletedCount)</span>
+                                <span>@T("{0} works", exam.SubmissionCount)</span>
+                                <span>@T("{0} completed", exam.CompletedCount)</span>
                             </div>
                         </div>
                     </a>
@@ -95,14 +95,14 @@
         }
     </section>
     <section class="sheet new-exam">
-        <h2 class="sheet-title">@T("Neue Prüfung")</h2>
-        <p class="sheet-sub">@T("Ein neues Blatt anlegen.")</p>
+        <h2 class="sheet-title">@T("New assignment")</h2>
+        <p class="sheet-sub">@T("Start a new sheet.")</p>
         <MudStack Spacing="3">
-            <MudTextField @bind-Value="title" Label="@T("Titel")" Placeholder="@T("z. B. Stadt von oben")" Variant="Variant.Outlined" Immediate="true" />
-            <MudTextField @bind-Value="schoolClass" Label="@T("Klasse")" Placeholder="@T("z. B. 2b")" Variant="Variant.Outlined" />
-            <MudDatePicker @bind-Date="date" Label="@T("Datum")" Variant="Variant.Outlined" DateFormat="@T("dd.MM.yyyy")" Culture="@culture" />
+            <MudTextField @bind-Value="title" Label="@T("Title")" Placeholder="@T("e.g. City from above")" Variant="Variant.Outlined" Immediate="true" />
+            <MudTextField @bind-Value="schoolClass" Label="@T("Class")" Placeholder="@T("e.g. 2b")" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="date" Label="@T("Date")" Variant="Variant.Outlined" DateFormat="@T("dd/MM/yyyy")" Culture="@culture" />
             <MudButton Class="btn-ink mt-1" Disabled="@string.IsNullOrWhiteSpace(title)" OnClick="CreateAsync" StartIcon="@Icons.Material.Filled.Add">
-                @T("Prüfung anlegen")
+                @T("Create assignment")
             </MudButton>
         </MudStack>
     </section>
@@ -110,7 +110,7 @@
 
 @code {
     private static System.Globalization.CultureInfo culture => Language.Culture;
-    private static string SettingsLink => $"<a href=\"/einstellungen\">{T("Einstellungen")}</a>";
+    private static string SettingsLink => $"<a href=\"/einstellungen\">{T("Settings")}</a>";
     private List<ExamSummary>? exams;
     private string title = "";
     private string schoolClass = "";
@@ -130,11 +130,11 @@
     private async Task DeletePastPhotosAsync()
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
-            T("Fotos endgültig löschen?"),
-            T("Die Fotos von {0} werden gelöscht. Noten, Stufen und Kommentare bleiben. Wer die Rückmeldeblätter mit Fotos braucht, exportiert sie vorher als PDF.",
-                string.Join(", ", pastSemesters.Select(e => T("«{0}»", e.Title)))),
-            yesText: T("Fotos löschen"),
-            cancelText: T("Abbrechen"));
+            T("Delete photos permanently?"),
+            T("The photos of {0} will be deleted. Grades, levels and comments are kept. If you need the feedback sheets with photos, export them as PDF first.",
+                string.Join(", ", pastSemesters.Select(e => T("‘{0}’", e.Title)))),
+            yesText: T("Delete photos"),
+            cancelText: T("Cancel"));
         if (confirmed != true)
         {
             return;
@@ -149,9 +149,9 @@
     private static string Greeting() =>
         DateTime.Now.Hour switch
         {
-            < 11 => T("Guten Morgen"),
-            < 17 => T("Guten Tag"),
-            _ => T("Guten Abend"),
+            < 11 => T("Good morning"),
+            < 17 => T("Hello"),
+            _ => T("Good evening"),
         };
 
     private async Task CreateAsync()

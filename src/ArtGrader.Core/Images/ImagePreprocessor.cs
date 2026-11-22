@@ -19,15 +19,15 @@ public static class ImagePreprocessor
         if (IsHeif(bytes))
         {
             throw new UnsupportedImageException(
-                T("HEIC-Fotos (iPhone) werden nicht unterstützt. Bitte als JPEG exportieren oder auf dem iPhone unter Einstellungen › Kamera › Formate «Maximale Kompatibilität» wählen."));
+                T("HEIC photos (iPhone) are not supported. Please export as JPEG, or on the iPhone choose Settings ’ Camera ’ Formats ’ ‘Most Compatible’."));
         }
 
         using var data = SKData.CreateCopy(bytes);
         using var codec = SKCodec.Create(data)
-            ?? throw new UnsupportedImageException(T("Diese Datei ist kein unterstütztes Bild (JPEG, PNG, WebP, GIF, BMP)."));
+            ?? throw new UnsupportedImageException(T("This file is not a supported image (JPEG, PNG, WebP, GIF, BMP)."));
 
         using var decoded = SKBitmap.Decode(codec)
-            ?? throw new UnsupportedImageException(T("Das Bild ist beschädigt und kann nicht gelesen werden."));
+            ?? throw new UnsupportedImageException(T("The image is damaged and cannot be read."));
         using var oriented = ApplyOrigin(decoded, codec.EncodedOrigin);
         using var resized = Downscale(oriented, maxSide);
         using var image = SKImage.FromBitmap(resized);
@@ -46,7 +46,7 @@ public static class ImagePreprocessor
         var width = Math.Max(1, (int)Math.Round(source.Width * scale));
         var height = Math.Max(1, (int)Math.Round(source.Height * scale));
         return source.Resize(new SKImageInfo(width, height), new SKSamplingOptions(SKCubicResampler.Mitchell))
-            ?? throw new UnsupportedImageException(T("Das Bild konnte nicht verkleinert werden."));
+            ?? throw new UnsupportedImageException(T("The image could not be made smaller."));
     }
 
     private static SKBitmap ApplyOrigin(SKBitmap source, SKEncodedOrigin origin)

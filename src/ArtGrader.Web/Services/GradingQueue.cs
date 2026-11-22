@@ -69,7 +69,7 @@ public sealed class GradingQueue(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unexpected error while grading submission {SubmissionId}", submissionId);
-                await repository.SetStatusAsync(submissionId, SubmissionStatus.Fehler, T("Unerwarteter Fehler: {0}", ex.Message));
+                await repository.SetStatusAsync(submissionId, SubmissionStatus.Fehler, T("Unexpected error: {0}", ex.Message));
             }
             finally
             {

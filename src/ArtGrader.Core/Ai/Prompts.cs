@@ -43,7 +43,7 @@ public static class Prompts
         """;
 
     /// <summary>The rubric import instructions; only the name of a default category depends on the app language.</summary>
-    public static string RubricImportSystem => RubricImportSystemTemplate.Replace("{0}", Texts.T("Kriterien"), StringComparison.Ordinal);
+    public static string RubricImportSystem => RubricImportSystemTemplate.Replace("{0}", Texts.T("Criteria"), StringComparison.Ordinal);
 
     private const string RubricImportSystemTemplate = """
         Du hilfst einer Lehrperson für Bildnerisches Gestalten (Sekundarstufe I, Schweiz), ihren

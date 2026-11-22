@@ -12,19 +12,19 @@ public sealed class LanguageSwitching;
 public partial class LocalizationTests
 {
     [Fact]
-    public void Every_text_in_the_code_has_an_english_translation()
+    public void Every_text_in_the_code_has_a_german_translation()
     {
         var missing = TextsInCode()
-            .Where(t => !Texts.EnglishTexts.ContainsKey(t.Text))
+            .Where(t => !Texts.GermanTexts.ContainsKey(t.Text))
             .Select(t => $"{t.File}: «{t.Text}»")
             .Distinct()
             .ToList();
 
-        Assert.True(missing.Count == 0, "Missing English texts:\n" + string.Join("\n", missing));
+        Assert.True(missing.Count == 0, "Missing German texts:\n" + string.Join("\n", missing));
     }
 
     [Fact]
-    public void Texts_are_looked_up_with_a_fixed_german_text_not_an_interpolated_one()
+    public void Texts_are_looked_up_with_a_fixed_english_text_not_an_interpolated_one()
     {
         var interpolated = SourceFiles()
             .SelectMany(f => InterpolatedLookup().Matches(File.ReadAllText(f)).Select(m => $"{Path.GetFileName(f)}: {m.Value}"))
@@ -34,9 +34,9 @@ public partial class LocalizationTests
     }
 
     [Fact]
-    public void Translations_keep_the_placeholders_of_the_german_text()
+    public void Translations_keep_the_placeholders_of_the_english_text()
     {
-        var broken = Texts.EnglishTexts
+        var broken = Texts.GermanTexts
             .Where(e => !Placeholders(e.Key).SetEquals(Placeholders(e.Value)))
             .Select(e => $"«{e.Key}» → «{e.Value}»")
             .ToList();
@@ -45,9 +45,9 @@ public partial class LocalizationTests
     }
 
     [Fact]
-    public void No_german_text_has_two_different_translations()
+    public void No_english_text_has_two_different_translations()
     {
-        _ = Texts.EnglishTexts;
+        _ = Texts.GermanTexts;
         Assert.True(Texts.Conflicts.Count == 0, "Conflicting translations:\n" + string.Join("\n", Texts.Conflicts));
     }
 
@@ -70,16 +70,16 @@ public partial class LocalizationTests
     }
 
     [Fact]
-    public void German_is_shown_as_written_and_english_is_looked_up()
+    public void English_is_shown_as_written_and_german_is_looked_up()
     {
-        var (german, english) = Texts.EnglishTexts.First();
+        var (english, german) = Texts.GermanTexts.First();
         try
         {
-            Language.Current = AppLanguage.De;
-            Assert.Equal(german, Texts.T(german));
-
             Language.Current = AppLanguage.En;
-            Assert.Equal(english, Texts.T(german));
+            Assert.Equal(english, Texts.T(english));
+
+            Language.Current = AppLanguage.De;
+            Assert.Equal(german, Texts.T(english));
         }
         finally
         {
@@ -115,7 +115,7 @@ public partial class LocalizationTests
         return directory?.FullName ?? throw new InvalidOperationException("Repository root not found.");
     }
 
-    // T("…") with a plain string literal; the German text is the key.
+    // T("…") with a plain string literal; the English text is the key.
     [GeneratedRegex("""\bT\(\s*"((?:[^"\\]|\\.)*)"\s*[,)]""")]
     private static partial Regex Lookup();
 

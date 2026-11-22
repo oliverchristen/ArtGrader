@@ -5,14 +5,14 @@
 }
 @if (grade is not null)
 {
-    <span class="@($"stamp {(Submission.Status == SubmissionStatus.Abgeschlossen ? "final" : "")}")" title="@T("{0:0.##} / {1:0.##} Punkte", result.Points, result.MaxPoints)">
-        @grade.Value.ToString("0.0#")<small>@T("Note")</small>
+    <span class="@($"stamp {(Submission.Status == SubmissionStatus.Abgeschlossen ? "final" : "")}")" title="@T("{0:0.##} / {1:0.##} points", result.Points, result.MaxPoints)">
+        @grade.Value.ToString("0.0#")<small>@T("Grade")</small>
     </span>
 }
 else if (result.Provisional is not null)
 {
-    <span class="stamp provisional" title="@T("Vorläufig – noch {0} Kriterium/en der Lehrperson offen", result.MissingCount)">
-        @result.Provisional.Value.ToString("0.0#")<small>@T("vorläufig")</small>
+    <span class="stamp provisional" title="@T("Provisional – {0} teacher criterion/criteria still open", result.MissingCount)">
+        @result.Provisional.Value.ToString("0.0#")<small>@T("provisional")</small>
     </span>
 }
 

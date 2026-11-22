@@ -5,22 +5,22 @@
     @switch (mode)
     {
         case Mode.Cover:
-            <span class="cover-hint">@T("Rechteck über die Stelle ziehen, die schwarz werden soll.")</span>
+            <span class="cover-hint">@T("Drag a rectangle over the area that should be blacked out.")</span>
             <span class="topbar-spacer"></span>
-            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Undo" Disabled="@(Covers.Count == 0)" OnClick="RemoveLastAsync">@T("Letzten Balken entfernen")</MudButton>
-            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">@T("Fertig")</MudButton>
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Undo" Disabled="@(Covers.Count == 0)" OnClick="RemoveLastAsync">@T("Remove last bar")</MudButton>
+            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">@T("Done")</MudButton>
             break;
         case Mode.Crop:
-            <span class="cover-hint">@T("Rechteck um den Bereich ziehen, der bleiben soll.")</span>
+            <span class="cover-hint">@T("Drag a rectangle around the area that should stay.")</span>
             <span class="topbar-spacer"></span>
-            <MudButton Class="btn-quiet" Size="Size.Small" OnClick="() => mode = Mode.View">@T("Abbrechen")</MudButton>
+            <MudButton Class="btn-quiet" Size="Size.Small" OnClick="() => mode = Mode.View">@T("Cancel")</MudButton>
             break;
         default:
-            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="() => Start(Mode.Cover)">@(CoverLabel ?? T("Name oder Signatur abdecken"))</MudButton>
-            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Crop" OnClick="() => Start(Mode.Crop)">@T("Zuschneiden")</MudButton>
+            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="() => Start(Mode.Cover)">@(CoverLabel ?? T("Cover name or signature"))</MudButton>
+            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Crop" OnClick="() => Start(Mode.Crop)">@T("Crop")</MudButton>
             @if (Crop is not null)
             {
-                <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CropFree" OnClick="RemoveCropAsync">@T("Zuschnitt aufheben")</MudButton>
+                <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CropFree" OnClick="RemoveCropAsync">@T("Undo crop")</MudButton>
             }
             @if (Summary() is { Length: > 0 } summary)
             {
@@ -91,13 +91,13 @@
         var parts = new List<string>();
         if (Covers.Count > 0)
         {
-            parts.Add(Covers.Count == 1 ? T("1 Stelle abgedeckt") : T("{0} Stellen abgedeckt", Covers.Count));
+            parts.Add(Covers.Count == 1 ? T("1 area covered") : T("{0} areas covered", Covers.Count));
         }
         if (Crop is not null)
         {
-            parts.Add(T("zugeschnitten"));
+            parts.Add(T("cropped"));
         }
-        return parts.Count == 0 ? "" : string.Join(" · ", parts) + " · " + T("die KI sieht nur den hellen Bereich ohne Balken");
+        return parts.Count == 0 ? "" : string.Join(" · ", parts) + " · " + T("the AI only sees the bright area without bars");
     }
 
     private static string Style(CoverArea area) =>

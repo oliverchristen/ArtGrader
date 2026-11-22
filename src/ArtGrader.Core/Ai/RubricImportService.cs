@@ -16,7 +16,7 @@ public sealed class RubricImportService(IModelGateway claude)
     {
         if (string.IsNullOrWhiteSpace(rubricText) && rubricPages.Count == 0)
         {
-            throw new ModelException(T("Der Beurteilungsbogen ist leer."));
+            throw new ModelException(T("The assessment sheet is empty."));
         }
         var shared = new List<ContentPart>();
         for (var i = 0; i < rubricPages.Count; i++)
@@ -51,7 +51,7 @@ public sealed class RubricImportService(IModelGateway claude)
         }
         catch (JsonException ex)
         {
-            throw new ModelException(T("Die Antwort der KI konnte nicht gelesen werden. Bitte nochmals versuchen."), ex);
+            throw new ModelException(T("The AI's answer could not be read. Please try again."), ex);
         }
 
         var categories = new List<RubricCategory>();
@@ -84,7 +84,7 @@ public sealed class RubricImportService(IModelGateway claude)
 
         if (categories.Count == 0)
         {
-            throw new ModelException(T("Im Dokument wurden keine Beurteilungskriterien gefunden."));
+            throw new ModelException(T("No assessment criteria were found in the document."));
         }
         return categories;
     }

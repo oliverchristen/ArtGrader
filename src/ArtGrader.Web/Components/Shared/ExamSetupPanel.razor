@@ -10,55 +10,55 @@
 
 <div class="flow">
     <section class="sheet">
-        <h2 class="sheet-title">@T("Datenschutz")</h2>
+        <h2 class="sheet-title">@T("Data protection")</h2>
         <div class="@($"privacy-choice {(grading.LocalOnly ? "on" : "")}")">
-            <MudSwitch T="bool" Value="grading.LocalOnly" ValueChanged="SetLocalOnlyAsync" Color="Color.Success" Label="@T("Nur lokal bewerten")" />
+            <MudSwitch T="bool" Value="grading.LocalOnly" ValueChanged="SetLocalOnlyAsync" Color="Color.Success" Label="@T("Assess locally only")" />
             <p>
                 @if (grading.LocalOnly)
                 {
                     @(string.IsNullOrWhiteSpace(Settings.OllamaModel)
-                        ? T("Dokumente, Fotos und Kriterien dieser Prüfung gehen nie ins Internet. Bewertet wird mit dem lokalen Modell.")
-                        : T("Dokumente, Fotos und Kriterien dieser Prüfung gehen nie ins Internet. Bewertet wird mit dem lokalen Modell «{0}».", Settings.OllamaModel))
+                        ? T("Documents, photos and criteria of this assignment never go online. Works are assessed with the local model.")
+                        : T("Documents, photos and criteria of this assignment never go online. Works are assessed with the local model ‘{0}’.", Settings.OllamaModel))
                 }
                 else
                 {
-                    @T("Einschalten, wenn für diese Prüfung nichts in die Cloud gehen darf. Das lokale Modell ist langsamer und etwas weniger genau.")
+                    @T("Turn on if nothing from this assignment may go to the cloud. The local model is slower and a little less accurate.")
                 }
             </p>
             @if (grading.LocalOnly && string.IsNullOrWhiteSpace(Settings.OllamaModel))
             {
-                <div class="banner mt-2">@T("Es ist noch kein lokales Modell eingerichtet.") <a href="/einstellungen">@T("Zu den Einstellungen")</a></div>
+                <div class="banner mt-2">@T("No local model has been set up yet.") <a href="/einstellungen">@T("Go to Settings")</a></div>
             }
         </div>
     </section>
 
-    <DocumentSection Exam="Exam" Kind="DocumentKind.Aufgabe" Title="@T("Aufgabenstellung")"
-                     Sub="@T("Das Blatt, das die Klasse bekommen hat. Die KI liest es, um zu verstehen, worum es geht.")"
-                     DropText="@T("Word, PDF oder Text hierher ziehen")" TextLabel="@T("Text der Aufgabe")"
-                     Placeholder="@T("Aufgabe hochladen oder hier eintippen")" Changed="OnDocumentChanged" />
+    <DocumentSection Exam="Exam" Kind="DocumentKind.Aufgabe" Title="@T("Task")"
+                     Sub="@T("The sheet the class was given. The AI reads it to understand what the assignment is about.")"
+                     DropText="@T("Drag Word, PDF or text here")" TextLabel="@T("Text of the task")"
+                     Placeholder="@T("Upload the task or type it here")" Changed="OnDocumentChanged" />
 
-    <DocumentSection Exam="Exam" Kind="DocumentKind.Unterricht" Title="@T("Unterrichtsmaterial")" Optional="true"
-                     Sub="@T("Zum Beispiel die PowerPoint-Präsentation zum Thema. So weiss die KI, was im Unterricht behandelt wurde.")"
-                     DropText="@T("PowerPoint, PDF oder Word hierher ziehen")" TextLabel="@T("Text aus dem Unterrichtsmaterial")" Rows="8"
+    <DocumentSection Exam="Exam" Kind="DocumentKind.Unterricht" Title="@T("Teaching material")" Optional="true"
+                     Sub="@T("For example the PowerPoint presentation on the topic. This tells the AI what was covered in class.")"
+                     DropText="@T("Drag PowerPoint, PDF or Word here")" TextLabel="@T("Text from the teaching material")" Rows="8"
                      Changed="OnDocumentChanged" />
 
-    <DocumentSection Exam="Exam" Kind="DocumentKind.Beurteilung" Title="@T("Beurteilungsbogen")"
-                     Sub="@T("Hochladen, prüfen und schwärzen. Dann liest die KI die Kriterien daraus aus.")"
-                     DropText="@T("Beurteilungsbogen hierher ziehen")" TextLabel="@T("Text des Beurteilungsbogens")" Changed="OnDocumentChanged">
+    <DocumentSection Exam="Exam" Kind="DocumentKind.Beurteilung" Title="@T("Assessment sheet")"
+                     Sub="@T("Upload, check and redact. Then the AI reads the criteria from it.")"
+                     DropText="@T("Drag the assessment sheet here")" TextLabel="@T("Text of the assessment sheet")" Changed="OnDocumentChanged">
         <Footer>
             <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.AutoAwesome" Disabled="@(importing || !HasRubricSource)" OnClick="ImportRubricAsync">
-                @(importing ? T("Die KI liest …") : T("Kriterien auslesen"))
+                @(importing ? T("The AI is reading …") : T("Read criteria"))
             </MudButton>
         </Footer>
     </DocumentSection>
 
     <section class="sheet">
-        <h2 class="sheet-title">@T("Beurteilungskriterien")</h2>
-        <p class="sheet-sub">@T("Aus dem Beurteilungsbogen auslesen oder selbst erfassen. Danach kannst du alles anpassen.")</p>
+        <h2 class="sheet-title">@T("Assessment criteria")</h2>
+        <p class="sheet-sub">@T("Read them from the assessment sheet or enter them yourself. You can adjust everything afterwards.")</p>
 
         @if (categories.Count == 0)
         {
-            <p class="faint mt-4">@T("Noch keine Kriterien.")</p>
+            <p class="faint mt-4">@T("No criteria yet.")</p>
         }
 
         @foreach (var category in categories)
@@ -66,57 +66,57 @@
             <div class="category" @key="category.Id">
                 <div class="category-head">
                     <MudTextField T="string" Value="category.Name" ValueChanged="@(v => { category.Name = v; RubricChanged(); })" Immediate="true"
-                                  Variant="Variant.Text" Class="flex-grow-1 category-name" Placeholder="@T("Kategorie")" />
+                                  Variant="Variant.Text" Class="flex-grow-1 category-name" Placeholder="@T("Category")" />
                     <MudIconButton Icon="@Icons.Material.Outlined.ArrowUpward" Size="Size.Small" Disabled="@(categories.IndexOf(category) == 0)"
-                                   OnClick="() => Move(categories, category, -1)" aria-label="@T("Kategorie nach oben")" />
+                                   OnClick="() => Move(categories, category, -1)" aria-label="@T("Move category up")" />
                     <MudIconButton Icon="@Icons.Material.Outlined.ArrowDownward" Size="Size.Small" Disabled="@(categories.IndexOf(category) == categories.Count - 1)"
-                                   OnClick="() => Move(categories, category, 1)" aria-label="@T("Kategorie nach unten")" />
+                                   OnClick="() => Move(categories, category, 1)" aria-label="@T("Move category down")" />
                     <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small"
-                                   OnClick="() => { categories.Remove(category); RubricChanged(); }" aria-label="@T("Kategorie löschen")" />
+                                   OnClick="() => { categories.Remove(category); RubricChanged(); }" aria-label="@T("Delete category")" />
                 </div>
                 @foreach (var criterion in category.Criteria)
                 {
                     var teacher = criterion.AssessedBy == AssessedBy.Teacher;
                     <div class="@($"criterion {(teacher ? "teacher" : "")}")" @key="criterion.Id">
                         <MudTextField T="string" Value="criterion.Text" ValueChanged="@(v => { criterion.Text = v; RubricChanged(); })" Immediate="true"
-                                      Variant="Variant.Text" Lines="1" Sizing="InputSizing.Auto" MaxLines="6" Placeholder="@T("Kriterium")" Underline="false" />
+                                      Variant="Variant.Text" Lines="1" Sizing="InputSizing.Auto" MaxLines="6" Placeholder="@T("Criterion")" Underline="false" />
                         <div class="d-flex">
                             <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowUp" Size="Size.Small" Disabled="@(category.Criteria.IndexOf(criterion) == 0)"
-                                           OnClick="() => Move(category.Criteria, criterion, -1)" aria-label="@T("Nach oben")" />
+                                           OnClick="() => Move(category.Criteria, criterion, -1)" aria-label="@T("Move up")" />
                             <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowDown" Size="Size.Small" Disabled="@(category.Criteria.IndexOf(criterion) == category.Criteria.Count - 1)"
-                                           OnClick="() => Move(category.Criteria, criterion, 1)" aria-label="@T("Nach unten")" />
+                                           OnClick="() => Move(category.Criteria, criterion, 1)" aria-label="@T("Move down")" />
                         </div>
                         <div class="criterion-tools">
-                            <span class="seg" role="radiogroup" aria-label="@T("Wer beurteilt")">
-                                <button type="button" class="@(teacher ? "" : "on")" @onclick="() => SetAssessor(criterion, AssessedBy.Ai)">@T("KI schlägt vor")</button>
-                                <button type="button" class="@(teacher ? "on teacher" : "")" @onclick="() => SetAssessor(criterion, AssessedBy.Teacher)">@T("nur Lehrperson")</button>
+                            <span class="seg" role="radiogroup" aria-label="@T("Who assesses")">
+                                <button type="button" class="@(teacher ? "" : "on")" @onclick="() => SetAssessor(criterion, AssessedBy.Ai)">@T("AI suggests")</button>
+                                <button type="button" class="@(teacher ? "on teacher" : "")" @onclick="() => SetAssessor(criterion, AssessedBy.Teacher)">@T("teacher only")</button>
                             </span>
-                            <span class="weight" title="@T("Gewicht")">
-                                @T("Gewicht")
-                                <button type="button" @onclick="() => ChangeWeight(criterion, -0.5m)" aria-label="@T("Gewicht verringern")">−</button>
+                            <span class="weight" title="@T("Weight")">
+                                @T("Weight")
+                                <button type="button" @onclick="() => ChangeWeight(criterion, -0.5m)" aria-label="@T("Decrease weight")">−</button>
                                 <b>@criterion.Weight.ToString("0.#")×</b>
-                                <button type="button" @onclick="() => ChangeWeight(criterion, 0.5m)" aria-label="@T("Gewicht erhöhen")">+</button>
+                                <button type="button" @onclick="() => ChangeWeight(criterion, 0.5m)" aria-label="@T("Increase weight")">+</button>
                             </span>
                             <span class="topbar-spacer"></span>
-                            <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Small" aria-label="@T("Kriterium entfernen")"
+                            <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Small" aria-label="@T("Remove criterion")"
                                            OnClick="() => { category.Criteria.Remove(criterion); RubricChanged(); }" />
                         </div>
                     </div>
                 }
-                <MudButton Class="btn-quiet mt-2" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Add" OnClick="() => AddCriterion(category)">@T("Kriterium")</MudButton>
+                <MudButton Class="btn-quiet mt-2" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Add" OnClick="() => AddCriterion(category)">@T("Criterion")</MudButton>
             </div>
         }
 
-        <MudButton Class="btn-soft mt-5" StartIcon="@Icons.Material.Outlined.PlaylistAdd" OnClick="AddCategory">@T("Kategorie")</MudButton>
+        <MudButton Class="btn-soft mt-5" StartIcon="@Icons.Material.Outlined.PlaylistAdd" OnClick="AddCategory">@T("Category")</MudButton>
     </section>
 
     <div class="next-step">
         @if (!HasCriteria)
         {
-            <span class="muted">@T("Fotos kannst du schon jetzt erfassen. Für die Bewertung braucht es Kriterien.")</span>
+            <span class="muted">@T("You can already add photos. Assessing needs criteria.")</span>
         }
         <MudButton Class="btn-ink" Size="Size.Large" OnClick="GoNextAsync" EndIcon="@Icons.Material.Filled.ArrowForward">
-            @T("Weiter zu Arbeiten erfassen")
+            @T("Continue to Add works")
         </MudButton>
     </div>
 </div>
@@ -198,7 +198,7 @@
         grading.LocalOnly = value;
         await Repository.SetLocalOnlyAsync(Exam.Id, value);
         await Changed.InvokeAsync();
-        Snackbar.Add(value ? T("Diese Prüfung wird nur noch lokal bewertet.") : T("Diese Prüfung darf wieder mit Claude bewertet werden."), Severity.Success);
+        Snackbar.Add(value ? T("This assignment is now assessed locally only.") : T("This assignment may be assessed with Claude again."), Severity.Success);
     }
 
     private async Task GoNextAsync()
@@ -217,16 +217,16 @@
         {
             Snackbar.Add(grading.LocalOnly
                 ? RoutingModelGateway.LocalOnlyWithoutModel
-                : T("Bitte zuerst unter «Einstellungen» Claude oder ein lokales Modell einrichten."), Severity.Warning);
+                : T("Please first set up Claude or a local model under ‘Settings’."), Severity.Warning);
             return;
         }
         if (categories.Count > 0 || Exam.Submissions.Any(s => s.GradedAt is not null))
         {
             var confirmed = await Dialogs.ShowMessageBoxAsync(
-                T("Kriterien ersetzen?"),
-                T("Die bisherigen Kriterien werden durch die ausgelesenen ersetzt. Bereits bewertete Arbeiten müssen danach neu bewertet werden."),
-                yesText: T("Ersetzen"),
-                cancelText: T("Abbrechen"));
+                T("Replace criteria?"),
+                T("The current criteria will be replaced by the ones read from the sheet. Works already assessed will then need to be assessed again."),
+                yesText: T("Replace"),
+                cancelText: T("Cancel"));
             if (confirmed != true)
             {
                 return;
@@ -250,8 +250,8 @@
             var total = categories.Sum(c => c.Criteria.Count);
             Snackbar.Add(
                 teacherOnly > 0
-                    ? T("{0} Kriterien übernommen, davon {1} nur für die Lehrperson. Bitte kurz prüfen.", total, teacherOnly)
-                    : T("{0} Kriterien übernommen. Bitte kurz prüfen.", total),
+                    ? T("{0} criteria added, {1} of them for the teacher only. Please check them briefly.", total, teacherOnly)
+                    : T("{0} criteria added. Please check them briefly.", total),
                 Severity.Success);
             await Changed.InvokeAsync();
         }
@@ -267,7 +267,7 @@
 
     private void AddCategory()
     {
-        var category = new RubricCategory { ExamId = Exam.Id, Name = T("Neue Kategorie") };
+        var category = new RubricCategory { ExamId = Exam.Id, Name = T("New category") };
         AddCriterion(category);
         categories.Add(category);
     }

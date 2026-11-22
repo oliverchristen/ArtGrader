@@ -21,11 +21,11 @@ public static class PdfPages
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            throw new UnsupportedDocumentException(T("Das PDF konnte nicht gelesen werden. Ist es passwortgeschützt oder beschädigt?"));
+            throw new UnsupportedDocumentException(T("The PDF could not be read. Is it password-protected or damaged?"));
         }
         if (count > MaxPages)
         {
-            throw new UnsupportedDocumentException(T("Das PDF hat {0} Seiten. Bitte höchstens {1} Seiten hochladen.", count, MaxPages));
+            throw new UnsupportedDocumentException(T("The PDF has {0} pages. Please upload no more than {1} pages.", count, MaxPages));
         }
 
         var pages = new List<byte[]>();

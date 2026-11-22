@@ -18,10 +18,10 @@ public static class FeedbackPdf
     private const float PhotoColumnWidth = 160;
 
     public static string AiNotice =>
-        T("Die Einschätzung wurde mit Unterstützung einer KI vorbereitet. Die Lehrperson hat jedes Kriterium geprüft und die Note festgelegt.");
+        T("This assessment was prepared with AI support. The teacher checked every criterion and set the grade.");
 
     public static string AiDraftNotice =>
-        T("Entwurf: Die Einschätzung wurde mit Unterstützung einer KI vorbereitet. Die Lehrperson hat sie noch nicht abgeschlossen.");
+        T("Draft: this assessment was prepared with AI support. The teacher has not completed it yet.");
 
     public static string? AiNoticeFor(Submission submission) =>
         submission.ModelId is null ? null
@@ -63,7 +63,7 @@ public static class FeedbackPdf
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text(T("BEURTEILUNG")).FontSize(7.5f).Bold().LetterSpacing(0.15f).FontColor(Terracotta);
+                column.Item().Text(T("ASSESSMENT")).FontSize(7.5f).Bold().LetterSpacing(0.15f).FontColor(Terracotta);
                 column.Item().Text(exam.Title).FontSize(17).Bold();
             });
             row.AutoItem().AlignBottom().AlignRight().Text(t =>
@@ -71,9 +71,9 @@ public static class FeedbackPdf
                 t.DefaultTextStyle(s => s.FontColor(InkSoft));
                 if (!string.IsNullOrWhiteSpace(exam.SchoolClass))
                 {
-                    t.Span(T("Klasse {0}  ·  ", exam.SchoolClass));
+                    t.Span(T("Class {0}  ·  ", exam.SchoolClass));
                 }
-                t.Span(exam.Date.ToString(T("dd.MM.yyyy"), Language.Culture));
+                t.Span(exam.Date.ToString(T("dd/MM/yyyy"), Language.Culture));
             });
         });
 
@@ -104,7 +104,7 @@ public static class FeedbackPdf
             {
                 footer.Item().PaddingBottom(4).AlignCenter().Text(notice).FontSize(7.5f).FontColor(InkSoft);
             }
-            footer.Item().AlignCenter().Text(T("Bildnerisches Gestalten")).FontSize(7).FontColor(InkSoft);
+            footer.Item().AlignCenter().Text(T("Visual Arts")).FontSize(7).FontColor(InkSoft);
         });
     }
 
@@ -142,14 +142,14 @@ public static class FeedbackPdf
             {
                 name.Item().Text(T("Name")).FontSize(7.5f).FontColor(InkSoft);
                 name.Item().Text(submission.StudentName).FontSize(16).Bold().Italic();
-                name.Item().PaddingTop(4).Text(T("{0:0.##} von {1:0.##} Punkten", result.Points, result.MaxPoints)).FontColor(InkSoft);
+                name.Item().PaddingTop(4).Text(T("{0:0.##} of {1:0.##} points", result.Points, result.MaxPoints)).FontColor(InkSoft);
             });
             row.ConstantItem(78).Height(78).Border(2.5f).BorderColor(Terracotta).CornerRadius(39)
                 .AlignCenter().AlignMiddle().Column(stamp =>
                 {
                     stamp.Item().AlignCenter().Text(grade is null ? "–" : grade.Value.ToString("0.0#"))
                         .FontSize(26).Bold().FontColor(Terracotta);
-                    stamp.Item().AlignCenter().Text(T("NOTE")).FontSize(6.5f).Bold().LetterSpacing(0.15f).FontColor(Terracotta);
+                    stamp.Item().AlignCenter().Text(T("GRADE")).FontSize(6.5f).Bold().LetterSpacing(0.15f).FontColor(Terracotta);
                 });
         });
 
@@ -158,7 +158,7 @@ public static class FeedbackPdf
         {
             column.Item().Background(Paper).CornerRadius(6).Padding(10).Column(feedback =>
             {
-                feedback.Item().Text(T("Rückmeldung")).Bold().FontSize(9.5f);
+                feedback.Item().Text(T("Feedback")).Bold().FontSize(9.5f);
                 feedback.Item().PaddingTop(3).Text(comment).LineHeight(1.35f);
             });
         }
@@ -179,7 +179,7 @@ public static class FeedbackPdf
 
             table.Header(header =>
             {
-                header.Cell().Element(HeaderCell).AlignBottom().Text(T("Kriterium")).Bold();
+                header.Cell().Element(HeaderCell).AlignBottom().Text(T("Criterion")).Bold();
                 foreach (var level in LevelText.AllDescending)
                 {
                     header.Cell().Element(HeaderCell).Column(cell =>

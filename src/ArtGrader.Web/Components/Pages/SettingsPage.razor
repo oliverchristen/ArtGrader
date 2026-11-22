@@ -9,19 +9,19 @@
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
 
-<PageTitle>@T("Einstellungen") · ArtGrader</PageTitle>
+<PageTitle>@T("Settings") · ArtGrader</PageTitle>
 
 <div class="page-head">
-    <div class="eyebrow">@T("Einstellungen")</div>
-    <h1 class="page-title">@((MarkupString)T("Wer schaut <em>mit</em>?"))</h1>
-    <p class="lede">@T("Wähle, welche KI die Arbeiten vorbewertet. Die Note entscheidest immer du.")</p>
+    <div class="eyebrow">@T("Settings")</div>
+    <h1 class="page-title">@((MarkupString)T("Who is <em>helping</em>?"))</h1>
+    <p class="lede">@T("Choose which AI pre-assesses the works. You always decide the grade.")</p>
 </div>
 
 <div class="flow">
     <section class="sheet">
-        <h2 class="sheet-title">@T("Sprache")</h2>
-        <p class="sheet-sub">@T("Gilt für ArtGrader, die Beurteilungsbögen und die Texte, die die KI schreibt.")</p>
-        <div class="choice-grid" role="radiogroup" aria-label="@T("Sprache")">
+        <h2 class="sheet-title">@T("Language")</h2>
+        <p class="sheet-sub">@T("Applies to ArtGrader, the assessment sheets and the texts the AI writes.")</p>
+        <div class="choice-grid" role="radiogroup" aria-label="@T("Language")">
             @foreach (var (language, name) in new[] { (AppLanguage.De, "Deutsch"), (AppLanguage.En, "English") })
             {
                 var on = Settings.Language == language;
@@ -33,57 +33,57 @@
     </section>
 
         <section class="sheet">
-            <div class="choice-grid" role="radiogroup" aria-label="@T("KI-Anbieter")">
+            <div class="choice-grid" role="radiogroup" aria-label="@T("AI provider")">
                 <button type="button" role="radio" aria-checked="@(provider == AiProvider.Anthropic)" class="@($"choice {(provider == AiProvider.Anthropic ? "on" : "")}")"
                         @onclick="SelectAnthropic">
                     <span class="c-title"><span class="c-icon" style="background:var(--ultramarine-wash);color:var(--ultramarine)"><MudIcon Icon="@Icons.Material.Outlined.Cloud" /></span>Claude</span>
-                    <span class="c-text" style="display:block">@T("Sehr genaue Einschätzungen, 30–60 Sekunden pro Arbeit. Läuft in der Cloud von Anthropic, braucht einen API-Schlüssel und kostet etwa 8 Rappen pro Arbeit.")</span>
+                    <span class="c-text" style="display:block">@T("Very accurate assessments, 30–60 seconds per work. Runs in Anthropic's cloud, needs an API key and costs about 8 centimes per work.")</span>
                 </button>
                 <button type="button" role="radio" aria-checked="@(provider == AiProvider.Ollama)" class="@($"choice {(provider == AiProvider.Ollama ? "on" : "")}")"
                         @onclick="SelectOllamaAsync">
-                    <span class="c-title"><span class="c-icon" style="background:var(--sage-wash);color:var(--sage)"><MudIcon Icon="@Icons.Material.Outlined.Laptop" /></span>@T("Lokal (Ollama)")</span>
-                    <span class="c-text" style="display:block">@T("Alles bleibt auf diesem Computer, kostenlos und offline. Langsamer und weniger genau – braucht viel Arbeitsspeicher (ab 32 GB).")</span>
+                    <span class="c-title"><span class="c-icon" style="background:var(--sage-wash);color:var(--sage)"><MudIcon Icon="@Icons.Material.Outlined.Laptop" /></span>@T("Local (Ollama)")</span>
+                    <span class="c-text" style="display:block">@T("Everything stays on this computer, free and offline. Slower and less accurate – needs a lot of memory (32 GB or more).")</span>
                 </button>
             </div>
 
             @if (provider == AiProvider.Anthropic)
             {
-                <h3 class="sheet-title" style="font-size:1.1rem">@T("Anthropic API-Schlüssel")</h3>
-                <p class="sheet-sub">@T("Erstellen unter console.anthropic.com → API Keys. Wird verschlüsselt auf diesem Computer gespeichert.")</p>
+                <h3 class="sheet-title" style="font-size:1.1rem">@T("Anthropic API key")</h3>
+                <p class="sheet-sub">@T("Create one at console.anthropic.com → API Keys. It is stored encrypted on this computer.")</p>
                 @if (Settings.KeyFromEnvironment)
                 {
-                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("Schlüssel aus der Umgebungsvariable ANTHROPIC_API_KEY")</div>
+                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("Key from the environment variable ANTHROPIC_API_KEY")</div>
                 }
                 else if (Settings.HasStoredKey)
                 {
-                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("Ein Schlüssel ist gespeichert")</div>
+                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("A key is saved")</div>
                 }
-                <MudTextField @bind-Value="apiKey" @bind-Value:after="Changed" Immediate="true" Label="@(Settings.HasStoredKey ? T("Neuer Schlüssel") : T("API-Schlüssel"))"
+                <MudTextField @bind-Value="apiKey" @bind-Value:after="Changed" Immediate="true" Label="@(Settings.HasStoredKey ? T("New key") : T("API key"))"
                               Variant="Variant.Outlined" InputType="InputType.Password" Placeholder="sk-ant-…" Class="mb-4" autocomplete="off"
                               Error="@(apiKeyError is not null)" ErrorText="@apiKeyError" />
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="7">
-                        <MudSelect T="string" @bind-Value="model" @bind-Value:after="Changed" Label="@T("Modell")" Variant="Variant.Outlined">
-                            <MudSelectItem T="string" Value="@("claude-opus-5-5")">@T("Claude Opus 5.5 (empfohlen)")</MudSelectItem>
-                            <MudSelectItem T="string" Value="@("claude-sonnet-5-5")">@T("Claude Sonnet 5.5 (günstiger)")</MudSelectItem>
-                            <MudSelectItem T="string" Value="@("claude-fable-5-1")">@T("Claude Fable 5.1 (stärkstes, teuerstes)")</MudSelectItem>
+                        <MudSelect T="string" @bind-Value="model" @bind-Value:after="Changed" Label="@T("Model")" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@("claude-opus-5-5")">@T("Claude Opus 5.5 (recommended)")</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("claude-sonnet-5-5")">@T("Claude Sonnet 5.5 (cheaper)")</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("claude-fable-5-1")">@T("Claude Fable 5.1 (strongest, most expensive)")</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" sm="5">
-                        <MudSelect T="string" @bind-Value="effort" @bind-Value:after="Changed" Label="@T("Gründlichkeit")" Variant="Variant.Outlined">
-                            <MudSelectItem T="string" Value="@("medium")">@T("Mittel")</MudSelectItem>
-                            <MudSelectItem T="string" Value="@("high")">@T("Hoch (empfohlen)")</MudSelectItem>
-                            <MudSelectItem T="string" Value="@("max")">@T("Maximal")</MudSelectItem>
+                        <MudSelect T="string" @bind-Value="effort" @bind-Value:after="Changed" Label="@T("Thoroughness")" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@("medium")">@T("Medium")</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("high")">@T("High (recommended)")</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("max")">@T("Maximum")</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                 </MudGrid>
             }
             else
             {
-                <h3 class="sheet-title" style="font-size:1.1rem">@T("Lokales Modell")</h3>
+                <h3 class="sheet-title" style="font-size:1.1rem">@T("Local model")</h3>
                 <p class="sheet-sub">
-                    @((MarkupString)T("Einmalig <a href='https://ollama.com/download' target='_blank' rel='noopener'>Ollama installieren</a> und starten."))
-                    @T("Danach hier ein Modell herunterladen und auswählen.")
+                    @((MarkupString)T("<a href='https://ollama.com/download' target='_blank' rel='noopener'>Install Ollama</a> once and start it."))
+                    @T("Then download and choose a model here.")
                 </p>
                 @if (ollamaError is not null)
                 {
@@ -91,10 +91,10 @@
                 }
                 else if (ollamaReachable)
                 {
-                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("Ollama läuft")</div>
+                    <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("Ollama is running")</div>
                 }
 
-                <div class="model-list" role="radiogroup" aria-label="@T("Lokales Modell")">
+                <div class="model-list" role="radiogroup" aria-label="@T("Local model")">
                     @foreach (var entry in LocalModelCatalog.Recommended)
                     {
                         var installed = IsInstalled(entry.Name);
@@ -108,15 +108,15 @@
                                 </span>
                                 <span class="model-text">@entry.Description</span>
                                 <span class="model-facts">
-                                    <span>⏱ @T("{0} Min. pro Arbeit", effort == "high" ? entry.MinutesWithThinking : entry.MinutesFast)</span>
+                                    <span>⏱ @T("{0} min per work", effort == "high" ? entry.MinutesWithThinking : entry.MinutesFast)</span>
                                     <span>@entry.DownloadGb.ToString("0.#") GB</span>
-                                    <span>@T("ab {0} GB Arbeitsspeicher", entry.MinMemoryGb)</span>
+                                    <span>@T("{0} GB memory or more", entry.MinMemoryGb)</span>
                                 </span>
                             </button>
                             <div class="model-action">
                                 @if (installed)
                                 {
-                                    <span class="ok-line"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("installiert")</span>
+                                    <span class="ok-line"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("installed")</span>
                                 }
                                 else if (download is { Error: { } error })
                                 {
@@ -126,13 +126,13 @@
                                 {
                                     var fraction = download.Progress?.Fraction ?? 0;
                                     <div class="brush-progress" style="min-width:140px"><span style="@($"width:{(fraction * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture)}%")"></span></div>
-                                    <span class="faint" style="font-size:.8rem">@(download.Progress?.Fraction is { } f ? $"{f:P0}" : T("startet …"))</span>
+                                    <span class="faint" style="font-size:.8rem">@(download.Progress?.Fraction is { } f ? $"{f:P0}" : T("starting …"))</span>
                                 }
                                 else
                                 {
                                     <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Download" Disabled="@(!ollamaReachable)"
                                                OnClick="() => Downloads.Start(entry.Name)">
-                                        @T("Herunterladen")
+                                        @T("Download")
                                     </MudButton>
                                 }
                             </div>
@@ -142,11 +142,11 @@
                     {
                         <div class="@($"model-card {(ollamaModel == other.Name ? "on" : "")}")">
                             <button type="button" role="radio" aria-checked="@(ollamaModel == other.Name)" class="model-pick" @onclick="() => PickModel(other.Name)">
-                                <span class="model-head"><span class="model-title">@T("Weiteres Modell")</span><code>@other.Name</code></span>
-                                <span class="model-text">@T("Selbst installiert. Muss Bilder verstehen können (Vision).")</span>
+                                <span class="model-head"><span class="model-title">@T("Other model")</span><code>@other.Name</code></span>
+                                <span class="model-text">@T("Installed by you. Must be able to understand images (vision).")</span>
                                 <span class="model-facts"><span>@((other.SizeBytes / 1_000_000_000.0).ToString("0.#")) GB</span></span>
                             </button>
-                            <div class="model-action"><span class="ok-line"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("installiert")</span></div>
+                            <div class="model-action"><span class="ok-line"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> @T("installed")</span></div>
                         </div>
                     }
                 </div>
@@ -154,20 +154,20 @@
                 {
                     <div class="banner info mt-3">
                         <MudIcon Icon="@Icons.Material.Outlined.CloudOff" />
-                        <span>@(hiddenCloudModels == 1 ? T("1 Cloud-Modell ist ausgeblendet.") : T("{0} Cloud-Modelle sind ausgeblendet.", hiddenCloudModels)) @T("Cloud-Modelle von Ollama rechnen auf fremden Servern; die Fotos würden den Computer verlassen.")</span>
+                        <span>@(hiddenCloudModels == 1 ? T("1 cloud model is hidden.") : T("{0} cloud models are hidden.", hiddenCloudModels)) @T("Ollama cloud models run on other people's servers; the photos would leave the computer.")</span>
                     </div>
                 }
-                <p class="faint mt-2" style="font-size:.8rem">@T("Zeiten gemessen auf dem Testcomputer mit 14 Arbeiten. Je nach Computer schneller oder langsamer.")</p>
+                <p class="faint mt-2" style="font-size:.8rem">@T("Times measured on the test computer with 14 works. Faster or slower depending on the computer.")</p>
 
-                <h3 class="sheet-title mt-6" style="font-size:1.1rem">@T("Modus")</h3>
-                <div class="choice-grid" role="radiogroup" aria-label="@T("Modus")" style="margin-bottom:8px">
+                <h3 class="sheet-title mt-6" style="font-size:1.1rem">@T("Mode")</h3>
+                <div class="choice-grid" role="radiogroup" aria-label="@T("Mode")" style="margin-bottom:8px">
                     <button type="button" role="radio" aria-checked="@(effort == "high")" class="@($"choice {(effort == "high" ? "on" : "")}")" @onclick="@(() => SetEffort("high"))">
-                        <span class="c-title">@T("Gründlich")</span>
-                        <span class="c-text">@T("Das Modell denkt nach, bevor es antwortet. Genauer, aber etwa doppelt so lang.")</span>
+                        <span class="c-title">@T("Thorough")</span>
+                        <span class="c-text">@T("The model thinks before it answers. More accurate, but takes about twice as long.")</span>
                     </button>
                     <button type="button" role="radio" aria-checked="@(effort == "medium")" class="@($"choice {(effort == "medium" ? "on" : "")}")" @onclick="@(() => SetEffort("medium"))">
-                        <span class="c-title">@T("Schnell")</span>
-                        <span class="c-text">@T("Antwortet direkt ohne Nachdenken. Gut, wenn viele Arbeiten anstehen.")</span>
+                        <span class="c-title">@T("Fast")</span>
+                        <span class="c-text">@T("Answers straight away without thinking. Good when there are many works to do.")</span>
                     </button>
                 </div>
                 @if (effort == "medium" && LocalModelCatalog.Find(ollamaModel) is { FastVariant: { } fastVariant } selectedModel && !IsInstalled(fastVariant))
@@ -175,8 +175,8 @@
                     var fastDownload = Downloads.Get(fastVariant);
                     <div class="model-card missing" style="margin-top:12px">
                         <div class="model-pick" style="cursor:default">
-                            <span class="model-head"><span class="model-title">@T("Schnell-Variante für «{0}»", selectedModel.Title)</span><code>@fastVariant</code></span>
-                            <span class="model-text">@T("Dieses Modell kann das Nachdenken nicht abschalten. Für den Schnell-Modus braucht es eine zweite Variante. Bis sie geladen ist, denkt es trotzdem nach.")</span>
+                            <span class="model-head"><span class="model-title">@T("Fast variant for ‘{0}’", selectedModel.Title)</span><code>@fastVariant</code></span>
+                            <span class="model-text">@T("This model cannot switch off thinking. Fast mode needs a second variant. Until it is downloaded, the model still thinks.")</span>
                             <span class="model-facts"><span>@selectedModel.DownloadGb.ToString("0.#") GB</span></span>
                         </div>
                         <div class="model-action">
@@ -188,13 +188,13 @@
                             {
                                 var fastFraction = fastDownload.Progress?.Fraction ?? 0;
                                 <div class="brush-progress" style="min-width:140px"><span style="@($"width:{(fastFraction * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture)}%")"></span></div>
-                                <span class="faint" style="font-size:.8rem">@(fastDownload.Progress?.Fraction is { } ff ? $"{ff:P0}" : T("startet …"))</span>
+                                <span class="faint" style="font-size:.8rem">@(fastDownload.Progress?.Fraction is { } ff ? $"{ff:P0}" : T("starting …"))</span>
                             }
                             else
                             {
                                 <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Download" Disabled="@(!ollamaReachable)"
                                            OnClick="() => Downloads.Start(fastVariant)">
-                                    @T("Herunterladen")
+                                    @T("Download")
                                 </MudButton>
                             }
                         </div>
@@ -203,11 +203,11 @@
 
                 <MudGrid Spacing="2" Class="mt-2">
                     <MudItem xs="12" sm="8">
-                        <MudTextField @bind-Value="ollamaUrl" @bind-Value:after="Changed" Immediate="true" Label="@T("Ollama-Adresse")" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="ollamaUrl" @bind-Value:after="Changed" Immediate="true" Label="@T("Ollama address")" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     </MudItem>
                     <MudItem xs="12" sm="4" Class="d-flex align-center">
                         <MudButton Class="btn-quiet" StartIcon="@Icons.Material.Outlined.Sync" OnClick="LoadModelsAsync" Disabled="@checking">
-                            @(checking ? T("Prüfe …") : T("Neu prüfen"))
+                            @(checking ? T("Checking …") : T("Check again"))
                         </MudButton>
                     </MudItem>
                 </MudGrid>
@@ -216,36 +216,36 @@
             @if (provider == AiProvider.Anthropic && Settings.HasStoredKey)
             {
                 <div class="d-flex justify-end mt-4">
-                    <MudButton Class="btn-quiet" Color="Color.Secondary" OnClick="RemoveKey">@T("Schlüssel entfernen")</MudButton>
+                    <MudButton Class="btn-quiet" Color="Color.Secondary" OnClick="RemoveKey">@T("Remove key")</MudButton>
                 </div>
             }
-            <p class="faint mt-4" style="font-size:.85rem">@T("Änderungen werden automatisch gespeichert.")</p>
+            <p class="faint mt-4" style="font-size:.85rem">@T("Changes are saved automatically.")</p>
         </section>
         <section class="sheet">
-            <h2 class="sheet-title">@T("Immer schwärzen")</h2>
+            <h2 class="sheet-title">@T("Always redact")</h2>
             <p class="sheet-sub">
-                @T("Begriffe, die auf deine Schule hinweisen: Schulhaus, Ort, dein Name und dein Kürzel. ArtGrader schlägt sie in jedem Dokument zum Schwärzen vor.")
-                @T("E-Mail-Adressen, Telefonnummern und Webadressen erkennt ArtGrader selbst.")
+                @T("Terms that point to your school: school building, town, your name and your initials. ArtGrader suggests redacting them in every document.")
+                @T("ArtGrader finds email addresses, phone numbers and web addresses by itself.")
             </p>
-            <MudTextField T="string" @bind-Value="redactTerms" @bind-Value:after="RedactTermsChanged" Immediate="true" Label="@T("Ein Begriff pro Zeile")"
+            <MudTextField T="string" @bind-Value="redactTerms" @bind-Value:after="RedactTermsChanged" Immediate="true" Label="@T("One term per line")"
                           Variant="Variant.Outlined" Lines="5" Placeholder="@TermsPlaceholder" />
         </section>
         <section class="sheet">
-            <h2 class="sheet-title">@T("Datenschutz")</h2>
+            <h2 class="sheet-title">@T("Data protection")</h2>
             <p class="muted" style="font-size:.93rem">
-                @T("Prüfungen, Fotos und Noten bleiben auf diesem Computer.")
-                @((MarkupString)T("Mit Claude gehen nur Aufgabe, Kriterien und Fotos an Anthropic – <b>keine Namen</b>."))
-                @T("Mit dem lokalen Modell verlässt nichts den Computer.")
+                @T("Assignments, photos and grades stay on this computer.")
+                @((MarkupString)T("With Claude, only the task, criteria and photos go to Anthropic – <b>no names</b>."))
+                @T("With the local model, nothing leaves the computer.")
             </p>
-            <p class="faint" style="font-size:.88rem">@T("Auf den Fotos sollten keine Namen zu sehen sein. Kläre die Nutzung mit deiner Schulleitung ab.")</p>
+            <p class="faint" style="font-size:.88rem">@T("No names should be visible on the photos. Check with your school leadership before using ArtGrader.")</p>
             <MudButton Href="schulleitung.html" Target="_blank" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Description" Class="mt-2">
-                @T("Übersicht für die Schulleitung")
+                @T("Overview for school leadership")
             </MudButton>
         </section>
         <section class="sheet">
-            <h2 class="sheet-title">@T("Datenordner")</h2>
+            <h2 class="sheet-title">@T("Data folder")</h2>
             <p style="word-break:break-all"><code>@Paths.Root</code></p>
-            <p class="faint" style="font-size:.88rem">@T("Für ein Backup diesen Ordner kopieren, während ArtGrader geschlossen ist.")</p>
+            <p class="faint" style="font-size:.88rem">@T("To make a backup, copy this folder while ArtGrader is closed.")</p>
         </section>
 </div>
 
@@ -258,7 +258,7 @@
     private string? ollamaModel;
     private IReadOnlyList<OllamaModelInfo> models = [];
     private int hiddenCloudModels;
-    private static string TermsPlaceholder => T("z. B. Schulhaus Musterdorf, Musterdorf, A. Beispiel – je eine Zeile");
+    private static string TermsPlaceholder => T("e.g. Sampletown School, Sampletown, A. Example – one per line");
     private string redactTerms = "";
 
     private readonly Debouncer saver = new();
@@ -394,7 +394,7 @@
         var key = apiKey;
         if (provider == AiProvider.Anthropic && !string.IsNullOrWhiteSpace(apiKey) && !apiKey.Trim().StartsWith("sk-ant-", StringComparison.Ordinal))
         {
-            apiKeyError = T("Das sieht nicht nach einem Anthropic-Schlüssel aus (beginnt mit «sk-ant-»).");
+            apiKeyError = T("This does not look like an Anthropic key (it starts with ‘sk-ant-’).");
             key = "";
         }
         if (provider == AiProvider.Ollama && string.IsNullOrWhiteSpace(ollamaModel))
@@ -412,7 +412,7 @@
         if (!string.IsNullOrWhiteSpace(key))
         {
             apiKey = "";
-            Snackbar.Add(T("Schlüssel gespeichert."), Severity.Success);
+            Snackbar.Add(T("Key saved."), Severity.Success);
         }
         StateHasChanged();
     }
@@ -420,6 +420,6 @@
     private void RemoveKey()
     {
         Settings.RemoveKey();
-        Snackbar.Add(T("Schlüssel entfernt."), Severity.Info);
+        Snackbar.Add(T("Key removed."), Severity.Info);
     }
 }
