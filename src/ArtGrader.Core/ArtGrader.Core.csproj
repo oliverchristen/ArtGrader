@@ -13,9 +13,9 @@
     <PackageReference Include="SkiaSharp" Version="4.157.0" />
   </ItemGroup>
 
-  <!-- German texts, one JSON file per area; keys are the English texts used in the code. -->
+  <!-- Translations (de, fr, it, rm), one JSON file per area; keys are the English texts used in the code. -->
   <ItemGroup>
-    <EmbeddedResource Include="Localization\de\*.json" />
+    <EmbeddedResource Include="Localization\*\*.json" />
   </ItemGroup>
 
 </Project>

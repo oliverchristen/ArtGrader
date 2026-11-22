@@ -6,6 +6,9 @@ public enum AppLanguage
 {
     De,
     En,
+    Fr,
+    It,
+    Rm,
 }
 
 /// <summary>
@@ -14,16 +17,36 @@ public enum AppLanguage
 /// </summary>
 public static class Language
 {
-    private static readonly CultureInfo German = CultureInfo.GetCultureInfo("de-CH");
-    private static readonly CultureInfo English = CultureInfo.GetCultureInfo("en-GB");
+    /// <summary>All languages in the order the settings show them, with their own name.</summary>
+    public static IReadOnlyList<(AppLanguage Language, string Name)> All { get; } =
+    [
+        (AppLanguage.De, "Deutsch"),
+        (AppLanguage.Fr, "Français"),
+        (AppLanguage.It, "Italiano"),
+        (AppLanguage.Rm, "Rumantsch"),
+        (AppLanguage.En, "English"),
+    ];
 
     public static AppLanguage Current { get; set; } = AppLanguage.De;
 
     public static bool IsEnglish => Current == AppLanguage.En;
 
-    /// <summary>Formats dates and numbers: «22. November 2026» in German, «22 November 2026» in English.</summary>
-    public static CultureInfo Culture => IsEnglish ? English : German;
+    /// <summary>Formats dates and numbers the Swiss way of each language; English uses British conventions.</summary>
+    public static CultureInfo Culture => CultureOf(Current);
 
     /// <summary>The value for the HTML lang attribute.</summary>
-    public static string HtmlLang => IsEnglish ? "en" : "de-CH";
+    public static string HtmlLang => Current == AppLanguage.En ? "en" : CultureOf(Current).Name;
+
+    /// <summary>The folder of the translations: Localization/de, fr, it, rm. English has none, it is the text in the code.</summary>
+    public static string Code(AppLanguage language) => language.ToString().ToLowerInvariant();
+
+    public static CultureInfo CultureOf(AppLanguage language) =>
+        CultureInfo.GetCultureInfo(language switch
+        {
+            AppLanguage.En => "en-GB",
+            AppLanguage.Fr => "fr-CH",
+            AppLanguage.It => "it-CH",
+            AppLanguage.Rm => "rm-CH",
+            _ => "de-CH",
+        });
 }

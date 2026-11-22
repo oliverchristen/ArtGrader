@@ -19,7 +19,7 @@ public static class ImagePreprocessor
         if (IsHeif(bytes))
         {
             throw new UnsupportedImageException(
-                T("HEIC photos (iPhone) are not supported. Please export as JPEG, or on the iPhone choose Settings ’ Camera ’ Formats ’ ‘Most Compatible’."));
+                T("HEIC photos (iPhone) are not supported. Please export as JPEG, or on the iPhone choose Settings › Camera › Formats › ‘Most Compatible’."));
         }
 
         using var data = SKData.CreateCopy(bytes);

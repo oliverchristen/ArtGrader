@@ -22,7 +22,7 @@
         <h2 class="sheet-title">@T("Language")</h2>
         <p class="sheet-sub">@T("Applies to ArtGrader, the assessment sheets and the texts the AI writes.")</p>
         <div class="choice-grid" role="radiogroup" aria-label="@T("Language")">
-            @foreach (var (language, name) in new[] { (AppLanguage.De, "Deutsch"), (AppLanguage.En, "English") })
+            @foreach (var (language, name) in Language.All)
             {
                 var on = Settings.Language == language;
                 <button type="button" role="radio" aria-checked="@on" class="@($"choice {(on ? "on" : "")}")" @onclick="() => SetLanguage(language)">

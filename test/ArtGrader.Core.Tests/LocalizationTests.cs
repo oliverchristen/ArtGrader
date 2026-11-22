@@ -11,16 +11,31 @@ public sealed class LanguageSwitching;
 [Collection(nameof(LanguageSwitching))]
 public partial class LocalizationTests
 {
-    [Fact]
-    public void Every_text_in_the_code_has_a_german_translation()
+    public static TheoryData<AppLanguage> TranslatedLanguages => new(Texts.TranslatedLanguages);
+
+    [Theory]
+    [MemberData(nameof(TranslatedLanguages))]
+    public void Every_text_in_the_code_is_translated(AppLanguage language)
     {
+        var translations = Texts.TranslationsOf(language);
         var missing = TextsInCode()
-            .Where(t => !Texts.GermanTexts.ContainsKey(t.Text))
+            .Where(t => !translations.ContainsKey(t.Text))
             .Select(t => $"{t.File}: «{t.Text}»")
             .Distinct()
             .ToList();
 
-        Assert.True(missing.Count == 0, "Missing German texts:\n" + string.Join("\n", missing));
+        Assert.True(missing.Count == 0, $"Missing {language} texts:\n" + string.Join("\n", missing));
+    }
+
+    [Fact]
+    public void All_languages_translate_the_same_texts()
+    {
+        var german = Texts.GermanTexts.Keys.ToHashSet();
+        foreach (var language in Texts.TranslatedLanguages)
+        {
+            var keys = Texts.TranslationsOf(language).Keys.ToHashSet();
+            Assert.True(keys.SetEquals(german), $"{language} differs from German: " + string.Join(", ", keys.Except(german).Concat(german.Except(keys)).Take(10)));
+        }
     }
 
     [Fact]
@@ -33,10 +48,11 @@ public partial class LocalizationTests
         Assert.True(interpolated.Count == 0, "Use T(\"… {0} …\", value) instead of T($\"…\"):\n" + string.Join("\n", interpolated));
     }
 
-    [Fact]
-    public void Translations_keep_the_placeholders_of_the_english_text()
+    [Theory]
+    [MemberData(nameof(TranslatedLanguages))]
+    public void Translations_keep_the_placeholders_of_the_english_text(AppLanguage language)
     {
-        var broken = Texts.GermanTexts
+        var broken = Texts.TranslationsOf(language)
             .Where(e => !Placeholders(e.Key).SetEquals(Placeholders(e.Value)))
             .Select(e => $"«{e.Key}» → «{e.Value}»")
             .ToList();
@@ -44,11 +60,18 @@ public partial class LocalizationTests
         Assert.True(broken.Count == 0, "Placeholders differ:\n" + string.Join("\n", broken));
     }
 
-    [Fact]
-    public void No_english_text_has_two_different_translations()
+    [Theory]
+    [MemberData(nameof(TranslatedLanguages))]
+    public void No_english_text_has_two_different_translations(AppLanguage language)
     {
-        _ = Texts.GermanTexts;
-        Assert.True(Texts.Conflicts.Count == 0, "Conflicting translations:\n" + string.Join("\n", Texts.Conflicts));
+        var conflicts = Texts.ConflictsOf(language);
+        Assert.True(conflicts.Count == 0, "Conflicting translations:\n" + string.Join("\n", conflicts));
+    }
+
+    [Fact]
+    public void Every_language_has_its_swiss_formats()
+    {
+        Assert.Equal(["de-CH", "fr-CH", "it-CH", "rm-CH", "en-GB"], Language.All.Select(l => Language.CultureOf(l.Language).Name));
     }
 
     [Fact]
@@ -62,6 +85,15 @@ public partial class LocalizationTests
             Language.Current = AppLanguage.En;
             Assert.Contains("Englisch (britische Rechtschreibung)", Prompts.GradingSystem);
             Assert.DoesNotContain("Schweizer Rechtschreibung", Prompts.GradingSystem);
+
+            Language.Current = AppLanguage.Fr;
+            Assert.Contains("auf Französisch", Prompts.GradingSystem);
+
+            Language.Current = AppLanguage.It;
+            Assert.Contains("auf Italienisch", Prompts.GradingSystem);
+
+            Language.Current = AppLanguage.Rm;
+            Assert.Contains("auf Rumantsch Grischun", Prompts.GradingSystem);
         }
         finally
         {
@@ -70,16 +102,36 @@ public partial class LocalizationTests
     }
 
     [Fact]
-    public void English_is_shown_as_written_and_german_is_looked_up()
+    public void English_is_shown_as_written_and_other_languages_are_looked_up()
     {
-        var (english, german) = Texts.GermanTexts.First();
+        var english = Texts.GermanTexts.Keys.First();
         try
         {
             Language.Current = AppLanguage.En;
             Assert.Equal(english, Texts.T(english));
 
+            foreach (var language in Texts.TranslatedLanguages)
+            {
+                Language.Current = language;
+                Assert.Equal(Texts.TranslationsOf(language)[english], Texts.T(english));
+            }
+        }
+        finally
+        {
             Language.Current = AppLanguage.De;
-            Assert.Equal(german, Texts.T(english));
+        }
+    }
+
+    [Fact]
+    public void Random_names_exist_in_every_language()
+    {
+        try
+        {
+            foreach (var (language, _) in Language.All)
+            {
+                Language.Current = language;
+                Assert.Equal(384, Domain.Pseudonyms.All.Distinct().Count());
+            }
         }
         finally
         {

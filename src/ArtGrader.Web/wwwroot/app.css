@@ -1675,6 +1675,12 @@ html:has(.exam-head.compact) {
     content: "✦ KI";
 }
 
+:lang(fr) .levels button.ai::after,
+:lang(it) .levels button.ai::after,
+:lang(rm) .levels button.ai::after {
+    content: "✦ IA";
+}
+
 /* ---------- Everything that comes from the AI: blue box with a "✦ AI" label ---------- */
 
 .ai-box {

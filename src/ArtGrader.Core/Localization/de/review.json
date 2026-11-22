@@ -129,5 +129,7 @@
   "{0} × {1}": "{0} × {1}",
   "Different models assess differently. For comparable grades, reassess the works with one model: select them in step 3 and click ‘Reassess selection’.": "Verschiedene Modelle bewerten unterschiedlich. Für vergleichbare Noten die Arbeiten mit einem Modell neu bewerten: in Schritt 3 auswählen und «Auswahl neu bewerten» klicken.",
   "This assessment was prepared with AI support ({0}). The teacher checked every criterion and set the grade.": "Die Einschätzung wurde mit Unterstützung einer KI vorbereitet ({0}). Die Lehrperson hat jedes Kriterium geprüft und die Note festgelegt.",
-  "Draft: this assessment was prepared with AI support ({0}). The teacher has not completed it yet.": "Entwurf: Die Einschätzung wurde mit Unterstützung einer KI vorbereitet ({0}). Die Lehrperson hat sie noch nicht abgeschlossen."
+  "Draft: this assessment was prepared with AI support ({0}). The teacher has not completed it yet.": "Entwurf: Die Einschätzung wurde mit Unterstützung einer KI vorbereitet ({0}). Die Lehrperson hat sie noch nicht abgeschlossen.",
+  "AI": "KI",
+  "Suggested by the AI: texts marked like this and levels with a blue ring.": "Vorschlag der KI: so markierte Texte und Stufen mit blauem Ring."
 }

@@ -5,11 +5,20 @@ namespace ArtGrader.Core.Ai;
 public static class Prompts
 {
     /// <summary>The grading instructions; the AI writes its justifications and feedback in the app language.</summary>
-    public static string GradingSystem => GradingSystemGerman.Replace(GermanOutput, Language.IsEnglish ? EnglishOutput : GermanOutput, StringComparison.Ordinal);
+    public static string GradingSystem => GradingSystemGerman.Replace(GermanOutput, OutputLanguage, StringComparison.Ordinal);
 
     private const string GermanOutput = "- Deutsch, Schweizer Rechtschreibung (immer «ss», nie «ß»).";
 
-    private const string EnglishOutput = "- Englisch (britische Rechtschreibung). Schreibe alle Texte der Antwort auf Englisch, auch Beschreibung, Stärken, nächste Schritte und Gesamtrückmeldung.";
+    private const string AllTexts = "auch Beschreibung, Stärken, nächste Schritte und Gesamtrückmeldung.";
+
+    private static string OutputLanguage => Language.Current switch
+    {
+        AppLanguage.En => "- Englisch (britische Rechtschreibung). Schreibe alle Texte der Antwort auf Englisch, " + AllTexts,
+        AppLanguage.Fr => "- Französisch, wie es in der Westschweiz geschrieben wird. Schreibe alle Texte der Antwort auf Französisch, " + AllTexts,
+        AppLanguage.It => "- Italienisch, wie es im Tessin geschrieben wird. Schreibe alle Texte der Antwort auf Italienisch, " + AllTexts,
+        AppLanguage.Rm => "- Rätoromanisch in der Standardsprache Rumantsch Grischun. Schreibe alle Texte der Antwort auf Rumantsch Grischun, " + AllTexts,
+        _ => GermanOutput,
+    };
 
     private const string GradingSystemGerman = """
         Du bist eine erfahrene Lehrperson für Bildnerisches Gestalten auf der Sekundarstufe I in der Schweiz
