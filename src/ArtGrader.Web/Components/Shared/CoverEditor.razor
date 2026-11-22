@@ -13,12 +13,15 @@
         case Mode.Crop:
             <span class="cover-hint">@T("Rechteck um den Bereich ziehen, der bleiben soll.")</span>
             <span class="topbar-spacer"></span>
-            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CropFree" Disabled="@(Crop is null)" OnClick="RemoveCropAsync">@T("Zuschnitt aufheben")</MudButton>
-            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">@T("Fertig")</MudButton>
+            <MudButton Class="btn-quiet" Size="Size.Small" OnClick="() => mode = Mode.View">@T("Abbrechen")</MudButton>
             break;
         default:
             <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="() => Start(Mode.Cover)">@(CoverLabel ?? T("Name oder Signatur abdecken"))</MudButton>
             <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Crop" OnClick="() => Start(Mode.Crop)">@T("Zuschneiden")</MudButton>
+            @if (Crop is not null)
+            {
+                <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CropFree" OnClick="RemoveCropAsync">@T("Zuschnitt aufheben")</MudButton>
+            }
             @if (Summary() is { Length: > 0 } summary)
             {
                 <span class="cover-hint">@summary</span>
@@ -146,7 +149,9 @@
         {
             if (area.Width >= 0.05 && area.Height >= 0.05)
             {
+                // A crop is one rectangle: apply it on release, no «Fertig» needed.
                 await SaveAsync(Covers, area);
+                mode = Mode.View;
             }
         }
         else if (area.Width >= 0.01 && area.Height >= 0.01)
