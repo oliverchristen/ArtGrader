@@ -6,196 +6,179 @@
 @inject ISnackbar Snackbar
 @inject IDialogService Dialogs
 @inject SettingsStore Settings
+@implements IAsyncDisposable
 
-<MudGrid Spacing="5">
-    <MudItem xs="12" lg="6">
-        <DocumentSection Exam="Exam" Kind="DocumentKind.Aufgabe" Title="Aufgabenstellung"
-                         Sub="Das Blatt, das die Klasse bekommen hat. Die KI liest es, um zu verstehen, worum es geht."
-                         DropText="Word, PDF oder Text hierher ziehen" TextLabel="Text der Aufgabe"
-                         Placeholder="Aufgabe hochladen oder hier eintippen" Changed="OnDocumentChanged" />
-
-        <DocumentSection Exam="Exam" Kind="DocumentKind.Unterricht" Title="Unterrichtsmaterial" Optional="true"
-                         Sub="Zum Beispiel die PowerPoint-Präsentation zum Thema. So weiss die KI, was im Unterricht behandelt wurde."
-                         DropText="PowerPoint, PDF oder Word hierher ziehen" TextLabel="Text aus dem Unterrichtsmaterial" Rows="8"
-                         Changed="OnDocumentChanged" />
-
-        <section class="sheet">
-            <h2 class="sheet-title">Angaben & Notenberechnung</h2>
-            <p class="sheet-sub">So wird aus den Stufen eine Note.</p>
-            <MudGrid Spacing="2" Class="mb-3">
-                <MudItem xs="12" sm="6"><MudTextField @bind-Value="draft.Title" Label="Titel" Variant="Variant.Outlined" /></MudItem>
-                <MudItem xs="6" sm="3"><MudTextField @bind-Value="draft.SchoolClass" Label="Klasse" Variant="Variant.Outlined" /></MudItem>
-                <MudItem xs="6" sm="3"><MudDatePicker @bind-Date="date" Label="Datum" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" Culture="@culture" /></MudItem>
-            </MudGrid>
-            <div class="points-grid">
-                <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="draft.Settings.PointsUebertroffen" Label="Übertroffen" Variant="Variant.Text" Min="0" Max="10" /></div>
-                <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="draft.Settings.PointsErfuellt" Label="Erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
-                <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="draft.Settings.PointsTeilweise" Label="Teilweise" Variant="Variant.Text" Min="0" Max="10" /></div>
-                <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="draft.Settings.PointsNicht" Label="Nicht erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
-            </div>
-            <MudSelect T="decimal" @bind-Value="draft.Settings.RoundingStep" Label="Runden auf" Variant="Variant.Outlined" Class="mt-4">
-                <MudSelectItem T="decimal" Value="0.5m">Halbe Noten (4.5)</MudSelectItem>
-                <MudSelectItem T="decimal" Value="0.25m">Viertelnoten (4.25)</MudSelectItem>
-                <MudSelectItem T="decimal" Value="0.1m">Zehntel (4.3)</MudSelectItem>
-            </MudSelect>
-            <div class="formula">Note = Punkte ÷ Maximum × 5 + 1 &nbsp;·&nbsp; <span class="muted" style="font-style:normal">@Example()</span></div>
-            <div class="@($"privacy-choice {(draft.LocalOnly ? "on" : "")}")">
-                <MudSwitch T="bool" Value="draft.LocalOnly" ValueChanged="SetLocalOnlyAsync" Color="Color.Success" Label="Nur lokal bewerten" />
-                <p>
-                    @if (draft.LocalOnly)
-                    {
-                        <text>Fotos und Kriterien dieser Prüfung gehen nie ins Internet. Bewertet wird mit dem lokalen Modell@(string.IsNullOrWhiteSpace(Settings.OllamaModel) ? "" : $" «{Settings.OllamaModel}»").</text>
-                    }
-                    else
-                    {
-                        <text>Einschalten, wenn für diese Prüfung nichts in die Cloud gehen darf. Das lokale Modell ist langsamer und etwas weniger genau.</text>
-                    }
-                </p>
-                @if (draft.LocalOnly && string.IsNullOrWhiteSpace(Settings.OllamaModel))
+<div class="flow">
+    <section class="sheet">
+        <h2 class="sheet-title">Datenschutz</h2>
+        <div class="@($"privacy-choice {(grading.LocalOnly ? "on" : "")}")">
+            <MudSwitch T="bool" Value="grading.LocalOnly" ValueChanged="SetLocalOnlyAsync" Color="Color.Success" Label="Nur lokal bewerten" />
+            <p>
+                @if (grading.LocalOnly)
                 {
-                    <div class="banner mt-2">Es ist noch kein lokales Modell eingerichtet. <a href="/einstellungen">Zu den Einstellungen</a></div>
+                    <text>Dokumente, Fotos und Kriterien dieser Prüfung gehen nie ins Internet. Bewertet wird mit dem lokalen Modell@(string.IsNullOrWhiteSpace(Settings.OllamaModel) ? "" : $" «{Settings.OllamaModel}»").</text>
                 }
-            </div>
-            <div class="d-flex justify-end mt-4">
-                <MudButton Class="btn-ink" OnClick="SaveDetailsAsync" StartIcon="@Icons.Material.Filled.Check">Speichern</MudButton>
-            </div>
-        </section>
-    </MudItem>
-
-    <MudItem xs="12" lg="6">
-        <DocumentSection Exam="Exam" Kind="DocumentKind.Beurteilung" Title="Beurteilungsbogen"
-                         Sub="Hochladen, prüfen und schwärzen. Dann liest die KI die Kriterien daraus aus."
-                         DropText="Beurteilungsbogen hierher ziehen" TextLabel="Text des Beurteilungsbogens" Changed="OnDocumentChanged">
-            <Footer>
-                <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.AutoAwesome" Disabled="@(importing || !HasRubricSource)" OnClick="ImportRubricAsync">
-                    @(importing ? "Die KI liest …" : "Kriterien auslesen")
-                </MudButton>
-            </Footer>
-        </DocumentSection>
-
-        <section class="sheet">
-            <div class="d-flex align-center justify-space-between gap-2">
-                <h2 class="sheet-title">Beurteilungskriterien</h2>
-                @if (rubricDirty)
+                else
                 {
-                    <span class="tag unsure">nicht gespeichert</span>
+                    <text>Einschalten, wenn für diese Prüfung nichts in die Cloud gehen darf. Das lokale Modell ist langsamer und etwas weniger genau.</text>
                 }
-            </div>
-            <p class="sheet-sub">Aus dem Beurteilungsbogen auslesen oder selbst erfassen. Danach kannst du alles anpassen.</p>
-
-            @if (categories.Count == 0)
+            </p>
+            @if (grading.LocalOnly && string.IsNullOrWhiteSpace(Settings.OllamaModel))
             {
-                <p class="faint mt-4">Noch keine Kriterien.</p>
+                <div class="banner mt-2">Es ist noch kein lokales Modell eingerichtet. <a href="/einstellungen">Zu den Einstellungen</a></div>
             }
+        </div>
+    </section>
 
-            @foreach (var category in categories)
-            {
-                <div class="category">
-                    <div class="category-head">
-                        <MudTextField Value="category.Name" ValueChanged="@((string v) => { category.Name = v; rubricDirty = true; })"
-                                      Variant="Variant.Text" Class="flex-grow-1 category-name" Placeholder="Kategorie" />
-                        <MudIconButton Icon="@Icons.Material.Outlined.ArrowUpward" Size="Size.Small" Disabled="@(categories.IndexOf(category) == 0)"
-                                       OnClick="() => Move(categories, category, -1)" aria-label="Kategorie nach oben" />
-                        <MudIconButton Icon="@Icons.Material.Outlined.ArrowDownward" Size="Size.Small" Disabled="@(categories.IndexOf(category) == categories.Count - 1)"
-                                       OnClick="() => Move(categories, category, 1)" aria-label="Kategorie nach unten" />
-                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small"
-                                       OnClick="() => { categories.Remove(category); rubricDirty = true; }" aria-label="Kategorie löschen" />
-                    </div>
-                    @foreach (var criterion in category.Criteria)
-                    {
-                        var teacher = criterion.AssessedBy == AssessedBy.Teacher;
-                        <div class="@($"criterion {(teacher ? "teacher" : "")}")">
-                            <MudTextField Value="criterion.Text" ValueChanged="@((string v) => { criterion.Text = v; rubricDirty = true; })"
-                                          Variant="Variant.Text" Lines="1" Sizing="InputSizing.Auto" MaxLines="6" Placeholder="Kriterium" Underline="false" />
-                            <div class="d-flex">
-                                <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowUp" Size="Size.Small" Disabled="@(category.Criteria.IndexOf(criterion) == 0)"
-                                               OnClick="() => Move(category.Criteria, criterion, -1)" aria-label="Nach oben" />
-                                <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowDown" Size="Size.Small" Disabled="@(category.Criteria.IndexOf(criterion) == category.Criteria.Count - 1)"
-                                               OnClick="() => Move(category.Criteria, criterion, 1)" aria-label="Nach unten" />
-                            </div>
-                            <div class="criterion-tools">
-                                <span class="seg" role="radiogroup" aria-label="Wer beurteilt">
-                                    <button type="button" class="@(teacher ? "" : "on")" @onclick="() => SetAssessor(criterion, AssessedBy.Ai)">KI schlägt vor</button>
-                                    <button type="button" class="@(teacher ? "on teacher" : "")" @onclick="() => SetAssessor(criterion, AssessedBy.Teacher)">nur Lehrperson</button>
-                                </span>
-                                <span class="weight" title="Gewicht">
-                                    Gewicht
-                                    <button type="button" @onclick="() => ChangeWeight(criterion, -0.5m)" aria-label="Gewicht verringern">−</button>
-                                    <b>@criterion.Weight.ToString("0.#")×</b>
-                                    <button type="button" @onclick="() => ChangeWeight(criterion, 0.5m)" aria-label="Gewicht erhöhen">+</button>
-                                </span>
-                                <span class="topbar-spacer"></span>
-                                <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Small" aria-label="Kriterium entfernen"
-                                               OnClick="() => { category.Criteria.Remove(criterion); rubricDirty = true; }" />
-                            </div>
+    <DocumentSection Exam="Exam" Kind="DocumentKind.Aufgabe" Title="Aufgabenstellung"
+                     Sub="Das Blatt, das die Klasse bekommen hat. Die KI liest es, um zu verstehen, worum es geht."
+                     DropText="Word, PDF oder Text hierher ziehen" TextLabel="Text der Aufgabe"
+                     Placeholder="Aufgabe hochladen oder hier eintippen" Changed="OnDocumentChanged" />
+
+    <DocumentSection Exam="Exam" Kind="DocumentKind.Unterricht" Title="Unterrichtsmaterial" Optional="true"
+                     Sub="Zum Beispiel die PowerPoint-Präsentation zum Thema. So weiss die KI, was im Unterricht behandelt wurde."
+                     DropText="PowerPoint, PDF oder Word hierher ziehen" TextLabel="Text aus dem Unterrichtsmaterial" Rows="8"
+                     Changed="OnDocumentChanged" />
+
+    <DocumentSection Exam="Exam" Kind="DocumentKind.Beurteilung" Title="Beurteilungsbogen"
+                     Sub="Hochladen, prüfen und schwärzen. Dann liest die KI die Kriterien daraus aus."
+                     DropText="Beurteilungsbogen hierher ziehen" TextLabel="Text des Beurteilungsbogens" Changed="OnDocumentChanged">
+        <Footer>
+            <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.AutoAwesome" Disabled="@(importing || !HasRubricSource)" OnClick="ImportRubricAsync">
+                @(importing ? "Die KI liest …" : "Kriterien auslesen")
+            </MudButton>
+        </Footer>
+    </DocumentSection>
+
+    <section class="sheet">
+        <h2 class="sheet-title">Beurteilungskriterien</h2>
+        <p class="sheet-sub">Aus dem Beurteilungsbogen auslesen oder selbst erfassen. Danach kannst du alles anpassen.</p>
+
+        @if (categories.Count == 0)
+        {
+            <p class="faint mt-4">Noch keine Kriterien.</p>
+        }
+
+        @foreach (var category in categories)
+        {
+            <div class="category" @key="category.Id">
+                <div class="category-head">
+                    <MudTextField T="string" Value="category.Name" ValueChanged="@(v => { category.Name = v; RubricChanged(); })" Immediate="true"
+                                  Variant="Variant.Text" Class="flex-grow-1 category-name" Placeholder="Kategorie" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.ArrowUpward" Size="Size.Small" Disabled="@(categories.IndexOf(category) == 0)"
+                                   OnClick="() => Move(categories, category, -1)" aria-label="Kategorie nach oben" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.ArrowDownward" Size="Size.Small" Disabled="@(categories.IndexOf(category) == categories.Count - 1)"
+                                   OnClick="() => Move(categories, category, 1)" aria-label="Kategorie nach unten" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small"
+                                   OnClick="() => { categories.Remove(category); RubricChanged(); }" aria-label="Kategorie löschen" />
+                </div>
+                @foreach (var criterion in category.Criteria)
+                {
+                    var teacher = criterion.AssessedBy == AssessedBy.Teacher;
+                    <div class="@($"criterion {(teacher ? "teacher" : "")}")" @key="criterion.Id">
+                        <MudTextField T="string" Value="criterion.Text" ValueChanged="@(v => { criterion.Text = v; RubricChanged(); })" Immediate="true"
+                                      Variant="Variant.Text" Lines="1" Sizing="InputSizing.Auto" MaxLines="6" Placeholder="Kriterium" Underline="false" />
+                        <div class="d-flex">
+                            <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowUp" Size="Size.Small" Disabled="@(category.Criteria.IndexOf(criterion) == 0)"
+                                           OnClick="() => Move(category.Criteria, criterion, -1)" aria-label="Nach oben" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowDown" Size="Size.Small" Disabled="@(category.Criteria.IndexOf(criterion) == category.Criteria.Count - 1)"
+                                           OnClick="() => Move(category.Criteria, criterion, 1)" aria-label="Nach unten" />
                         </div>
-                    }
-                    <MudButton Class="btn-quiet mt-2" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Add" OnClick="() => AddCriterion(category)">Kriterium</MudButton>
-                </div>
-            }
-
-            <div class="d-flex justify-space-between align-center flex-wrap gap-2 mt-5">
-                <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.PlaylistAdd" OnClick="AddCategory">Kategorie</MudButton>
-                <div class="d-flex gap-2">
-                    @if (rubricDirty)
-                    {
-                        <MudButton Class="btn-ink" OnClick="SaveRubricAsync" StartIcon="@Icons.Material.Filled.Check">Kriterien speichern</MudButton>
-                    }
-                    else if (categories.Count > 0)
-                    {
-                        <MudButton Class="btn-ink" OnClick="() => Next?.Invoke()" EndIcon="@Icons.Material.Filled.ArrowForward">Weiter zu den Arbeiten</MudButton>
-                    }
-                </div>
+                        <div class="criterion-tools">
+                            <span class="seg" role="radiogroup" aria-label="Wer beurteilt">
+                                <button type="button" class="@(teacher ? "" : "on")" @onclick="() => SetAssessor(criterion, AssessedBy.Ai)">KI schlägt vor</button>
+                                <button type="button" class="@(teacher ? "on teacher" : "")" @onclick="() => SetAssessor(criterion, AssessedBy.Teacher)">nur Lehrperson</button>
+                            </span>
+                            <span class="weight" title="Gewicht">
+                                Gewicht
+                                <button type="button" @onclick="() => ChangeWeight(criterion, -0.5m)" aria-label="Gewicht verringern">−</button>
+                                <b>@criterion.Weight.ToString("0.#")×</b>
+                                <button type="button" @onclick="() => ChangeWeight(criterion, 0.5m)" aria-label="Gewicht erhöhen">+</button>
+                            </span>
+                            <span class="topbar-spacer"></span>
+                            <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Small" aria-label="Kriterium entfernen"
+                                           OnClick="() => { category.Criteria.Remove(criterion); RubricChanged(); }" />
+                        </div>
+                    </div>
+                }
+                <MudButton Class="btn-quiet mt-2" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Add" OnClick="() => AddCriterion(category)">Kriterium</MudButton>
             </div>
-        </section>
-    </MudItem>
-</MudGrid>
+        }
+
+        <MudButton Class="btn-soft mt-5" StartIcon="@Icons.Material.Outlined.PlaylistAdd" OnClick="AddCategory">Kategorie</MudButton>
+    </section>
+
+    <section class="sheet">
+        <h2 class="sheet-title">Notenberechnung</h2>
+        <p class="sheet-sub">So wird aus den Stufen eine Note.</p>
+        <div class="points-grid">
+            <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="grading.Settings.PointsUebertroffen" @bind-Value:after="GradingChanged" Immediate="true" Label="Übertroffen" Variant="Variant.Text" Min="0" Max="10" /></div>
+            <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="grading.Settings.PointsErfuellt" @bind-Value:after="GradingChanged" Immediate="true" Label="Erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
+            <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="grading.Settings.PointsTeilweise" @bind-Value:after="GradingChanged" Immediate="true" Label="Teilweise" Variant="Variant.Text" Min="0" Max="10" /></div>
+            <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="grading.Settings.PointsNicht" @bind-Value:after="GradingChanged" Immediate="true" Label="Nicht erfüllt" Variant="Variant.Text" Min="0" Max="10" /></div>
+        </div>
+        <MudSelect T="decimal" @bind-Value="grading.Settings.RoundingStep" @bind-Value:after="GradingChanged" Label="Runden auf" Variant="Variant.Outlined" Class="mt-4">
+            <MudSelectItem T="decimal" Value="0.5m">Halbe Noten (4.5)</MudSelectItem>
+            <MudSelectItem T="decimal" Value="0.25m">Viertelnoten (4.25)</MudSelectItem>
+            <MudSelectItem T="decimal" Value="0.1m">Zehntel (4.3)</MudSelectItem>
+        </MudSelect>
+        <div class="formula">Note = Punkte ÷ Maximum × 5 + 1 &nbsp;·&nbsp; <span class="muted" style="font-style:normal">@Example()</span></div>
+    </section>
+
+    <div class="next-step">
+        @if (!HasCriteria)
+        {
+            <span class="muted">Sobald es Kriterien gibt, kannst du die Arbeiten erfassen.</span>
+        }
+        <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(!HasCriteria)" OnClick="GoNextAsync" EndIcon="@Icons.Material.Filled.ArrowForward">
+            Weiter zu den Arbeiten
+        </MudButton>
+    </div>
+</div>
 
 @code {
-    private static readonly System.Globalization.CultureInfo culture = new("de-CH");
-
     [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
-    [Parameter] public Action? Next { get; set; }
+    [Parameter] public EventCallback Next { get; set; }
 
-    private Exam draft = new();
-    private DateTime? date;
+    private readonly Debouncer rubricSaver = new();
+    private readonly Debouncer gradingSaver = new();
+    private Exam grading = new();
     private List<RubricCategory> categories = [];
-    private bool rubricDirty;
     private bool importing;
     private Guid loadedFor;
 
+    private bool HasCriteria => categories.Any(c => c.Criteria.Any(k => !string.IsNullOrWhiteSpace(k.Text)));
+
     protected override void OnParametersSet()
     {
-        if (loadedFor == Exam.Id && rubricDirty)
+        // Only load when another exam is shown. Afterwards this panel owns the rubric and grading
+        // values, so an auto-save that reloads the exam does not drop an empty, just added criterion.
+        if (loadedFor == Exam.Id)
         {
             return;
         }
-        if (loadedFor != Exam.Id)
+        loadedFor = Exam.Id;
+        grading = new Exam
         {
-            draft = new Exam
+            Id = Exam.Id,
+            LocalOnly = Exam.LocalOnly,
+            Settings = new GradingSettings
             {
-                Id = Exam.Id,
-                Title = Exam.Title,
-                SchoolClass = Exam.SchoolClass,
-                Date = Exam.Date,
-                LocalOnly = Exam.LocalOnly,
-                Settings = new GradingSettings
-                {
-                    PointsUebertroffen = Exam.Settings.PointsUebertroffen,
-                    PointsErfuellt = Exam.Settings.PointsErfuellt,
-                    PointsTeilweise = Exam.Settings.PointsTeilweise,
-                    PointsNicht = Exam.Settings.PointsNicht,
-                    RoundingStep = Exam.Settings.RoundingStep,
-                    MinGrade = Exam.Settings.MinGrade,
-                    MaxGrade = Exam.Settings.MaxGrade,
-                },
-            };
-            date = Exam.Date.ToDateTime(TimeOnly.MinValue);
-            loadedFor = Exam.Id;
-        }
-        categories = Exam.Categories
-            .Select(c => new RubricCategory
+                PointsUebertroffen = Exam.Settings.PointsUebertroffen,
+                PointsErfuellt = Exam.Settings.PointsErfuellt,
+                PointsTeilweise = Exam.Settings.PointsTeilweise,
+                PointsNicht = Exam.Settings.PointsNicht,
+                RoundingStep = Exam.Settings.RoundingStep,
+                MinGrade = Exam.Settings.MinGrade,
+                MaxGrade = Exam.Settings.MaxGrade,
+            },
+        };
+        categories = CopyOf(Exam.Categories);
+    }
+
+    private static List<RubricCategory> CopyOf(IEnumerable<RubricCategory> source) =>
+        source.Select(c => new RubricCategory
             {
                 Id = c.Id,
                 ExamId = c.ExamId,
@@ -212,48 +195,68 @@
                 }).ToList(),
             })
             .ToList();
-    }
 
     private string Example()
     {
         var count = Math.Max(1, categories.Sum(c => c.Criteria.Count(k => k.Weight > 0)));
-        var max = count * draft.Settings.MaxLevelPoints;
+        var max = count * grading.Settings.MaxLevelPoints;
         if (max == 0)
         {
             return "";
         }
-        var points = count * draft.Settings.PointsErfuellt;
-        var grade = GradeCalculator.ToGrade(points, max, draft.Settings);
+        var points = count * grading.Settings.PointsErfuellt;
+        var grade = GradeCalculator.ToGrade(points, max, grading.Settings);
         return $"alles «erfüllt» = {points}/{max} Punkte → {grade:0.0#}";
     }
 
     private void SetAssessor(RubricCriterion criterion, AssessedBy assessedBy)
     {
         criterion.AssessedBy = assessedBy;
-        rubricDirty = true;
+        RubricChanged();
     }
 
     private void ChangeWeight(RubricCriterion criterion, decimal delta)
     {
         criterion.Weight = Math.Clamp(criterion.Weight + delta, 0m, 5m);
-        rubricDirty = true;
+        RubricChanged();
+    }
+
+    private void RubricChanged() => rubricSaver.Schedule(() => InvokeAsync(SaveRubricAsync));
+
+    private void GradingChanged() => gradingSaver.Schedule(() => InvokeAsync(SaveGradingAsync));
+
+    private async Task SaveRubricAsync()
+    {
+        // Empty criteria and categories stay on screen while being filled in, but are not saved.
+        var complete = CopyOf(categories);
+        foreach (var category in complete)
+        {
+            category.Criteria.RemoveAll(k => string.IsNullOrWhiteSpace(k.Text));
+        }
+        complete.RemoveAll(c => c.Criteria.Count == 0);
+        await Repository.SaveRubricAsync(Exam.Id, complete);
+        await Changed.InvokeAsync();
+    }
+
+    private async Task SaveGradingAsync()
+    {
+        await Repository.UpdateGradingAsync(Exam.Id, grading.LocalOnly, grading.Settings);
+        await Changed.InvokeAsync();
     }
 
     private async Task SetLocalOnlyAsync(bool value)
     {
-        draft.LocalOnly = value;
-        draft.Date = DateOnly.FromDateTime(date ?? DateTime.Today);
-        await Repository.UpdateExamDetailsAsync(draft);
+        grading.LocalOnly = value;
+        await gradingSaver.FlushAsync();
+        await SaveGradingAsync();
         Snackbar.Add(value ? "Diese Prüfung wird nur noch lokal bewertet." : "Diese Prüfung darf wieder mit Claude bewertet werden.", Severity.Success);
-        await Changed.InvokeAsync();
     }
 
-    private async Task SaveDetailsAsync()
+    private async Task GoNextAsync()
     {
-        draft.Date = DateOnly.FromDateTime(date ?? DateTime.Today);
-        await Repository.UpdateExamDetailsAsync(draft);
-        Snackbar.Add("Gespeichert.", Severity.Success);
-        await Changed.InvokeAsync();
+        await rubricSaver.FlushAsync();
+        await gradingSaver.FlushAsync();
+        await Next.InvokeAsync();
     }
 
     private bool HasRubricSource => !string.IsNullOrWhiteSpace(Exam.RubricText) || Exam.PagesOf(DocumentKind.Beurteilung).Any();
@@ -262,9 +265,9 @@
 
     private async Task ImportRubricAsync()
     {
-        if (!Settings.CanGrade(draft))
+        if (!Settings.CanGrade(grading))
         {
-            Snackbar.Add(draft.LocalOnly
+            Snackbar.Add(grading.LocalOnly
                 ? RoutingModelGateway.LocalOnlyWithoutModel
                 : "Bitte zuerst unter «Einstellungen» Claude oder ein lokales Modell einrichten.", Severity.Warning);
             return;
@@ -282,6 +285,7 @@
             }
         }
 
+        await rubricSaver.FlushAsync();
         importing = true;
         StateHasChanged();
         try
@@ -291,9 +295,9 @@
             {
                 pages.Add(ImageCover.Apply(await Files.ReadAsync(page.RelativePath), page.Covers, page.Crop));
             }
-            categories = await RubricImport.ImportAsync(Exam.RubricText, pages, Exam.ExerciseText, draft.LocalOnly, CancellationToken.None);
-            await Repository.SaveRubricAsync(Exam.Id, categories);
-            rubricDirty = false;
+            var imported = await RubricImport.ImportAsync(Exam.RubricText, pages, Exam.ExerciseText, grading.LocalOnly, CancellationToken.None);
+            await Repository.SaveRubricAsync(Exam.Id, imported);
+            categories = CopyOf(imported);
             var teacherOnly = categories.SelectMany(c => c.Criteria).Count(k => k.AssessedBy == AssessedBy.Teacher);
             Snackbar.Add(
                 $"{categories.Sum(c => c.Criteria.Count)} Kriterien übernommen"
@@ -316,13 +320,12 @@
         var category = new RubricCategory { ExamId = Exam.Id, Name = "Neue Kategorie" };
         AddCriterion(category);
         categories.Add(category);
-        rubricDirty = true;
     }
 
     private void AddCriterion(RubricCategory category)
     {
+        // An empty criterion is not saved until it has text, so there is nothing to save yet.
         category.Criteria.Add(new RubricCriterion { CategoryId = category.Id });
-        rubricDirty = true;
     }
 
     private void Move<T>(List<T> list, T item, int delta)
@@ -335,19 +338,12 @@
         }
         list.RemoveAt(index);
         list.Insert(target, item);
-        rubricDirty = true;
+        RubricChanged();
     }
 
-    private async Task SaveRubricAsync()
+    public async ValueTask DisposeAsync()
     {
-        foreach (var category in categories)
-        {
-            category.Criteria.RemoveAll(k => string.IsNullOrWhiteSpace(k.Text));
-        }
-        categories.RemoveAll(c => c.Criteria.Count == 0);
-        await Repository.SaveRubricAsync(Exam.Id, categories);
-        rubricDirty = false;
-        Snackbar.Add("Kriterien gespeichert.", Severity.Success);
-        await Changed.InvokeAsync();
+        await rubricSaver.DisposeAsync();
+        await gradingSaver.DisposeAsync();
     }
 }

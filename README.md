@@ -18,7 +18,7 @@ gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie �
    - Aufgabenblatt hochladen (Word, PowerPoint, PDF oder Text) oder eintippen. Optional das Unterrichtsmaterial
      dazu, zum Beispiel die PowerPoint-Präsentation zum Thema; so weiss die KI, was behandelt wurde.
    - ArtGrader zeigt jedes Dokument so, wie die KI es liest. Was auf die Schule hinweist (Schulhaus, Ort, Namen von
-     Lehrpersonen, Logo), lässt sich schwärzen: Text markieren und schwärzen, PDF-Seiten zuschneiden oder mit Balken
+     Lehrpersonen, Logo), lässt sich entfernen: im Text direkt löschen, PDF-Seiten zuschneiden oder mit Balken
      abdecken. ArtGrader schlägt Stellen vor, siehe «Schwärzen» unten.
    - Beurteilungsbogen hochladen, prüfen und schwärzen, dann «Kriterien auslesen». Die KI überträgt Kategorien und
      Kriterien. Kriterien, die man auf einem Foto nicht sehen kann (z. B. «Prozess und Engagement»), werden als «nur
@@ -36,13 +36,16 @@ gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie �
    Rückmeldung (einzeln oder für die ganze Klasse). Das PDF vermerkt, dass die Einschätzung mit KI-Unterstützung
    entstand und ob die Lehrperson sie abgeschlossen hat.
 
+Alle Eingaben werden etwa eine Sekunde nach der letzten Änderung automatisch gespeichert. Jeder Schritt führt
+von oben nach unten; unten geht es mit einem Knopf zum nächsten Schritt.
+
 Nach Ende des Semesters (ab 1. Februar und ab 1. August) erinnert die Startseite an Prüfungen, die noch Fotos von Schülerarbeiten
 enthalten, und löscht die Fotos auf Knopfdruck. Noten und Beurteilungen bleiben.
 
 ### Notenberechnung
 
-Übertroffen = 3, Erfüllt = 2, Teilweise = 1, Nicht erfüllt = 0 Punkte (anpassbar), jedes Kriterium mit seinem
-Gewicht. **Note = Punkte / Maximum × 5 + 1**, gerundet auf halbe Noten (oder Viertel/Zehntel). Die Note berechnet das
+Übertroffen = 6, Erfüllt = 5, Teilweise = 4, Nicht erfüllt = 3 Punkte (anpassbar), jedes Kriterium mit seinem
+Gewicht. **Note = Punkte / Maximum × 5 + 1**, gerundet auf Viertelnoten (oder halbe Noten/Zehntel). Die Note berechnet das
 Programm, nicht die KI. Eine Note kann pro Arbeit auch manuell gesetzt werden.
 
 ### Schwärzen
@@ -103,7 +106,7 @@ Computer, und es entstehen keine Kosten. Dafür ist es langsamer und weniger gen
 2. In ArtGrader unter Einstellungen «Lokal (Ollama)» wählen und ein Modell herunterladen. Empfohlen ist
    `qwen3.8:27b` (18 GB, ab 32 GB Arbeitsspeicher) im Modus «Schnell». Andere Bildmodelle lassen sich im Terminal
    mit `ollama pull <name>` laden.
-3. Das Modell auswählen und speichern.
+3. Das Modell auswählen. Einstellungen werden automatisch gespeichert.
 
 Die Modelle werden nur auf Knopfdruck heruntergeladen und liegen im Ordner von Ollama. Die Arbeiten werden
 nacheinander bewertet. PDF-Seiten gehen als Bilder an das Modell. Cloud-Modelle von Ollama (Namen mit `cloud`)

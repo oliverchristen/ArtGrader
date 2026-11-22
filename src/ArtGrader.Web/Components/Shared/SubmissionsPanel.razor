@@ -11,7 +11,7 @@
 {
     <div class="banner mb-4">
         <MudIcon Icon="@Icons.Material.Outlined.Info" />
-        <span>Lege zuerst die Beurteilungskriterien fest. <a href="javascript:void(0)" @onclick="() => ShowSetup?.Invoke()">Zu Schritt 1</a></span>
+        <span>Lege zuerst die Beurteilungskriterien fest. <a href="javascript:void(0)" @onclick="() => ShowSetup.InvokeAsync()">Zu Schritt 1</a></span>
     </div>
 }
 
@@ -129,7 +129,7 @@ else
                     }
                 </a>
                 <div class="@($"work-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
-                    <MudTextField T="string" Value="submission.StudentName" ValueChanged="@(v => RenameAsync(submission, v))"
+                    <MudTextField T="string" Value="submission.StudentName" ValueChanged="@(v => RenameAsync(submission, v))" DebounceInterval="1000"
                                   Variant="Variant.Text" Margin="Margin.Dense" Placeholder="Name" aria-label="Name" />
                     @if (submission.HasPlaceholderName)
                     {
@@ -152,6 +152,28 @@ else
     </div>
 }
 
+<div class="next-step">
+    @if (NextToReview() is { } open)
+    {
+        <span class="muted">Prüfe jede Arbeit und schliesse sie ab.</span>
+        <MudButton Class="btn-ink" Size="Size.Large" Href="@ReviewUrl(open)" EndIcon="@Icons.Material.Filled.ArrowForward">Arbeiten prüfen</MudButton>
+    }
+    else
+    {
+        @if (Exam.Submissions.Count == 0)
+        {
+            <span class="muted">Lege oben die Fotos der Arbeiten ab.</span>
+        }
+        else if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
+        {
+            <span class="muted">Lass die Arbeiten zuerst von der KI bewerten.</span>
+        }
+        <MudButton Class="btn-ink" Size="Size.Large" Disabled="@(Exam.Submissions.Count == 0)" OnClick="() => Next.InvokeAsync()" EndIcon="@Icons.Material.Filled.ArrowForward">
+            Weiter zu Übersicht & Export
+        </MudButton>
+    }
+</div>
+
 @code {
     private const long MaxImageBytes = 40 * 1024 * 1024;
     private const int MaxFiles = 200;
@@ -159,7 +181,8 @@ else
 
     [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
-    [Parameter] public Action? ShowSetup { get; set; }
+    [Parameter] public EventCallback ShowSetup { get; set; }
+    [Parameter] public EventCallback Next { get; set; }
 
     private readonly HashSet<Guid> selected = [];
     private bool oneSubmission;
@@ -177,6 +200,10 @@ else
         running = Exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet);
         selected.IntersectWith(Exam.Submissions.Select(s => s.Id));
     }
+
+    /// <summary>The first work that has a suggestion and still waits for the teacher.</summary>
+    private Submission? NextToReview() =>
+        Exam.Submissions.FirstOrDefault(s => s.Status is SubmissionStatus.Vorschlag);
 
     private string ReviewUrl(Submission submission) => $"/pruefung/{Exam.Id}/arbeit/{submission.Id}";
 

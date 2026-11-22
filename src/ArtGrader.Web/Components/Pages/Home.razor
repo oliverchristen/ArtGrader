@@ -42,20 +42,7 @@
     </div>
 }
 
-<div class="home-grid">
-    <section class="sheet new-exam">
-        <h2 class="sheet-title">Neue Prüfung</h2>
-        <p class="sheet-sub">Ein neues Blatt anlegen.</p>
-        <MudStack Spacing="3">
-            <MudTextField @bind-Value="title" Label="Titel" Placeholder="z. B. Stadt von oben" Variant="Variant.Outlined" Immediate="true" />
-            <MudTextField @bind-Value="schoolClass" Label="Klasse" Placeholder="z. B. 2b" Variant="Variant.Outlined" />
-            <MudDatePicker @bind-Date="date" Label="Datum" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" Culture="@culture" />
-            <MudButton Class="btn-ink mt-1" Disabled="@string.IsNullOrWhiteSpace(title)" OnClick="CreateAsync" StartIcon="@Icons.Material.Filled.Add">
-                Prüfung anlegen
-            </MudButton>
-        </MudStack>
-    </section>
-
+<div class="home-flow">
     <section>
         @if (exams is null)
         {
@@ -66,7 +53,7 @@
             <div class="sheet empty-state">
                 <img src="img/empty-sketch.svg" alt="" />
                 <h2 class="sheet-title mt-3">Noch ein leeres Skizzenbuch</h2>
-                <p class="muted">Lege links deine erste Prüfung an.</p>
+                <p class="muted">Lege unten deine erste Prüfung an.</p>
             </div>
         }
         else
@@ -104,6 +91,18 @@
                 }
             </div>
         }
+    </section>
+    <section class="sheet new-exam">
+        <h2 class="sheet-title">Neue Prüfung</h2>
+        <p class="sheet-sub">Ein neues Blatt anlegen.</p>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="title" Label="Titel" Placeholder="z. B. Stadt von oben" Variant="Variant.Outlined" Immediate="true" />
+            <MudTextField @bind-Value="schoolClass" Label="Klasse" Placeholder="z. B. 2b" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="date" Label="Datum" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" Culture="@culture" />
+            <MudButton Class="btn-ink mt-1" Disabled="@string.IsNullOrWhiteSpace(title)" OnClick="CreateAsync" StartIcon="@Icons.Material.Filled.Add">
+                Prüfung anlegen
+            </MudButton>
+        </MudStack>
     </section>
 </div>
 

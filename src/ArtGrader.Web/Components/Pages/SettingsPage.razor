@@ -6,7 +6,7 @@
 @inject AppPaths Paths
 @inject ISnackbar Snackbar
 @inject ModelDownloads Downloads
-@implements IDisposable
+@implements IAsyncDisposable
 
 <PageTitle>Einstellungen · ArtGrader</PageTitle>
 
@@ -16,12 +16,11 @@
     <p class="lede">Wähle, welche KI die Arbeiten vorbewertet. Die Note entscheidest immer du.</p>
 </div>
 
-<MudGrid Spacing="5">
-    <MudItem xs="12" md="7">
+<div class="flow">
         <section class="sheet">
             <div class="choice-grid" role="radiogroup" aria-label="KI-Anbieter">
                 <button type="button" role="radio" aria-checked="@(provider == AiProvider.Anthropic)" class="@($"choice {(provider == AiProvider.Anthropic ? "on" : "")}")"
-                        @onclick="() => provider = AiProvider.Anthropic">
+                        @onclick="SelectAnthropic">
                     <span class="c-title"><span class="c-icon" style="background:var(--ultramarine-wash);color:var(--ultramarine)"><MudIcon Icon="@Icons.Material.Outlined.Cloud" /></span>Claude</span>
                     <span class="c-text" style="display:block">Sehr genaue Einschätzungen, 30–60 Sekunden pro Arbeit. Läuft in der Cloud von Anthropic, braucht einen API-Schlüssel und kostet etwa 8 Rappen pro Arbeit.</span>
                 </button>
@@ -44,18 +43,19 @@
                 {
                     <div class="ok-line mb-3"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" /> Ein Schlüssel ist gespeichert</div>
                 }
-                <MudTextField @bind-Value="apiKey" Label="@(Settings.HasStoredKey ? "Neuer Schlüssel (leer lassen = behalten)" : "API-Schlüssel")"
-                              Variant="Variant.Outlined" InputType="InputType.Password" Placeholder="sk-ant-…" Class="mb-4" autocomplete="off" />
+                <MudTextField @bind-Value="apiKey" @bind-Value:after="Changed" Immediate="true" Label="@(Settings.HasStoredKey ? "Neuer Schlüssel" : "API-Schlüssel")"
+                              Variant="Variant.Outlined" InputType="InputType.Password" Placeholder="sk-ant-…" Class="mb-4" autocomplete="off"
+                              Error="@(apiKeyError is not null)" ErrorText="@apiKeyError" />
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="7">
-                        <MudSelect T="string" @bind-Value="model" Label="Modell" Variant="Variant.Outlined">
+                        <MudSelect T="string" @bind-Value="model" @bind-Value:after="Changed" Label="Modell" Variant="Variant.Outlined">
                             <MudSelectItem T="string" Value="@("claude-opus-5-5")">Claude Opus 5.5 (empfohlen)</MudSelectItem>
                             <MudSelectItem T="string" Value="@("claude-sonnet-5-5")">Claude Sonnet 5.5 (günstiger)</MudSelectItem>
                             <MudSelectItem T="string" Value="@("claude-fable-5-1")">Claude Fable 5.1 (stärkstes, teuerstes)</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" sm="5">
-                        <MudSelect T="string" @bind-Value="effort" Label="Gründlichkeit" Variant="Variant.Outlined">
+                        <MudSelect T="string" @bind-Value="effort" @bind-Value:after="Changed" Label="Gründlichkeit" Variant="Variant.Outlined">
                             <MudSelectItem T="string" Value="@("medium")">Mittel</MudSelectItem>
                             <MudSelectItem T="string" Value="@("high")">Hoch (empfohlen)</MudSelectItem>
                             <MudSelectItem T="string" Value="@("max")">Maximal</MudSelectItem>
@@ -86,7 +86,7 @@
                         var download = Downloads.Get(entry.Name);
                         <div class="@($"model-card {(ollamaModel == entry.Name ? "on" : "")} {(installed ? "" : "missing")}")">
                             <button type="button" role="radio" aria-checked="@(ollamaModel == entry.Name)" class="model-pick" disabled="@(!installed)"
-                                    @onclick="() => ollamaModel = entry.Name">
+                                    @onclick="() => PickModel(entry.Name)">
                                 <span class="model-head">
                                     <span class="model-title">@entry.Title</span>
                                     <code>@entry.Name</code>
@@ -126,7 +126,7 @@
                     @foreach (var other in models.Where(m => !LocalModelCatalog.IsKnown(m.Name)))
                     {
                         <div class="@($"model-card {(ollamaModel == other.Name ? "on" : "")}")">
-                            <button type="button" role="radio" aria-checked="@(ollamaModel == other.Name)" class="model-pick" @onclick="() => ollamaModel = other.Name">
+                            <button type="button" role="radio" aria-checked="@(ollamaModel == other.Name)" class="model-pick" @onclick="() => PickModel(other.Name)">
                                 <span class="model-head"><span class="model-title">Weiteres Modell</span><code>@other.Name</code></span>
                                 <span class="model-text">Selbst installiert. Muss Bilder verstehen können (Vision).</span>
                                 <span class="model-facts"><span>@((other.SizeBytes / 1_000_000_000.0).ToString("0.#")) GB</span></span>
@@ -146,11 +146,11 @@
 
                 <h3 class="sheet-title mt-6" style="font-size:1.1rem">Modus</h3>
                 <div class="choice-grid" role="radiogroup" aria-label="Modus" style="margin-bottom:8px">
-                    <button type="button" role="radio" aria-checked="@(effort == "high")" class="@($"choice {(effort == "high" ? "on" : "")}")" @onclick="@(() => effort = "high")">
+                    <button type="button" role="radio" aria-checked="@(effort == "high")" class="@($"choice {(effort == "high" ? "on" : "")}")" @onclick="@(() => SetEffort("high"))">
                         <span class="c-title">Gründlich</span>
                         <span class="c-text">Das Modell denkt nach, bevor es antwortet. Genauer, aber etwa doppelt so lang.</span>
                     </button>
-                    <button type="button" role="radio" aria-checked="@(effort == "medium")" class="@($"choice {(effort == "medium" ? "on" : "")}")" @onclick="@(() => effort = "medium")">
+                    <button type="button" role="radio" aria-checked="@(effort == "medium")" class="@($"choice {(effort == "medium" ? "on" : "")}")" @onclick="@(() => SetEffort("medium"))">
                         <span class="c-title">Schnell</span>
                         <span class="c-text">Antwortet direkt ohne Nachdenken. Gut, wenn viele Arbeiten anstehen.</span>
                     </button>
@@ -188,7 +188,7 @@
 
                 <MudGrid Spacing="2" Class="mt-2">
                     <MudItem xs="12" sm="8">
-                        <MudTextField @bind-Value="ollamaUrl" Label="Ollama-Adresse" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="ollamaUrl" @bind-Value:after="Changed" Immediate="true" Label="Ollama-Adresse" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     </MudItem>
                     <MudItem xs="12" sm="4" Class="d-flex align-center">
                         <MudButton Class="btn-quiet" StartIcon="@Icons.Material.Outlined.Sync" OnClick="LoadModelsAsync" Disabled="@checking">
@@ -198,27 +198,22 @@
                 </MudGrid>
             }
 
-            <div class="d-flex justify-end gap-2 mt-6">
-                @if (provider == AiProvider.Anthropic && Settings.HasStoredKey)
-                {
+            @if (provider == AiProvider.Anthropic && Settings.HasStoredKey)
+            {
+                <div class="d-flex justify-end mt-4">
                     <MudButton Class="btn-quiet" Color="Color.Secondary" OnClick="RemoveKey">Schlüssel entfernen</MudButton>
-                }
-                <MudButton Class="btn-ink" OnClick="Save" StartIcon="@Icons.Material.Filled.Check">Speichern</MudButton>
-            </div>
+                </div>
+            }
+            <p class="faint mt-4" style="font-size:.85rem">Änderungen werden automatisch gespeichert.</p>
         </section>
-    </MudItem>
-    <MudItem xs="12" md="5">
         <section class="sheet">
             <h2 class="sheet-title">Immer schwärzen</h2>
             <p class="sheet-sub">
                 Begriffe, die auf deine Schule hinweisen: Schulhaus, Ort, dein Name und dein Kürzel. ArtGrader schlägt sie in
                 jedem Dokument zum Schwärzen vor. E-Mail-Adressen, Telefonnummern und Webadressen erkennt ArtGrader selbst.
             </p>
-            <MudTextField T="string" @bind-Value="redactTerms" Label="Ein Begriff pro Zeile" Variant="Variant.Outlined"
-                          Lines="5" Placeholder="@TermsPlaceholder" />
-            <div class="d-flex justify-end mt-3">
-                <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.Check" OnClick="SaveRedactTerms">Speichern</MudButton>
-            </div>
+            <MudTextField T="string" @bind-Value="redactTerms" @bind-Value:after="RedactTermsChanged" Immediate="true" Label="Ein Begriff pro Zeile"
+                          Variant="Variant.Outlined" Lines="5" Placeholder="@TermsPlaceholder" />
         </section>
         <section class="sheet">
             <h2 class="sheet-title">Datenschutz</h2>
@@ -236,8 +231,7 @@
             <p style="word-break:break-all"><code>@Paths.Root</code></p>
             <p class="faint" style="font-size:.88rem">Für ein Backup diesen Ordner kopieren, während ArtGrader geschlossen ist.</p>
         </section>
-    </MudItem>
-</MudGrid>
+</div>
 
 @code {
     private AiProvider provider;
@@ -251,11 +245,33 @@
     private const string TermsPlaceholder = "z. B. Schulhaus Musterdorf, Musterdorf, A. Beispiel – je eine Zeile";
     private string redactTerms = "";
 
-    private void SaveRedactTerms()
-    {
+    private readonly Debouncer saver = new();
+    private readonly Debouncer termsSaver = new();
+    private string? apiKeyError;
+
+    private void RedactTermsChanged() => termsSaver.Schedule(() => InvokeAsync(SaveRedactTerms));
+
+    private void SaveRedactTerms() =>
         Settings.SaveRedactTerms(redactTerms.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-        redactTerms = string.Join("\n", Settings.RedactTerms);
-        Snackbar.Add("Gespeichert. ArtGrader schlägt diese Begriffe in allen Dokumenten zum Schwärzen vor.", Severity.Success);
+
+    private void Changed() => saver.Schedule(() => InvokeAsync(Save));
+
+    private void SelectAnthropic()
+    {
+        provider = AiProvider.Anthropic;
+        Changed();
+    }
+
+    private void PickModel(string name)
+    {
+        ollamaModel = name;
+        Changed();
+    }
+
+    private void SetEffort(string value)
+    {
+        effort = value;
+        Changed();
     }
     private string? ollamaError;
     private bool ollamaReachable;
@@ -277,7 +293,12 @@
         StateHasChanged();
     });
 
-    public void Dispose() => Downloads.Changed -= OnDownloadsChanged;
+    public async ValueTask DisposeAsync()
+    {
+        Downloads.Changed -= OnDownloadsChanged;
+        await saver.DisposeAsync();
+        await termsSaver.DisposeAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -305,6 +326,7 @@
         {
             await LoadModelsAsync();
         }
+        Changed();
     }
 
     private async Task LoadModelsAsync()
@@ -340,19 +362,27 @@
 
     private void Save()
     {
+        // A half-typed or wrong key is not saved; the other settings are.
+        apiKeyError = null;
+        var key = apiKey;
         if (provider == AiProvider.Anthropic && !string.IsNullOrWhiteSpace(apiKey) && !apiKey.Trim().StartsWith("sk-ant-", StringComparison.Ordinal))
         {
-            Snackbar.Add("Das sieht nicht nach einem Anthropic-Schlüssel aus (beginnt mit «sk-ant-»).", Severity.Warning);
-            return;
+            apiKeyError = "Das sieht nicht nach einem Anthropic-Schlüssel aus (beginnt mit «sk-ant-»).";
+            key = "";
         }
         if (provider == AiProvider.Ollama && string.IsNullOrWhiteSpace(ollamaModel))
         {
-            Snackbar.Add("Bitte ein lokales Modell auswählen.", Severity.Warning);
+            // Without a model the local choice is not usable yet; keep the saved settings until one is picked.
+            StateHasChanged();
             return;
         }
-        Settings.Save(new SettingsUpdate(provider, apiKey, model, effort, ollamaUrl, ollamaModel));
-        apiKey = "";
-        Snackbar.Add("Gespeichert.", Severity.Success);
+        Settings.Save(new SettingsUpdate(provider, key, model, effort, ollamaUrl, ollamaModel));
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            apiKey = "";
+            Snackbar.Add("Schlüssel gespeichert.", Severity.Success);
+        }
+        StateHasChanged();
     }
 
     private void RemoveKey()

@@ -5,7 +5,17 @@ namespace ArtGrader.Core.Tests;
 
 public class GradeCalculatorTests
 {
-    private static readonly GradingSettings Defaults = new();
+    // The formula tests use the classic 3/2/1/0 points with halves, independent of the app defaults.
+    private static readonly GradingSettings Defaults = ZeroToThree(0.5m);
+
+    private static GradingSettings ZeroToThree(decimal roundingStep) => new()
+    {
+        PointsUebertroffen = 3,
+        PointsErfuellt = 2,
+        PointsTeilweise = 1,
+        PointsNicht = 0,
+        RoundingStep = roundingStep,
+    };
 
     private static GradeInput[] Levels(params Level?[] levels) =>
         levels.Select(l => new GradeInput(Guid.NewGuid(), 1m, l)).ToArray();
@@ -15,6 +25,17 @@ public class GradeCalculatorTests
     {
         var result = GradeCalculator.Calculate(Levels(Level.Uebertroffen, Level.Uebertroffen, Level.Uebertroffen), Defaults);
         Assert.Equal(6m, result.Grade);
+    }
+
+    [Fact]
+    public void New_exams_use_six_to_three_points_and_quarter_grades()
+    {
+        var defaults = new GradingSettings();
+        Assert.Equal((6, 5, 4, 3), (defaults.PointsUebertroffen, defaults.PointsErfuellt, defaults.PointsTeilweise, defaults.PointsNicht));
+        Assert.Equal(0.25m, defaults.RoundingStep);
+
+        Assert.Equal(3.5m, GradeCalculator.Calculate(Levels(Level.Nicht, Level.Nicht), defaults).Grade);
+        Assert.Equal(4.75m, GradeCalculator.Calculate(Levels(Level.Erfuellt, Level.Teilweise, Level.Erfuellt, Level.Teilweise), defaults).Grade);
     }
 
     [Fact]
@@ -64,7 +85,7 @@ public class GradeCalculatorTests
     [InlineData("0.1", "4.3")]
     public void Rounding_step_is_applied(string step, string expectedGrade)
     {
-        var settings = new GradingSettings { RoundingStep = decimal.Parse(step, System.Globalization.CultureInfo.InvariantCulture) };
+        var settings = ZeroToThree(decimal.Parse(step, System.Globalization.CultureInfo.InvariantCulture));
         var expected = decimal.Parse(expectedGrade, System.Globalization.CultureInfo.InvariantCulture);
         var result = GradeCalculator.Calculate(Levels(Level.Erfuellt, Level.Erfuellt, Level.Erfuellt, Level.Erfuellt, Level.Erfuellt, Level.Erfuellt), settings);
         Assert.Equal(12m, result.Points);

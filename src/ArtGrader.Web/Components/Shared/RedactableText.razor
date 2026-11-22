@@ -1,17 +1,12 @@
 @using ArtGrader.Core.Ai
 @using ArtGrader.Core.Documents
-@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <div class="redactable">
     <label class="redactable-label" for="@id">@Label</label>
-    <textarea id="@id" @ref="area" rows="@Rows" placeholder="@Placeholder" value="@text"
-              @oninput="e => text = e.Value?.ToString() ?? string.Empty" @onchange="CommitAsync"></textarea>
-    <div class="redactable-tools">
-        <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.FormatStrikethrough" OnClick="RedactSelectionAsync">
-            Markierte Stelle schwärzen
-        </MudButton>
-        <span class="cover-hint">Text markieren, dann schwärzen. Oder direkt im Text löschen.</span>
-    </div>
+    <textarea id="@id" rows="@Rows" placeholder="@Placeholder" value="@text"
+              @oninput="OnInput" @onchange="CommitAsync"></textarea>
+    <span class="cover-hint">Namen, Orte und alles, was auf deine Schule hinweist, direkt im Text löschen. Änderungen werden automatisch gespeichert.</span>
 
     @{
         var groups = Suggestions();
@@ -89,9 +84,9 @@
 
     private readonly string id = $"redact-{Guid.NewGuid():N}";
     private readonly List<(string Text, string Reason)> modelPassages = [];
-    private ElementReference area;
     private string text = "";
     private string lastValue = "";
+    private readonly Debouncer saver = new();
     private bool checking;
     private bool checkedWithModel;
     private string? checkError;
@@ -110,11 +105,20 @@
             .GroupBy(h => h.Text, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+    private void OnInput(ChangeEventArgs e)
+    {
+        text = e.Value?.ToString() ?? string.Empty;
+        saver.Schedule(() => InvokeAsync(PublishAsync));
+    }
+
     private async Task CommitAsync(ChangeEventArgs e)
     {
         text = e.Value?.ToString() ?? string.Empty;
+        await saver.FlushAsync();
         await PublishAsync();
     }
+
+    public ValueTask DisposeAsync() => saver.DisposeAsync();
 
     private async Task CheckAsync()
     {
@@ -148,29 +152,6 @@
         text = RedactionSuggestions.Apply(text, current.Where(h => chosen.Contains(h.Text)));
         await PublishAsync();
     }
-
-    private async Task RedactSelectionAsync()
-    {
-        int[] range;
-        try
-        {
-            range = await JS.InvokeAsync<int[]>("artGrader.selection", area);
-            text = await JS.InvokeAsync<string>("artGrader.value", area);
-        }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException)
-        {
-            return;
-        }
-        var (from, to) = (Math.Clamp(range[0], 0, text.Length), Math.Clamp(range[1], 0, text.Length));
-        if (to <= from)
-        {
-            return;
-        }
-        text = Redact(text, from, to);
-        await PublishAsync();
-    }
-
-    public static string Redact(string text, int from, int to) => text[..from] + Redacted + text[to..];
 
     private async Task PublishAsync()
     {

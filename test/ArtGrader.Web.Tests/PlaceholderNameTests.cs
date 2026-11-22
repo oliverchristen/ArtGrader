@@ -78,12 +78,25 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_header_saves_class_and_date_but_never_an_empty_title()
+    {
+        var date = new DateOnly(2027, 3, 4);
+        Assert.Equal("Stadt bei Nacht", await repository.SaveExamHeaderAsync(exam.Id, "  Stadt bei Nacht ", " 2b ", date));
+        Assert.Equal("Stadt bei Nacht", await repository.SaveExamHeaderAsync(exam.Id, "   ", "2b", date));
+
+        var stored = (await repository.GetAsync(exam.Id))!;
+        Assert.Equal("Stadt bei Nacht", stored.Title);
+        Assert.Equal("2b", stored.SchoolClass);
+        Assert.Equal(date, stored.Date);
+    }
+
+    [Fact]
     public async Task Covers_and_the_local_only_flag_are_stored()
     {
         var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
 
         await repository.SetImageEditsAsync(work.Images[0].Id, [new CoverArea { X = 0.7, Y = 0.8, Width = 0.3, Height = 0.2 }], new CoverArea { X = 0.1, Y = 0.1, Width = 0.8, Height = 0.8 });
-        await repository.UpdateExamDetailsAsync(new Exam { Id = exam.Id, Title = exam.Title, LocalOnly = true });
+        await repository.UpdateGradingAsync(exam.Id, localOnly: true, new GradingSettings());
 
         var stored = (await repository.GetAsync(exam.Id))!;
         Assert.True(stored.LocalOnly);

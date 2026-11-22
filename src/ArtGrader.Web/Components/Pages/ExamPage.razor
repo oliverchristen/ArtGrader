@@ -5,7 +5,8 @@
 @inject IDialogService Dialogs
 @inject FileStore Files
 @inject CurrentExam Current
-@implements IDisposable
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <PageTitle>@(exam?.Title ?? "Prüfung") · ArtGrader</PageTitle>
 
@@ -21,38 +22,50 @@ else
 {
     var criteriaCount = exam.OrderedCriteria().Count();
     var completed = exam.Submissions.Count(s => s.Status == SubmissionStatus.Abgeschlossen);
-    <nav class="crumbs"><a href="/">Prüfungen</a><span>/</span><span>@exam.Title</span></nav>
-    <div class="review-head" style="margin-bottom:8px">
-        <div>
-            <div class="eyebrow">@(string.IsNullOrWhiteSpace(exam.SchoolClass) ? "Prüfung" : $"Klasse {exam.SchoolClass}") · @exam.Date.ToString("d. MMMM yyyy", culture)</div>
-            <h1 class="page-title">@exam.Title</h1>
+    <div class="exam-head">
+        <nav class="crumbs"><a href="/">Prüfungen</a><span>/</span><span>@exam.Title</span></nav>
+        <div class="review-head">
+            <div class="exam-head-main">
+                <div class="exam-meta-edit">
+                    <label class="meta-field">
+                        <span>Klasse</span>
+                        <input value="@schoolClass" @oninput="OnClassInput" placeholder="–" size="@Math.Max(5, schoolClass.Length + 2)" maxlength="40" aria-label="Klasse" />
+                    </label>
+                    <span aria-hidden="true">·</span>
+                    <label class="meta-field">
+                        <input type="date" value="@date.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" aria-label="Datum" />
+                    </label>
+                </div>
+                <input class="page-title title-input" value="@title" @oninput="OnTitleInput" @onblur="OnTitleBlur"
+                       aria-label="Titel der Prüfung" placeholder="Titel" maxlength="200" />
+            </div>
+            <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="DeleteAsync">Prüfung löschen</MudButton>
         </div>
-        <MudButton Class="btn-quiet" Color="Color.Secondary" StartIcon="@Icons.Material.Outlined.Delete" OnClick="DeleteAsync">Prüfung löschen</MudButton>
-    </div>
 
-    <div class="steps" role="tablist">
-        <button type="button" role="tab" aria-selected="@(activeTab == 0)" class="@StepClass(0, criteriaCount > 0)" @onclick="() => activeTab = 0">
-            <span class="num">@(criteriaCount > 0 && activeTab != 0 ? "✓" : "1")</span> Aufgabe & Kriterien
-        </button>
-        <button type="button" role="tab" aria-selected="@(activeTab == 1)" class="@StepClass(1, exam.Submissions.Count > 0 && exam.Submissions.All(s => s.GradedAt is not null))" @onclick="() => activeTab = 1">
-            <span class="num">2</span> Arbeiten bewerten
-            @if (running > 0)
-            {
-                <span class="badge">@running läuft</span>
-            }
-        </button>
-        <button type="button" role="tab" aria-selected="@(activeTab == 2)" class="@StepClass(2, exam.Submissions.Count > 0 && completed == exam.Submissions.Count)" @onclick="() => activeTab = 2">
-            <span class="num">3</span> Übersicht & Export
-        </button>
+        <div class="steps" role="tablist">
+            <button type="button" role="tab" aria-selected="@(activeTab == 0)" class="@StepClass(0, criteriaCount > 0)" @onclick="() => activeTab = 0">
+                <span class="num">@(criteriaCount > 0 && activeTab != 0 ? "✓" : "1")</span> Aufgabe & Kriterien
+            </button>
+            <button type="button" role="tab" aria-selected="@(activeTab == 1)" class="@StepClass(1, exam.Submissions.Count > 0 && exam.Submissions.All(s => s.GradedAt is not null))" @onclick="() => activeTab = 1">
+                <span class="num">2</span> Arbeiten bewerten
+                @if (running > 0)
+                {
+                    <span class="badge">@running läuft</span>
+                }
+            </button>
+            <button type="button" role="tab" aria-selected="@(activeTab == 2)" class="@StepClass(2, exam.Submissions.Count > 0 && completed == exam.Submissions.Count)" @onclick="() => activeTab = 2">
+                <span class="num">3</span> Übersicht & Export
+            </button>
+        </div>
     </div>
 
     @switch (activeTab)
     {
         case 0:
-            <ExamSetupPanel Exam="exam" Changed="ReloadAsync" Next="() => activeTab = 1" />
+            <ExamSetupPanel Exam="exam" Changed="ReloadAsync" Next="() => GoToTabAsync(1)" />
             break;
         case 1:
-            <SubmissionsPanel Exam="exam" Changed="ReloadAsync" ShowSetup="() => activeTab = 0" />
+            <SubmissionsPanel Exam="exam" Changed="ReloadAsync" ShowSetup="() => GoToTabAsync(0)" Next="() => GoToTabAsync(2)" />
             break;
         default:
             <OverviewPanel Exam="exam" />
@@ -69,6 +82,66 @@ else
     private bool notFound;
     private int activeTab;
     private int running;
+    private readonly Debouncer headerSaver = new();
+    private string title = "";
+    private string schoolClass = "";
+    private DateOnly date;
+
+    private void OnTitleInput(ChangeEventArgs e)
+    {
+        title = e.Value?.ToString() ?? "";
+        ScheduleHeaderSave();
+    }
+
+    private void OnTitleBlur()
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            title = exam!.Title;
+        }
+    }
+
+    private void OnClassInput(ChangeEventArgs e)
+    {
+        schoolClass = e.Value?.ToString() ?? "";
+        ScheduleHeaderSave();
+    }
+
+    private void OnDateChanged(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var value))
+        {
+            date = value;
+            ScheduleHeaderSave();
+        }
+    }
+
+    private void ScheduleHeaderSave() => headerSaver.Schedule(() => InvokeAsync(SaveHeaderAsync));
+
+    private async Task SaveHeaderAsync()
+    {
+        if (exam is null)
+        {
+            return;
+        }
+        await Repository.SaveExamHeaderAsync(exam.Id, title, schoolClass, date);
+        exam.Title = string.IsNullOrWhiteSpace(title) ? exam.Title : title.Trim();
+        exam.SchoolClass = schoolClass.Trim();
+        exam.Date = date;
+        StateHasChanged();
+    }
+
+    private async Task GoToTabAsync(int tab)
+    {
+        activeTab = tab;
+        try
+        {
+            await JS.InvokeVoidAsync("scrollTo", 0, 0);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException)
+        {
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,6 +161,12 @@ else
         exam = await Repository.GetAsync(Id);
         notFound = exam is null;
         Current.Set(exam);
+        if (exam is not null && !headerSaver.IsPending)
+        {
+            title = exam.Title;
+            schoolClass = exam.SchoolClass;
+            date = exam.Date;
+        }
         if (exam is not null)
         {
             running = exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet);
@@ -121,9 +200,10 @@ else
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         Events.SubmissionChanged -= OnSubmissionChanged;
+        await headerSaver.DisposeAsync();
         Current.Clear(Id);
     }
 }

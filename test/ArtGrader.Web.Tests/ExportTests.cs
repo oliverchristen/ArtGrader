@@ -10,7 +10,12 @@ public class ExportTests
 
     private static Exam ExampleExam()
     {
-        var exam = new Exam { Title = "Stadt von oben", SchoolClass = "2b" };
+        var exam = new Exam
+        {
+            Title = "Stadt von oben",
+            SchoolClass = "2b",
+            Settings = new GradingSettings { PointsUebertroffen = 3, PointsErfuellt = 2, PointsTeilweise = 1, PointsNicht = 0, RoundingStep = 0.5m },
+        };
         var perspective = new RubricCategory { Name = "Perspektivisches Zeichnen", Order = 0 };
         perspective.Criteria.Add(new RubricCriterion { Text = "Die Zeichnung ist perspektivisch korrekt.", Order = 0 });
         perspective.Criteria.Add(new RubricCriterion { Text = "Die Standflächen der Häuser sind sinnvoll.", Order = 1 });

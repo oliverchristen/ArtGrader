@@ -68,23 +68,35 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         return exam;
     }
 
-    public async Task UpdateExamDetailsAsync(Exam source)
+    /// <summary>Saves title, class and date from the page header. An empty title keeps the current one.</summary>
+    public async Task<string> SaveExamHeaderAsync(Guid examId, string title, string schoolClass, DateOnly date)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var exam = await db.Exams.FirstAsync(e => e.Id == source.Id);
-        exam.Title = source.Title.Trim();
-        exam.SchoolClass = source.SchoolClass.Trim();
-        exam.Date = source.Date;
-        exam.LocalOnly = source.LocalOnly;
+        var exam = await db.Exams.FirstAsync(e => e.Id == examId);
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            exam.Title = title.Trim();
+        }
+        exam.SchoolClass = schoolClass.Trim();
+        exam.Date = date;
+        await db.SaveChangesAsync();
+        return exam.Title;
+    }
+
+    public async Task UpdateGradingAsync(Guid examId, bool localOnly, GradingSettings settings)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var exam = await db.Exams.FirstAsync(e => e.Id == examId);
+        exam.LocalOnly = localOnly;
         exam.Settings = new GradingSettings
         {
-            PointsUebertroffen = source.Settings.PointsUebertroffen,
-            PointsErfuellt = source.Settings.PointsErfuellt,
-            PointsTeilweise = source.Settings.PointsTeilweise,
-            PointsNicht = source.Settings.PointsNicht,
-            RoundingStep = source.Settings.RoundingStep,
-            MinGrade = source.Settings.MinGrade,
-            MaxGrade = source.Settings.MaxGrade,
+            PointsUebertroffen = settings.PointsUebertroffen,
+            PointsErfuellt = settings.PointsErfuellt,
+            PointsTeilweise = settings.PointsTeilweise,
+            PointsNicht = settings.PointsNicht,
+            RoundingStep = settings.RoundingStep,
+            MinGrade = settings.MinGrade,
+            MaxGrade = settings.MaxGrade,
         };
         await db.SaveChangesAsync();
     }

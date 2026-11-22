@@ -7,7 +7,9 @@
     return;
 }
 
-<div class="stats">
+<section class="sheet">
+    <h2 class="sheet-title">Auswertung</h2>
+<div class="stats stats-inline">
     <div class="stat">
         <div class="k">Durchschnitt</div>
         <div class="v">@(average?.ToString("0.00") ?? "–")</div>
@@ -35,17 +37,10 @@
     </div>
 </div>
 
+</section>
+
 <section class="sheet">
-    <div class="d-flex align-center flex-wrap gap-2 mb-4">
-        <h2 class="sheet-title" style="margin:0">Notenliste</h2>
-        <span class="topbar-spacer"></span>
-        <MudButton Class="btn-ink" StartIcon="@Icons.Material.Outlined.GridOn" Href="@($"/export/{Exam.Id}/noten.xlsx")" Target="_blank">Excel</MudButton>
-        <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
-                   Href="@($"/export/{Exam.Id}/beurteilungen.pdf?begruendungen={withJustifications.ToString().ToLowerInvariant()}")">
-            Beurteilungsbögen (PDF)
-        </MudButton>
-        <MudSwitch @bind-Value="withJustifications" Color="Color.Primary" Label="mit Begründungen" />
-    </div>
+    <h2 class="sheet-title mb-4">Notenliste</h2>
     <div class="table-wrap">
         <table class="grades">
             <thead>
@@ -125,6 +120,23 @@
             }
         </div>
     }
+</section>
+
+<section class="sheet export-step">
+    <h2 class="sheet-title">Exportieren</h2>
+    <p class="sheet-sub">Die Notenliste für deine Unterlagen und die Beurteilungsbögen für die Klasse. Beides bleibt auf diesem Computer.</p>
+    @if (Exam.Submissions.Any(s => s.Status != SubmissionStatus.Abgeschlossen))
+    {
+        <p class="muted mb-3">Noch nicht alle Arbeiten sind abgeschlossen. Offene Arbeiten erscheinen mit vorläufiger Note.</p>
+    }
+    <MudSwitch @bind-Value="withJustifications" Color="Color.Primary" Label="Begründungen der KI in die Beurteilungsbögen aufnehmen" />
+    <div class="next-step">
+        <MudButton Class="btn-soft" Size="Size.Large" StartIcon="@Icons.Material.Outlined.GridOn" Href="@($"/export/{Exam.Id}/noten.xlsx")" Target="_blank">Notenliste (Excel)</MudButton>
+        <MudButton Class="btn-ink" Size="Size.Large" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
+                   Href="@($"/export/{Exam.Id}/beurteilungen.pdf?begruendungen={withJustifications.ToString().ToLowerInvariant()}")">
+            Beurteilungsbögen (PDF)
+        </MudButton>
+    </div>
 </section>
 
 @code {

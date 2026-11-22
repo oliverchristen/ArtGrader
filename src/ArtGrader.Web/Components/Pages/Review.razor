@@ -40,7 +40,7 @@ else
         <div class="student-nav">
             <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft" Disabled="@(previous is null)" Href="@(previous is null ? null : Url(previous))" aria-label="Vorherige Arbeit" />
             <div class="@($"student-name {(submission.HasPlaceholderName ? "placeholder-name" : "")}")">
-                <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" Variant="Variant.Text" aria-label="Name" />
+                <MudTextField T="string" Value="submission.StudentName" ValueChanged="RenameAsync" DebounceInterval="1000" Variant="Variant.Text" aria-label="Name" />
                 @if (submission.HasPlaceholderName)
                 {
                     <span class="name-hint">Zufallsname – echten Namen eintragen</span>
@@ -210,7 +210,7 @@ else
                     </div>
                 }
                 <MudTextField T="string" Value="submission.TeacherComment" ValueChanged="SetCommentAsync" Variant="Variant.Outlined" Lines="4" Sizing="InputSizing.Auto"
-                              Label="Deine Rückmeldung" DebounceInterval="800" />
+                              Label="Deine Rückmeldung" DebounceInterval="1000" />
                 @if (!string.IsNullOrWhiteSpace(submission.AiOverallComment) && submission.TeacherComment != submission.AiOverallComment)
                 {
                     <div class="ai-quote">«@submission.AiOverallComment»</div>
@@ -219,6 +219,31 @@ else
                     </MudButton>
                 }
             </section>
+
+            <div class="next-step">
+                @if (submission.Status == SubmissionStatus.Abgeschlossen)
+                {
+                    <span class="muted">Abgeschlossen.</span>
+                    @if (next is not null)
+                    {
+                        <MudButton Class="btn-ink" Size="Size.Large" Href="@Url(next)" EndIcon="@Icons.Material.Filled.ArrowForward">Nächste Arbeit</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Class="btn-ink" Size="Size.Large" Href="@($"/pruefung/{exam.Id}")" EndIcon="@Icons.Material.Filled.ArrowForward">Zurück zur Prüfung</MudButton>
+                    }
+                }
+                else
+                {
+                    @if (grade is null && !busy && result.MissingCount > 0)
+                    {
+                        <span class="muted">Noch @result.MissingCount Kriterium/en für dich offen.</span>
+                    }
+                    <MudButton Class="btn-ink" Size="Size.Large" StartIcon="@Icons.Material.Filled.Check" Disabled="@(grade is null || busy)" OnClick="CompleteAsync">
+                        Abschliessen@(next is null ? "" : " & weiter")
+                    </MudButton>
+                }
+            </div>
         </div>
     </div>
 }
