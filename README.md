@@ -60,8 +60,11 @@ Die Vorschläge gelten für Text. PDF-Seiten deckt die Lehrperson von Hand ab.
    - Mac mit Apple-Chip (M1/M2/M3/…): `ArtGrader-osx-arm64.zip`
    - Mac mit Intel-Prozessor: `ArtGrader-osx-x64.zip`
 2. Starten:
-   - **Windows:** `ArtGrader.exe` doppelklicken. Erscheint «Der Computer wurde durch Windows geschützt»:
-     *Weitere Informationen* → *Trotzdem ausführen*.
+   - **Windows:** Vor dem Entpacken die ZIP-Datei mit der rechten Maustaste anklicken → *Eigenschaften* → unten
+     *Zulassen* ankreuzen → *OK*. Sonst erscheint beim Start «Der Computer wurde durch Windows geschützt», weil
+     ArtGrader nicht signiert ist. Dann `ArtGrader.exe` doppelklicken. Erscheint die Meldung trotzdem:
+     *Weitere Informationen* → *Trotzdem ausführen*. Fehlt diese Schaltfläche (oft auf verwalteten Schul- oder
+     Firmencomputern), muss die Informatik ArtGrader freigeben.
    - **Mac:** Einmalig im Programm «Terminal» `bash ` eintippen (mit Leerzeichen), die Datei `install.sh` aus dem
      entpackten Ordner ins Terminalfenster ziehen und Enter drücken. Das Skript kopiert `ArtGrader.app` nach
      «Programme» im Benutzerordner, gibt es für macOS frei und startet es. Danach startet ArtGrader per Doppelklick
