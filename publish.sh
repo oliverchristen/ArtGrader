@@ -12,8 +12,8 @@ for rid in ${runtimes[@]}; do
     dotnet publish "$root/src/ArtGrader.Web/ArtGrader.Web.csproj" -c Release -r "$rid" -o "$out"
 
     if [[ "$rid" == osx-* ]]; then
-        cp "$root/build/ArtGrader.command" "$out/"
-        chmod +x "$out/ArtGrader" "$out/ArtGrader.command"
+        cp "$root/build/ArtGrader.command" "$root/build/install.sh" "$out/"
+        chmod +x "$out/ArtGrader" "$out/ArtGrader.command" "$out/install.sh"
     fi
 
     (cd "$artifacts" && if command -v ditto >/dev/null; then ditto -c -k --keepParent "ArtGrader-$rid" "ArtGrader-$rid.zip"; else zip -qry "ArtGrader-$rid.zip" "ArtGrader-$rid"; fi)

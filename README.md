@@ -36,12 +36,18 @@ Programm, nicht die KI. Eine Note kann pro Arbeit auch manuell gesetzt werden.
 2. Starten:
    - **Windows:** `ArtGrader.exe` doppelklicken. Erscheint «Der Computer wurde durch Windows geschützt»:
      *Weitere Informationen* → *Trotzdem ausführen*.
-   - **Mac:** `ArtGrader.command` doppelklicken. Beim ersten Mal meldet macOS, dass das Programm nicht geprüft werden
-     kann. Dann im Finder **Rechtsklick → Öffnen → Öffnen**. Falls das nicht reicht, im Terminal einmal ausführen:
-     `xattr -dr com.apple.quarantine ~/Downloads/ArtGrader-osx-arm64` (Pfad anpassen).
+   - **Mac:** Im Programm «Terminal» einmal `bash ` eintippen (mit Leerzeichen), die Datei `install.sh` aus dem
+     entpackten Ordner ins Terminalfenster ziehen und Enter drücken. Das Skript kopiert ArtGrader nach
+     `~/Applications/ArtGrader` und gibt es für macOS frei. Danach dort `ArtGrader.command` doppelklicken.
 3. Der Browser öffnet sich mit http://localhost:5080. Das schwarze Fenster (Terminal) offen lassen, solange du
    arbeitest; Schliessen beendet ArtGrader.
 4. Unter **Einstellungen** den Anthropic API-Schlüssel eintragen (console.anthropic.com → API Keys).
+
+### Aktualisieren
+
+ArtGrader beenden (Terminalfenster schliessen), die neue Version wie oben installieren – auf dem Mac wieder mit
+`install.sh`. Prüfungen, Fotos, Noten und der API-Schlüssel liegen im Datenordner und bleiben erhalten. Nötige
+Änderungen an der Datenbank macht ArtGrader beim ersten Start selbst. Vorher den Datenordner zu kopieren schadet nie.
 
 ### Kosten
 
@@ -66,7 +72,11 @@ einfügen. Die Arbeiten werden nacheinander bewertet.
 - Gespeichert wird lokal: Windows `%LOCALAPPDATA%\ArtGrader`, macOS `~/Library/Application Support/ArtGrader`.
 - Mit Claude gehen nur Aufgabentext, Kriterien und Fotos an Anthropic – **keine Namen**. Auf den Fotos sollten
   keine Namen sichtbar sein. Mit dem lokalen Modell verlässt nichts den Computer.
-- Der API-Schlüssel wird verschlüsselt gespeichert.
+- Der API-Schlüssel wird verschlüsselt gespeichert. Der Schlüssel dazu ist an das Benutzerkonto gebunden (Windows:
+  Benutzerkonto, macOS: Schlüsselbund). Eine Kopie des Datenordners verrät den API-Schlüssel nicht; auf einem neuen
+  Computer muss er neu eingetragen werden.
+- Datenbank und Fotos sind nicht separat verschlüsselt. Den Computer mit BitLocker (Windows) bzw. FileVault (macOS)
+  verschlüsseln.
 - Die Nutzung mit der Schulleitung abklären (Datenschutzrichtlinien des Kantons).
 
 ### Grenzen
@@ -83,7 +93,7 @@ einfügen. Die Arbeiten werden nacheinander bewertet.
   DocumentFormat.OpenXml, ClosedXML, QuestPDF.
 - `src/ArtGrader.Core` – Domäne, Notenberechnung, Dokument- und Bildaufbereitung, KI-Anbindung
   (`IModelGateway` mit `AnthropicClaudeGateway` und `OllamaGateway`, Auswahl über `RoutingModelGateway`).
-- Schriften: Fraunces und DM Sans liegen unter `wwwroot/fonts` (SIL Open Font License), damit die App offline läuft.
+- Schrift: DM Sans liegt unter `wwwroot/fonts` (SIL Open Font License), damit die App offline läuft.
 - `src/ArtGrader.Web` – Oberfläche, Speicherung, Warteschlange, Exporte.
 - `test/` – xUnit-Tests (ohne echte API-Aufrufe).
 
@@ -91,14 +101,16 @@ einfügen. Die Arbeiten werden nacheinander bewertet.
 dotnet test ArtGrader.slnx
 dotnet run --project src/ArtGrader.Web            # http://localhost:5080
 ./publish.sh osx-arm64 osx-x64 win-x64             # macOS/Linux: ZIPs in artifacts/
-./publish.ps1                                      # Windows (macOS-ZIPs besser via publish.sh oder CI)
+./publish.ps1                                      # Windows; Mac-Ordner danach auf dem Mac mit install.sh einrichten
 ```
 
 - `ANTHROPIC_API_KEY` übersteuert den gespeicherten Schlüssel, `ARTGRADER_DATA` den Datenordner,
   `ARTGRADER_NO_BROWSER=1` verhindert das Öffnen des Browsers.
 - Schemaänderungen: `dotnet ef migrations add <Name> --project src/ArtGrader.Web --output-dir Data/Migrations`.
   Beim Start werden Migrationen automatisch angewendet.
-- Die macOS-ZIPs müssen auf macOS gepackt werden (CI-Job `macos-latest`), sonst fehlt das Ausführungsrecht.
+- Unter Windows gebaute Mac-Versionen sind weder ausführbar markiert noch signiert; `build/install.sh` holt das auf
+  dem Mac nach (Ausführungsrecht, Quarantäne entfernen, Ad-hoc-Signatur). Die ZIPs aus dem CI-Job `macos-latest`
+  sind bereits signiert.
 
 ### Lizenzen
 

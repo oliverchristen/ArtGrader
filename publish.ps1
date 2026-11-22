@@ -15,7 +15,8 @@ foreach ($rid in $Runtimes) {
 
     if ($rid -like 'osx-*') {
         Copy-Item (Join-Path $root 'build/ArtGrader.command') $out
-        Write-Warning "${rid}: zip on macOS with publish.sh (or use the CI artifact) so the executable bit survives."
+        Copy-Item (Join-Path $root 'build/install.sh') $out
+        Write-Host "${rid}: copy the folder to the Mac and run 'bash install.sh' there."
         continue
     }
 

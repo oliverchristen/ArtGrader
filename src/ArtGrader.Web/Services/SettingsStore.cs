@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using ArtGrader.Core.Ai;
 using ArtGrader.Core.Storage;
@@ -56,16 +56,9 @@ public sealed class SettingsStore : IAiSettingsSource
         lock (gate)
         {
             var key = Environment.GetEnvironmentVariable(EnvironmentKey);
-            if (string.IsNullOrWhiteSpace(key) && HasStoredKey)
+            if (string.IsNullOrWhiteSpace(key))
             {
-                try
-                {
-                    key = protector.Unprotect(stored.ProtectedApiKey!);
-                }
-                catch (System.Security.Cryptography.CryptographicException)
-                {
-                    key = null;
-                }
+                key = StoredApiKey();
             }
             return new AiSettings(stored.Provider, key, stored.Model, stored.Effort, stored.OllamaUrl, stored.OllamaModel);
         }
@@ -89,6 +82,38 @@ public sealed class SettingsStore : IAiSettingsSource
             Persist();
         }
         Changed?.Invoke();
+    }
+
+    public string? StoredApiKey()
+    {
+        lock (gate)
+        {
+            if (!HasStoredKey)
+            {
+                return null;
+            }
+            try
+            {
+                return protector.Unprotect(stored.ProtectedApiKey!);
+            }
+            catch (System.Security.Cryptography.CryptographicException)
+            {
+                return null;
+            }
+        }
+    }
+
+    public void ReprotectApiKey()
+    {
+        lock (gate)
+        {
+            if (!HasStoredKey)
+            {
+                return;
+            }
+            stored = stored with { ProtectedApiKey = protector.Protect(protector.Unprotect(stored.ProtectedApiKey!)) };
+            Persist();
+        }
     }
 
     public void RemoveKey()

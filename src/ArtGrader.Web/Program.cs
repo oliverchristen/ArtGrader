@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using ArtGrader.Core.Ai;
 using ArtGrader.Core.Storage;
 using ArtGrader.Web.Components;
@@ -22,7 +22,7 @@ builder.WebHost.UseUrls(url);
 
 var paths = new AppPaths();
 builder.Services.AddSingleton(paths);
-builder.Services.AddDataProtection().SetApplicationName("ArtGrader").PersistKeysToFileSystem(new DirectoryInfo(paths.Keys));
+builder.Services.AddDataProtection().SetApplicationName("ArtGrader").PersistKeysToFileSystem(new DirectoryInfo(paths.Keys)).LockKeysToUser();
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseSqlite($"Data Source={paths.Database}"));
 builder.Services.AddSingleton<ExamRepository>();
 builder.Services.AddSingleton<FileStore>();
@@ -54,6 +54,20 @@ await using (var scope = app.Services.CreateAsyncScope())
     await using var db = await factory.CreateDbContextAsync();
     await db.Database.MigrateAsync();
     await scope.ServiceProvider.GetRequiredService<ExamRepository>().ReplaceGeneratedNamesAsync();
+}
+
+try
+{
+    var settings = app.Services.GetRequiredService<SettingsStore>();
+    var removed = KeyLock.RemovePlaintextKeys(app.Services, paths.Keys, settings.ReprotectApiKey);
+    if (removed > 0)
+    {
+        app.Logger.LogInformation("Schlüssel an das Benutzerkonto gebunden, {Count} ungeschützte Schlüsseldatei(en) entfernt.", removed);
+    }
+}
+catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or InvalidOperationException or IOException)
+{
+    app.Logger.LogWarning(ex, "Die Schlüssel konnten nicht an das Benutzerkonto gebunden werden.");
 }
 
 if (!app.Environment.IsDevelopment())
