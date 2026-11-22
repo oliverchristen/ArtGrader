@@ -90,4 +90,21 @@ public static class SingleInstance
             return false;
         }
     }
+
+    /// <summary>Asks the running ArtGrader for a ticket to open the browser with. Null if it does not accept the key.</summary>
+    public static async Task<string?> TicketAsync(string url, string key)
+    {
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        using var request = new HttpRequestMessage(HttpMethod.Post, url.TrimEnd('/') + AccessGate.TicketPath);
+        request.Headers.Add(AccessGate.HeaderName, key);
+        try
+        {
+            using var response = await http.SendAsync(request);
+            return response.IsSuccessStatusCode ? (await response.Content.ReadAsStringAsync()).Trim() : null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return null;
+        }
+    }
 }

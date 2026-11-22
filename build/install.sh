@@ -17,7 +17,11 @@ fi
 
 if curl -fs "$url/api/ping" 2>/dev/null | grep -q ArtGrader; then
     echo "ArtGrader läuft noch und wird beendet …"
-    curl -fs -X POST "$url/beenden" > /dev/null 2>&1 || true
+    # ArtGrader only obeys someone who can read this account's access key. The key goes to curl
+    # through stdin so that it never shows up in the process list.
+    key="$(cat "${ARTGRADER_DATA:-$HOME/Library/Application Support/ArtGrader}/access-key" 2>/dev/null || true)"
+    printf 'header = "X-ArtGrader-Key: %s"
+' "$key" | curl -fs -X POST -K - "$url/beenden" > /dev/null 2>&1 || true
     for _ in $(seq 1 20); do
         curl -fs "$url/api/ping" > /dev/null 2>&1 || break
         sleep 0.5

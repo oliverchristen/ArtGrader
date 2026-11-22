@@ -111,7 +111,9 @@ public sealed class SettingsStore : IAiSettingsSource
                 Provider = update.Provider,
                 Model = string.IsNullOrWhiteSpace(update.Model) ? AiSettings.DefaultModel : update.Model.Trim(),
                 Effort = string.IsNullOrWhiteSpace(update.Effort) ? AiSettings.DefaultEffort : update.Effort.Trim(),
-                OllamaUrl = string.IsNullOrWhiteSpace(update.OllamaUrl) ? AiSettings.DefaultOllamaUrl : update.OllamaUrl.Trim().TrimEnd('/'),
+                OllamaUrl = string.IsNullOrWhiteSpace(update.OllamaUrl)
+                    ? AiSettings.DefaultOllamaUrl
+                    : OllamaGateway.IsThisComputer(update.OllamaUrl) ? update.OllamaUrl.Trim().TrimEnd('/') : stored.OllamaUrl,
                 OllamaModel = string.IsNullOrWhiteSpace(update.OllamaModel) ? null : update.OllamaModel.Trim(),
                 ProtectedApiKey = string.IsNullOrWhiteSpace(update.NewApiKey)
                     ? stored.ProtectedApiKey

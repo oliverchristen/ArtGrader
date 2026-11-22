@@ -173,6 +173,13 @@ dotnet run --project src/ArtGrader.Web            # http://localhost:5080
   Dock-Symbol (`LSUIElement`): `Contents/MacOS/ArtGrader` ist ein Startskript, das das Programm aus
   `Contents/Resources/app` im Hintergrund startet. Läuft ArtGrader schon (`/api/ping`), öffnet ein zweiter Start nur
   den Browser. Beenden über `POST /beenden`.
+- Zugang: ArtGrader hat kein Login, lässt aber nur einen Browser herein, den es selbst geöffnet hat (`AccessGate`).
+  Der Zugangsschlüssel liegt in `access-key` im Datenordner, den nur das eigene Benutzerkonto lesen kann. Beim Start
+  öffnet ArtGrader den Browser mit einem Ticket (einmal gültig, eine Minute); der Browser bekommt dafür ein Cookie.
+  Alles ausser `/api/ping` verlangt das Cookie oder den Header `X-ArtGrader-Key`. Mit `dotnet run` steht der Link
+  zum Öffnen in der Konsole.
+- Lokale Modelle: Die Ollama-Adresse muss auf diesen Computer zeigen (`localhost`, `127.0.0.1`, `::1`). Andere
+  Adressen speichert ArtGrader nicht und ruft sie nicht auf.
 - Schemaänderungen: `dotnet ef migrations add <Name> --project src/ArtGrader.Web --output-dir Data/Migrations`.
   Beim Start werden Migrationen automatisch angewendet.
 - Die Schlüssel für den API-Schlüssel (ASP.NET Data Protection) sind unter Windows mit DPAPI an den Benutzer

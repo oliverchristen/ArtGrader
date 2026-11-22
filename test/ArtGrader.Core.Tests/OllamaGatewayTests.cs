@@ -11,10 +11,13 @@ public class OllamaGatewayTests
     {
         private int next;
 
+        public int Calls { get; private set; }
+
         public List<JsonObject> Requests { get; } = [];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            Calls++;
             if (request.Content is not null)
             {
                 Requests.Add(JsonNode.Parse(await request.Content.ReadAsStringAsync(cancellationToken))!.AsObject());
@@ -33,6 +36,43 @@ public class OllamaGatewayTests
 
     private static ModelJsonRequest Request(params ContentPart[] content) =>
         new("System", [new TextPart("Aufgabe")], content, new JsonObject { ["type"] = "object" });
+
+    [Theory]
+    [InlineData("http://localhost:11434", true)]
+    [InlineData("http://LOCALHOST:11434/", true)]
+    [InlineData("http://127.0.0.1:11434", true)]
+    [InlineData("http://[::1]:11434", true)]
+    [InlineData("http://ollama.localhost:11434", true)]
+    [InlineData("http://192.168.1.20:11434", false)]
+    [InlineData("https://ollama.example.com", false)]
+    [InlineData("http://localhost.example.com:11434", false)]
+    [InlineData("http://localhost@example.com:11434", false)]
+    [InlineData("http://127.0.0.1.example.com", false)]
+    [InlineData("file:///C:/temp", false)]
+    [InlineData("localhost:11434", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void Only_addresses_on_this_computer_count_as_local(string? url, bool local) =>
+        Assert.Equal(local, OllamaGateway.IsThisComputer(url));
+
+    private sealed class RemoteSettings : IAiSettingsSource
+    {
+        public AiSettings Current() => new(AiProvider.Ollama, null, AiSettings.DefaultModel, "high", "http://192.168.1.20:11434", "qwen3-vl:32b");
+    }
+
+    [Fact]
+    public async Task Nothing_is_sent_to_an_address_on_another_computer()
+    {
+        var fake = new FakeOllama((HttpStatusCode.OK, Ok));
+        var gateway = new OllamaGateway(new HttpClient(fake), new RemoteSettings());
+
+        await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.CompleteJsonAsync(Request(new ImagePart([1, 2, 3])), default));
+        await Assert.ThrowsAsync<ModelNotConfiguredException>(() => gateway.ListModelsAsync("http://192.168.1.20:11434", default));
+        await Assert.ThrowsAsync<ModelNotConfiguredException>(() =>
+            gateway.PullAsync("http://192.168.1.20:11434", "qwen3-vl:32b", new Progress<PullProgress>(), default));
+
+        Assert.Equal(0, fake.Calls);
+    }
 
     [Fact]
     public async Task Sends_images_schema_and_thinking_and_returns_content()

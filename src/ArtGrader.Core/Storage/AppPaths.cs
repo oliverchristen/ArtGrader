@@ -24,6 +24,9 @@ public sealed class AppPaths
 
     public string Logs => Path.Combine(Root, "logs");
 
+    /// <summary>The key that lets a browser of this user account into the app. See AccessGate.</summary>
+    public string AccessKeyFile => Path.Combine(Root, "access-key");
+
     public static string DefaultRoot()
     {
         var overridden = Environment.GetEnvironmentVariable("ARTGRADER_DATA");

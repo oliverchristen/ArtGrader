@@ -403,6 +403,11 @@
             StateHasChanged();
             return;
         }
+        if (provider == AiProvider.Ollama && !string.IsNullOrWhiteSpace(ollamaUrl) && !OllamaGateway.IsThisComputer(ollamaUrl))
+        {
+            // An address on another machine is not saved; the last local address stays.
+            ollamaError = OllamaGateway.NotThisComputer(ollamaUrl);
+        }
         Settings.Save(new SettingsUpdate(provider, key, model, effort, ollamaUrl, ollamaModel));
         if (!string.IsNullOrWhiteSpace(key))
         {

@@ -102,7 +102,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
     {
         try
         {
-            var tags = await http.GetFromJsonAsync<TagsResponse>(new Uri(new Uri(baseUrl), "/api/tags"), cancellationToken);
+            var tags = await http.GetFromJsonAsync<TagsResponse>(Endpoint(baseUrl, "/api/tags"), cancellationToken);
             return (tags?.Models ?? [])
                 .Select(m => new OllamaModelInfo(m.Name, m.Size, !string.IsNullOrEmpty(m.RemoteHost) || !string.IsNullOrEmpty(m.RemoteModel) || IsCloudName(m.Name)))
                 .OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
@@ -116,7 +116,7 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
 
     public async Task PullAsync(string baseUrl, string model, IProgress<PullProgress> progress, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new Uri(baseUrl), "/api/pull"))
+        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint(baseUrl, "/api/pull"))
         {
             Content = new StringContent(new JsonObject { ["model"] = model, ["stream"] = true }.ToJsonString(), Encoding.UTF8, "application/json"),
         };
@@ -175,11 +175,12 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
 
     private async Task<ChatResponse> SendAsync(string baseUrl, JsonObject body, CancellationToken cancellationToken)
     {
+        var endpoint = Endpoint(baseUrl, "/api/chat");
         HttpResponseMessage message;
         try
         {
             message = await http.PostAsync(
-                new Uri(new Uri(baseUrl), "/api/chat"),
+                endpoint,
                 new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"),
                 cancellationToken);
         }
@@ -235,6 +236,28 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
         [property: JsonPropertyName("size")] long Size,
         [property: JsonPropertyName("remote_host")] string? RemoteHost = null,
         [property: JsonPropertyName("remote_model")] string? RemoteModel = null);
+
+    /// <summary>
+    /// «Lokal» means this computer. An address on another machine would send the photos over the network,
+    /// so every request to Ollama goes through this check.
+    /// </summary>
+    public static bool IsThisComputer(string? baseUrl)
+    {
+        if (!Uri.TryCreate(baseUrl?.Trim(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+        {
+            return false;
+        }
+        var host = uri.DnsSafeHost;
+        return host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase)
+            || (IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address));
+    }
+
+    public static string NotThisComputer(string? baseUrl) =>
+        T("Die Ollama-Adresse «{0}» zeigt nicht auf diesen Computer. Damit würden die Fotos den Computer verlassen. Bitte eine Adresse wie http://localhost:11434 eintragen.", baseUrl ?? "");
+
+    private static Uri Endpoint(string baseUrl, string path) =>
+        IsThisComputer(baseUrl) ? new Uri(new Uri(baseUrl.Trim()), path) : throw new ModelNotConfiguredException(NotThisComputer(baseUrl));
 
     public static bool IsCloudName(string model)
     {

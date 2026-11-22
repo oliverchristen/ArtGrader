@@ -19,22 +19,27 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 });
 
 var url = builder.Configuration["ArtGrader:Url"] ?? "http://localhost:5080";
+var paths = new AppPaths();
+var accessKey = AccessGate.LoadOrCreateKey(paths.AccessKeyFile);
+var gate = new AccessGate(accessKey, TimeProvider.System);
 if (await SingleInstance.IsRunningAsync(url))
 {
     Console.WriteLine($"ArtGrader läuft bereits auf {url}.");
     if (Environment.GetEnvironmentVariable("ARTGRADER_NO_BROWSER") is null)
     {
-        BrowserLauncher.Open(url, null);
+        // The running ArtGrader hands out a ticket only to someone who can read this user's access key.
+        var ticket = await SingleInstance.TicketAsync(url, accessKey);
+        BrowserLauncher.Open(ticket is null ? url : AccessGate.Link(url, ticket), null);
     }
     return;
 }
 builder.WebHost.UseUrls(url);
 
-var paths = new AppPaths();
 builder.Logging.AddProvider(new FileLoggerProvider(paths.Logs));
 builder.Logging.AddFilter<FileLoggerProvider>("Microsoft", LogLevel.Warning);
 builder.Logging.AddFilter<FileLoggerProvider>("System", LogLevel.Warning);
 builder.Services.AddSingleton(paths);
+builder.Services.AddSingleton(gate);
 builder.Services.AddDataProtection().SetApplicationName("ArtGrader").PersistKeysToFileSystem(new DirectoryInfo(paths.Keys)).LockKeysToUser();
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseSqlite($"Data Source={paths.Database}"));
 builder.Services.AddSingleton<ExamRepository>();
@@ -43,7 +48,7 @@ builder.Services.AddSingleton<SettingsStore>();
 builder.Services.AddSingleton<IAiSettingsSource>(sp => sp.GetRequiredService<SettingsStore>());
 builder.Services.AddSingleton<AnthropicClaudeGateway>();
 builder.Services.AddSingleton(sp => new OllamaGateway(
-    new HttpClient { Timeout = TimeSpan.FromMinutes(30) },
+    new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false, UseProxy = false }) { Timeout = TimeSpan.FromMinutes(30) },
     sp.GetRequiredService<IAiSettingsSource>()));
 builder.Services.AddSingleton<IModelGateway, RoutingModelGateway>();
 builder.Services.AddSingleton<ModelDownloads>();
@@ -89,6 +94,8 @@ catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicExcep
     app.Logger.LogWarning(ex, "Die Schlüssel konnten nicht an das Benutzerkonto gebunden werden.");
 }
 
+app.Use(gate.InvokeAsync);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -100,6 +107,8 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.MapGet(SingleInstance.PingPath, () => SingleInstance.PingAnswer);
+
+app.MapPost(AccessGate.TicketPath, () => gate.NewTicket());
 
 // The overview for school management (docs/schulleitung.html), built into the app.
 app.MapGet("/schulleitung.html", () =>
@@ -205,9 +214,14 @@ app.Lifetime.ApplicationStarted.Register(() =>
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
     logger.LogInformation("ArtGrader läuft auf {Url}. Daten: {Data}", url, paths.Root);
-    if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("ARTGRADER_NO_BROWSER") is null)
+    if (app.Environment.IsDevelopment())
     {
-        BrowserLauncher.Open(url, logger);
+        // Only on the console, never in the log file: this link lets a browser in.
+        Console.WriteLine($"Im Browser öffnen (10 Minuten gültig): {AccessGate.Link(url, gate.NewTicket(TimeSpan.FromMinutes(10)))}");
+    }
+    else if (Environment.GetEnvironmentVariable("ARTGRADER_NO_BROWSER") is null)
+    {
+        BrowserLauncher.Open(AccessGate.Link(url, gate.NewTicket()), logger);
     }
 });
 

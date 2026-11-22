@@ -70,5 +70,9 @@
   "Das Bild ist beschädigt und kann nicht gelesen werden.": "The image is damaged and cannot be read.",
   "HEIC-Fotos (iPhone) werden nicht unterstützt. Bitte als JPEG exportieren oder auf dem iPhone unter Einstellungen › Kamera › Formate «Maximale Kompatibilität» wählen.": "HEIC photos (iPhone) are not supported. Please export as JPEG, or on the iPhone choose Settings ’ Camera ’ Formats ’ ‘Most Compatible’.",
   "Diese Datei ist kein unterstütztes Bild (JPEG, PNG, WebP, GIF, BMP).": "This file is not a supported image (JPEG, PNG, WebP, GIF, BMP).",
-  "Das Bild konnte nicht verkleinert werden.": "The image could not be made smaller."
+  "Das Bild konnte nicht verkleinert werden.": "The image could not be made smaller.",
+  "Die Ollama-Adresse «{0}» zeigt nicht auf diesen Computer. Damit würden die Fotos den Computer verlassen. Bitte eine Adresse wie http://localhost:11434 eintragen.": "The Ollama address ‘{0}’ does not point to this computer. The photos would leave the computer. Please enter an address such as http://localhost:11434.",
+  "Bitte ArtGrader neu öffnen": "Please open ArtGrader again",
+  "Damit niemand sonst an deine Prüfungen kommt, öffnet sich ArtGrader nur über das Programm selbst.": "So that nobody else can get to your exams, ArtGrader only opens through the app itself.",
+  "Doppelklicke das ArtGrader-Symbol. Der Browser öffnet sich dann von selbst.": "Double-click the ArtGrader icon. The browser then opens by itself."
 }
