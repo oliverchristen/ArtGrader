@@ -107,6 +107,34 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Quoted_claude_model_ids_are_repaired_and_count_as_claude()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using (var db = factory.CreateDbContext())
+        {
+            await db.Database.EnsureDeletedAsync(ct);
+            await db.Database.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261122155524_ModelProvider", ct);
+            db.Exams.Add(exam = new Exam { Title = "Alt" });
+            await db.SaveChangesAsync(ct);
+        }
+        var claude = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
+        var local = await repository.AddSubmissionAsync(exam.Id, null, [Image("b.jpg")]);
+        await using (var db = factory.CreateDbContext())
+        {
+            // As stored before the fix, and as the previous migration then classified them.
+            await db.Database.ExecuteSqlAsync($"UPDATE Submissions SET ModelId = {"\"claude-fable-5-1\""}, ModelProvider = 1 WHERE Id = {claude.Id.ToString().ToUpperInvariant()}", ct);
+            await db.Database.ExecuteSqlAsync($"UPDATE Submissions SET ModelId = 'qwen3.8:27b', ModelProvider = 1 WHERE Id = {local.Id.ToString().ToUpperInvariant()}", ct);
+            await db.Database.MigrateAsync(ct);
+        }
+
+        var works = (await repository.GetAsync(exam.Id))!.Submissions;
+
+        Assert.Equal("claude-fable-5-1", works.Single(s => s.Id == claude.Id).ModelId);
+        Assert.Equal(Core.Ai.AiProvider.Anthropic, works.Single(s => s.Id == claude.Id).ModelProvider);
+        Assert.Equal(Core.Ai.AiProvider.Ollama, works.Single(s => s.Id == local.Id).ModelProvider);
+    }
+
+    [Fact]
     public async Task Images_without_covers_from_older_versions_load_after_the_upgrade()
     {
         await using (var db = factory.CreateDbContext())

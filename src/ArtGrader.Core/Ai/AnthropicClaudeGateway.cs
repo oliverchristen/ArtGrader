@@ -98,7 +98,8 @@ public sealed class AnthropicClaudeGateway(IAiSettingsSource settingsSource) : I
         var usage = response.Usage;
         return new ModelJsonResponse(
             text.ToString(),
-            response.Model.ToString(),
+            // The SDK writes the model as a JSON string ("claude-…"); store the plain id.
+            response.Model.ToString().Trim('"'),
             new ModelUsage(
                 usage.InputTokens,
                 usage.OutputTokens,
