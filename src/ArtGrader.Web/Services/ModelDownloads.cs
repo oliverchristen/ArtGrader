@@ -9,6 +9,8 @@ public sealed class ModelDownloads(OllamaGateway ollama, SettingsStore settings,
 
     public event Action? Changed;
 
+    public bool IsBusy => running.Values.Any(s => !s.Done && s.Error is null);
+
     public DownloadState? Get(string model) => running.TryGetValue(model, out var state) ? state : null;
 
     public void Start(string model)

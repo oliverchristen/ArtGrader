@@ -62,18 +62,21 @@ Die Vorschläge gelten für Text. PDF-Seiten deckt die Lehrperson von Hand ab.
 2. Starten:
    - **Windows:** `ArtGrader.exe` doppelklicken. Erscheint «Der Computer wurde durch Windows geschützt»:
      *Weitere Informationen* → *Trotzdem ausführen*.
-   - **Mac:** Im Programm «Terminal» einmal `bash ` eintippen (mit Leerzeichen), die Datei `install.sh` aus dem
-     entpackten Ordner ins Terminalfenster ziehen und Enter drücken. Das Skript kopiert ArtGrader nach
-     `~/Applications/ArtGrader` und gibt es für macOS frei. Danach dort `ArtGrader.command` doppelklicken.
-3. Der Browser öffnet sich mit http://localhost:5080. Das schwarze Fenster (Terminal) offen lassen, solange du
-   arbeitest; Schliessen beendet ArtGrader.
-4. Unter **Einstellungen** Claude oder ein lokales Modell wählen (siehe unten). Für Claude einen API-Schlüssel
+   - **Mac:** Einmalig im Programm «Terminal» `bash ` eintippen (mit Leerzeichen), die Datei `install.sh` aus dem
+     entpackten Ordner ins Terminalfenster ziehen und Enter drücken. Das Skript kopiert `ArtGrader.app` nach
+     «Programme» im Benutzerordner, gibt es für macOS frei und startet es. Danach startet ArtGrader per Doppelklick
+     auf `ArtGrader.app` (Tipp: ins Dock ziehen).
+3. Der Browser öffnet sich mit http://localhost:5080. Es erscheint kein weiteres Fenster. Ein zweiter Doppelklick
+   öffnet ArtGrader im Browser, auch wenn es schon läuft.
+4. **Beenden:** in ArtGrader oben rechts auf ⏻. Ist 30 Minuten lang kein ArtGrader-Tab offen und läuft keine
+   Bewertung, beendet sich ArtGrader von selbst.
+5. Unter **Einstellungen** Claude oder ein lokales Modell wählen (siehe unten). Für Claude einen API-Schlüssel
    eintragen.
 
 ### Aktualisieren
 
-ArtGrader beenden (Terminalfenster schliessen), die neue Version wie oben installieren – auf dem Mac wieder mit
-`install.sh`. Prüfungen, Fotos, Noten und der API-Schlüssel liegen im Datenordner und bleiben erhalten, ebenso die
+ArtGrader beenden (⏻ oben rechts), die neue Version wie oben installieren – auf dem Mac wieder mit `install.sh`, das
+eine laufende Version selbst beendet. Prüfungen, Fotos, Noten und der API-Schlüssel liegen im Datenordner und bleiben erhalten, ebenso die
 lokalen Modelle von Ollama. Nötige Änderungen an der Datenbank macht ArtGrader beim ersten Start selbst. Vorher den
 Datenordner zu kopieren schadet nie.
 
@@ -102,6 +105,7 @@ blendet ArtGrader aus und verwendet sie nie, weil sie auf fremden Servern rechne
 ### Datenschutz
 
 - Gespeichert wird lokal: Windows `%LOCALAPPDATA%\ArtGrader`, macOS `~/Library/Application Support/ArtGrader`.
+  Im Unterordner `logs` liegen Protokolle der letzten 14 Tage, falls etwas nicht funktioniert.
 - Mit Claude gehen nur Aufgabe, Unterrichtsmaterial, Kriterien und Fotos an Anthropic – **keine Namen** und keine
   Dateinamen. Fotos werden neu gespeichert, Metadaten (Kamera, Ort, Datum) fallen weg. Mit dem lokalen Modell
   verlässt nichts den Computer.
@@ -148,14 +152,19 @@ dotnet run --project src/ArtGrader.Web            # http://localhost:5080
 ```
 
 - `ANTHROPIC_API_KEY` übersteuert den gespeicherten Schlüssel, `ARTGRADER_DATA` den Datenordner,
-  `ARTGRADER_NO_BROWSER=1` verhindert das Öffnen des Browsers.
+  `ARTGRADER_NO_BROWSER=1` verhindert das Öffnen des Browsers. `ArtGrader:IdleMinutes` (Standard 30, in Development
+  0 = aus) steuert das automatische Beenden.
+- Die Windows-Version ist eine Windows-App ohne Konsolenfenster (`WinExe`). Die Mac-Version ist ein App-Bundle ohne
+  Dock-Symbol (`LSUIElement`): `Contents/MacOS/ArtGrader` ist ein Startskript, das das Programm aus
+  `Contents/Resources/app` im Hintergrund startet. Läuft ArtGrader schon (`/api/ping`), öffnet ein zweiter Start nur
+  den Browser. Beenden über `POST /beenden`.
 - Schemaänderungen: `dotnet ef migrations add <Name> --project src/ArtGrader.Web --output-dir Data/Migrations`.
   Beim Start werden Migrationen automatisch angewendet.
 - Die Schlüssel für den API-Schlüssel (ASP.NET Data Protection) sind unter Windows mit DPAPI an den Benutzer
   gebunden, unter macOS über einen Schlüssel im Schlüsselbund (`KeyLock`). Beim ersten Start ersetzt ArtGrader
   ungeschützte Schlüsseldateien.
 - Unter Windows gebaute Mac-Versionen sind weder ausführbar markiert noch signiert; `build/install.sh` holt das auf
-  dem Mac nach (Ausführungsrecht, Quarantäne entfernen, Ad-hoc-Signatur). Die ZIPs aus dem CI-Job `macos-latest`
+  dem Mac nach (Ausführungsrecht, Quarantäne entfernen, Ad-hoc-Signatur des Programms in `Resources/app`). Die ZIPs aus dem CI-Job `macos-latest`
   sind bereits signiert.
 
 ### Lizenzen

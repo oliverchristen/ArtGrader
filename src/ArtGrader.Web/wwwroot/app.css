@@ -2018,3 +2018,225 @@ code {
 .redact-chip button:hover {
     background: var(--ultramarine);
 }
+
+.quit-button.mud-icon-button {
+    border: 1.5px solid var(--stroke);
+    padding: 6px;
+}
+
+.quit-button.mud-icon-button:hover {
+    background: var(--terracotta);
+    color: #fff;
+}
+
+/* ---------- Reconnect overlay ---------- */
+
+.components-reconnect-first-attempt-visible,
+.components-reconnect-repeated-attempt-visible,
+.components-reconnect-failed-visible,
+.components-pause-visible,
+.components-resume-failed-visible {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-show .components-reconnect-first-attempt-visible,
+#components-reconnect-modal.components-reconnect-retrying .components-reconnect-repeated-attempt-visible,
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-failed-visible,
+#components-reconnect-modal.components-reconnect-paused .components-pause-visible,
+#components-reconnect-modal.components-reconnect-resume-failed .components-resume-failed-visible {
+    display: block;
+}
+
+#components-reconnect-modal.components-reconnect-retrying .components-reconnect-first-attempt-visible,
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-first-attempt-visible,
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-repeated-attempt-visible {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-failed .reconnect-actions button.components-reconnect-failed-visible,
+#components-reconnect-modal.components-reconnect-paused .reconnect-actions button.components-pause-visible,
+#components-reconnect-modal.components-reconnect-resume-failed .reconnect-actions button.components-resume-failed-visible {
+    display: inline-flex !important;
+}
+
+#components-reconnect-modal {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+    border: none;
+    padding: 0;
+    background: transparent;
+    max-width: min(26rem, calc(100vw - 32px));
+    width: 100%;
+    overflow: visible;
+}
+
+#components-reconnect-modal::backdrop {
+    background: rgba(255, 255, 255, .45);
+    backdrop-filter: grayscale(1) blur(2px);
+    -webkit-backdrop-filter: grayscale(1) blur(2px);
+}
+
+#components-reconnect-modal[open] .reconnect-card {
+    animation: reconnect-in .35s cubic-bezier(.2, .9, .3, 1.2) both;
+}
+
+.reconnect-card {
+    background: var(--card);
+    color: var(--ink);
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius);
+    box-shadow: 8px 8px 0 var(--ochre);
+    padding: 22px 24px 24px;
+    font-family: var(--sans);
+    text-align: center;
+}
+
+.reconnect-card h2 {
+    font-family: var(--sans);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 6px 0 6px;
+}
+
+.reconnect-card p {
+    margin: 0;
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+
+.reconnect-art {
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+    overflow: visible;
+}
+
+.reconnect-art .cable {
+    fill: none;
+    stroke: var(--stroke);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+.reconnect-art .plug rect {
+    fill: var(--terracotta);
+    stroke: var(--stroke);
+    stroke-width: 2.5;
+}
+
+.reconnect-art .plug path {
+    stroke: var(--stroke);
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+
+.reconnect-art .socket rect {
+    fill: var(--ultramarine);
+    stroke: var(--stroke);
+    stroke-width: 2.5;
+}
+
+.reconnect-art .socket circle {
+    fill: var(--stroke);
+}
+
+.reconnect-art .spark path {
+    fill: none;
+    stroke: var(--ochre);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+}
+
+#components-reconnect-modal.components-reconnect-show .plug,
+#components-reconnect-modal.components-reconnect-retrying .plug {
+    animation: plug-reach 1.4s ease-in-out infinite;
+}
+
+#components-reconnect-modal.components-reconnect-show .spark,
+#components-reconnect-modal.components-reconnect-retrying .spark {
+    animation: spark-blink 1.4s ease-in-out infinite;
+}
+
+#components-reconnect-modal.components-reconnect-failed .plug,
+#components-reconnect-modal.components-reconnect-resume-failed .plug {
+    transform: translate(-6px, 14px) rotate(14deg);
+    transform-origin: 84px 46px;
+}
+
+#components-reconnect-modal.components-reconnect-failed .spark,
+#components-reconnect-modal.components-reconnect-resume-failed .spark {
+    opacity: 0;
+}
+
+#components-reconnect-modal.components-reconnect-paused .spark {
+    opacity: .35;
+}
+
+.reconnect-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+#components-reconnect-modal .reconnect-actions button {
+    display: none !important;
+    align-items: center;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    border-radius: 999px !important;
+    font-family: var(--sans) !important;
+    font-size: .92rem !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    padding: 9px 20px !important;
+    cursor: pointer;
+    border: 1.5px solid var(--stroke) !important;
+}
+
+#components-reconnect-modal .reconnect-actions .reconnect-primary {
+    background: var(--ink) !important;
+    color: #fff !important;
+}
+
+#components-reconnect-modal .reconnect-actions .reconnect-primary:hover {
+    background: var(--ultramarine) !important;
+}
+
+#components-reconnect-modal .reconnect-actions .reconnect-secondary {
+    background: var(--card) !important;
+    color: var(--ink) !important;
+}
+
+#components-reconnect-modal .reconnect-actions .reconnect-secondary:hover {
+    background: var(--ochre) !important;
+}
+
+@keyframes reconnect-in {
+    from { transform: translateY(16px) rotate(-1.5deg); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes plug-reach {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(14px); }
+}
+
+@keyframes spark-blink {
+    0%, 35%, 100% { opacity: 0; }
+    50%, 60% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #components-reconnect-modal .plug,
+    #components-reconnect-modal .spark,
+    #components-reconnect-modal[open] .reconnect-card {
+        animation: none !important;
+    }
+}

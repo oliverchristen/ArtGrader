@@ -2,40 +2,42 @@
 set -euo pipefail
 
 source_dir="$(cd "$(dirname "$0")" && pwd)"
-target="$HOME/Applications/ArtGrader"
+target="$HOME/Applications/ArtGrader.app"
+url="http://localhost:5080"
 
 if [[ "$(uname)" != "Darwin" ]]; then
     echo "Dieses Skript ist für macOS." >&2
     exit 1
 fi
 
-if [[ ! -f "$source_dir/ArtGrader" ]]; then
-    echo "Im Ordner $source_dir fehlt die Datei «ArtGrader». Bitte das Skript im entpackten ArtGrader-Ordner starten." >&2
+if [[ ! -d "$source_dir/ArtGrader.app" ]]; then
+    echo "Im Ordner $source_dir fehlt «ArtGrader.app». Bitte das Skript im entpackten ArtGrader-Ordner starten." >&2
     exit 1
 fi
 
-if pgrep -x ArtGrader >/dev/null; then
-    echo "ArtGrader läuft noch. Bitte das ArtGrader-Terminalfenster schliessen und das Skript erneut starten." >&2
-    exit 1
+if curl -fs "$url/api/ping" 2>/dev/null | grep -q ArtGrader; then
+    echo "ArtGrader läuft noch und wird beendet …"
+    curl -fs -X POST "$url/beenden" > /dev/null 2>&1 || true
+    for _ in $(seq 1 20); do
+        curl -fs "$url/api/ping" > /dev/null 2>&1 || break
+        sleep 0.5
+    done
 fi
 
-if [[ "$source_dir" != "$target" ]]; then
-    echo "Installiere nach $target …"
-    mkdir -p "$HOME/Applications"
-    rm -rf "$target.new"
-    cp -R "$source_dir" "$target.new"
-    rm -rf "$target"
-    mv "$target.new" "$target"
-fi
+echo "Installiere nach $target …"
+mkdir -p "$HOME/Applications"
+rm -rf "$target.new"
+cp -R "$source_dir/ArtGrader.app" "$target.new"
+rm -rf "$target" "$HOME/Applications/ArtGrader"
+mv "$target.new" "$target"
 
-cd "$target"
-xattr -dr com.apple.quarantine . 2>/dev/null || true
-chmod +x ArtGrader ArtGrader.command install.sh
-codesign --force --sign - ArtGrader >/dev/null
+xattr -dr com.apple.quarantine "$target" 2>/dev/null || true
+chmod +x "$target/Contents/MacOS/ArtGrader" "$target/Contents/Resources/app/ArtGrader"
+codesign --force --sign - "$target/Contents/Resources/app/ArtGrader" > /dev/null
 
 echo
-echo "ArtGrader ist installiert."
-echo "Starten: im Finder den Ordner «Programme» in deinem Benutzerordner öffnen,"
-echo "dann ArtGrader › ArtGrader.command doppelklicken."
+echo "ArtGrader ist installiert und startet jetzt."
+echo "Später starten: im Finder «Programme» im Benutzerordner öffnen und ArtGrader doppelklicken."
+echo "Tipp: ArtGrader ins Dock ziehen. Beenden geht in ArtGrader oben rechts."
 echo "Deine Prüfungen und Einstellungen liegen unverändert in ~/Library/Application Support/ArtGrader."
 open "$target"

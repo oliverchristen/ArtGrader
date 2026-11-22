@@ -2,6 +2,9 @@
 @using ArtGrader.Core.Ai
 @inject SettingsStore Settings
 @inject CurrentExam Current
+@inject GradingQueue Queue
+@inject IDialogService Dialogs
+@inject IJSRuntime JS
 @implements IDisposable
 
 <MudThemeProvider Theme="theme" />
@@ -24,6 +27,9 @@
             <span class="label">@ProviderLabel()</span>
             <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
         </a>
+        <MudTooltip Text="ArtGrader beenden">
+            <MudIconButton Icon="@Icons.Material.Outlined.PowerSettingsNew" Class="quit-button" OnClick="QuitAsync" aria-label="ArtGrader beenden" />
+        </MudTooltip>
     </div>
 </header>
 
@@ -69,6 +75,28 @@
         },
         LayoutProperties = new LayoutProperties { DefaultBorderRadius = "10px" },
     };
+
+    private async Task QuitAsync()
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "ArtGrader beenden?",
+            Queue.IsBusy
+                ? "Es werden noch Arbeiten bewertet. Sie werden abgebrochen und lassen sich nach dem nächsten Start neu bewerten."
+                : "Alles ist gespeichert. Zum Weiterarbeiten ArtGrader wieder starten.",
+            yesText: "Beenden",
+            cancelText: "Abbrechen");
+        if (confirmed != true)
+        {
+            return;
+        }
+        try
+        {
+            await JS.InvokeVoidAsync("artGrader.quit");
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException)
+        {
+        }
+    }
 
     private bool LocalOnly => Current.Value?.LocalOnly == true;
 

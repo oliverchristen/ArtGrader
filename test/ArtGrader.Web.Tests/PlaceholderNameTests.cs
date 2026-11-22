@@ -1,6 +1,7 @@
-﻿using ArtGrader.Core.Domain;
+using ArtGrader.Core.Domain;
 using ArtGrader.Web.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace ArtGrader.Web.Tests;
 
@@ -93,17 +94,26 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Images_from_before_covers_existed_load_without_covers()
+    public async Task Images_without_covers_from_older_versions_load_after_the_upgrade()
     {
+        await using (var db = factory.CreateDbContext())
+        {
+            await db.Database.EnsureDeletedAsync();
+            await db.Database.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261122090653_DocumentsLessonAndCrop");
+            db.Exams.Add(exam = new Exam { Title = "Alt" });
+            await db.SaveChangesAsync();
+        }
         var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
         await using (var db = factory.CreateDbContext())
         {
             await db.Database.ExecuteSqlRawAsync("UPDATE Images SET Covers = NULL");
+            await db.Database.MigrateAsync();
         }
 
         var image = (await repository.GetAsync(exam.Id))!.Submissions.Single(s => s.Id == work.Id).Images.Single();
 
         Assert.Empty(image.Covers);
+        Assert.Null(image.Crop);
     }
 
     [Fact]

@@ -26,6 +26,9 @@ public sealed class GradingQueue(
     private const int Parallelism = 3;
     private readonly Channel<(Guid ExamId, Guid SubmissionId)> channel = Channel.CreateUnbounded<(Guid, Guid)>();
     private readonly SemaphoreSlim localModelGate = new(1, 1);
+    private int active;
+
+    public bool IsBusy => channel.Reader.Count > 0 || Volatile.Read(ref active) > 0;
 
     public async Task EnqueueAsync(Guid examId, IEnumerable<Guid> submissionIds)
     {
@@ -48,6 +51,7 @@ public sealed class GradingQueue(
     {
         await foreach (var (examId, submissionId) in channel.Reader.ReadAllAsync(stoppingToken))
         {
+            Interlocked.Increment(ref active);
             try
             {
                 await GradeAsync(examId, submissionId, stoppingToken);
@@ -65,6 +69,10 @@ public sealed class GradingQueue(
             {
                 logger.LogError(ex, "Unexpected error while grading submission {SubmissionId}", submissionId);
                 await repository.SetStatusAsync(submissionId, SubmissionStatus.Fehler, "Unerwarteter Fehler: " + ex.Message);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref active);
             }
             events.Raise(examId, submissionId);
         }

@@ -1,31 +1,49 @@
 ﻿<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
 
-<dialog id="components-reconnect-modal" data-nosnippet>
-    <div class="components-reconnect-container">
-        <div class="components-rejoining-animation" aria-hidden="true">
-            <div></div>
-            <div></div>
+<dialog id="components-reconnect-modal" data-nosnippet aria-labelledby="reconnect-title">
+    <div class="reconnect-card">
+        <svg class="reconnect-art" viewBox="0 0 240 110" aria-hidden="true">
+            <path class="cable" d="M4 70 C 40 70, 50 40, 86 46" />
+            <g class="plug">
+                <rect x="84" y="30" width="38" height="32" rx="6" />
+                <path d="M122 38 h14 M122 54 h14" />
+            </g>
+            <g class="spark">
+                <path d="M146 28 l6 10 M158 22 v12 M170 28 l-6 10" />
+            </g>
+            <g class="socket">
+                <rect x="160" y="30" width="38" height="32" rx="6" />
+                <circle cx="172" cy="46" r="3.5" />
+                <circle cx="186" cy="46" r="3.5" />
+            </g>
+            <path class="cable" d="M198 46 C 214 46, 220 76, 238 76" />
+        </svg>
+
+        <div class="components-reconnect-first-attempt-visible">
+            <h2 id="reconnect-title">Einen Moment …</h2>
+            <p>Die Verbindung zu ArtGrader ist kurz unterbrochen. Sie wird wiederhergestellt.</p>
         </div>
-        <p class="components-reconnect-first-attempt-visible">
-            Verbindung zu ArtGrader wird wiederhergestellt …
-        </p>
-        <p class="components-reconnect-repeated-attempt-visible">
-            Verbindung fehlgeschlagen. Neuer Versuch in <span id="components-seconds-to-next-attempt"></span> Sekunden.
-        </p>
-        <p class="components-reconnect-failed-visible">
-            Keine Verbindung.<br />Läuft ArtGrader noch? Bitte Seite neu laden.
-        </p>
-        <button id="components-reconnect-button" class="components-reconnect-failed-visible">
-            Nochmals versuchen
-        </button>
-        <p class="components-pause-visible">
-            Die Sitzung wurde pausiert.
-        </p>
-        <p class="components-resume-failed-visible">
-            Die Sitzung konnte nicht fortgesetzt werden.<br />Bitte Seite neu laden.
-        </p>
-        <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible">
-            Fortsetzen
-        </button>
+        <div class="components-reconnect-repeated-attempt-visible">
+            <h2>Noch keine Verbindung</h2>
+            <p>Neuer Versuch in <span id="components-seconds-to-next-attempt"></span> Sekunden.</p>
+        </div>
+        <div class="components-reconnect-failed-visible">
+            <h2>ArtGrader antwortet nicht</h2>
+            <p>Vielleicht wurde ArtGrader beendet. Starte ArtGrader und versuche es dann nochmals. Deine Arbeit ist gespeichert.</p>
+        </div>
+        <div class="components-pause-visible">
+            <h2>Pause</h2>
+            <p>Die Sitzung ruht. Mit «Fortsetzen» geht es weiter, wo du warst.</p>
+        </div>
+        <div class="components-resume-failed-visible">
+            <h2>Bitte neu laden</h2>
+            <p>Die Sitzung konnte nicht fortgesetzt werden. Nach dem Neuladen ist alles wieder da.</p>
+        </div>
+
+        <div class="reconnect-actions">
+            <button id="components-reconnect-button" class="components-reconnect-failed-visible reconnect-primary">Nochmals versuchen</button>
+            <button id="components-resume-button" class="components-pause-visible reconnect-primary">Fortsetzen</button>
+            <button type="button" class="components-reconnect-failed-visible components-resume-failed-visible reconnect-secondary" onclick="location.reload()">Seite neu laden</button>
+        </div>
     </div>
 </dialog>

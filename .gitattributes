@@ -3,3 +3,4 @@
 *.command text eol=lf
 *.docx binary
 *.jpeg binary
+build/mac/ArtGrader text eol=lf

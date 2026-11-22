@@ -22,6 +22,8 @@ public sealed class AppPaths
 
     public string SettingsFile => Path.Combine(Root, "settings.json");
 
+    public string Logs => Path.Combine(Root, "logs");
+
     public static string DefaultRoot()
     {
         var overridden = Environment.GetEnvironmentVariable("ARTGRADER_DATA");

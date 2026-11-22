@@ -18,9 +18,21 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 });
 
 var url = builder.Configuration["ArtGrader:Url"] ?? "http://localhost:5080";
+if (await SingleInstance.IsRunningAsync(url))
+{
+    Console.WriteLine($"ArtGrader läuft bereits auf {url}.");
+    if (Environment.GetEnvironmentVariable("ARTGRADER_NO_BROWSER") is null)
+    {
+        BrowserLauncher.Open(url, null);
+    }
+    return;
+}
 builder.WebHost.UseUrls(url);
 
 var paths = new AppPaths();
+builder.Logging.AddProvider(new FileLoggerProvider(paths.Logs));
+builder.Logging.AddFilter<FileLoggerProvider>("Microsoft", LogLevel.Warning);
+builder.Logging.AddFilter<FileLoggerProvider>("System", LogLevel.Warning);
 builder.Services.AddSingleton(paths);
 builder.Services.AddDataProtection().SetApplicationName("ArtGrader").PersistKeysToFileSystem(new DirectoryInfo(paths.Keys)).LockKeysToUser();
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseSqlite($"Data Source={paths.Database}"));
@@ -41,6 +53,10 @@ builder.Services.AddSingleton<GradingEvents>();
 builder.Services.AddScoped<CurrentExam>();
 builder.Services.AddSingleton<GradingQueue>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GradingQueue>());
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ActiveTabs>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler, TabCircuitHandler>();
+builder.Services.AddHostedService<IdleShutdown>();
 
 builder.Services.AddMudServices();
 builder.Services.AddRazorComponents()
@@ -81,6 +97,23 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
+app.MapGet(SingleInstance.PingPath, () => SingleInstance.PingAnswer);
+
+app.MapPost("/beenden", (HttpContext context, IHostApplicationLifetime lifetime) =>
+{
+    var site = context.Request.Headers["Sec-Fetch-Site"].ToString();
+    if (site.Length > 0 && site is not ("same-origin" or "none"))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+    _ = Task.Run(async () =>
+    {
+        await Task.Delay(500);
+        lifetime.StopApplication();
+    });
+    return Results.Content(StoppedPage.Html, "text/html; charset=utf-8");
+}).DisableAntiforgery();
 
 app.MapGet("/files/{**path}", (string path, FileStore files) =>
 {
@@ -166,7 +199,7 @@ app.MapGet(
 app.Lifetime.ApplicationStarted.Register(() =>
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("ArtGrader läuft auf {Url} – dieses Fenster offen lassen. Daten: {Data}", url, paths.Root);
+    logger.LogInformation("ArtGrader läuft auf {Url}. Daten: {Data}", url, paths.Root);
     if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("ARTGRADER_NO_BROWSER") is null)
     {
         BrowserLauncher.Open(url, logger);

@@ -45,14 +45,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         modelBuilder.Entity<SubmissionImage>(image =>
         {
-            image.OwnsMany(i => i.Covers, covers => covers.ToJson());
-            image.OwnsOne(i => i.Crop, crop => crop.ToJson());
+            image.ComplexCollection(i => i.Covers, covers => covers.ToJson());
+            image.ComplexProperty(i => i.Crop, crop => crop.ToJson());
         });
 
         modelBuilder.Entity<DocumentPage>(page =>
         {
-            page.OwnsMany(p => p.Covers, covers => covers.ToJson());
-            page.OwnsOne(p => p.Crop, crop => crop.ToJson());
+            page.ComplexCollection(p => p.Covers, covers => covers.ToJson());
+            page.ComplexProperty(p => p.Crop, crop => crop.ToJson());
         });
 
         modelBuilder.Entity<CriterionAssessment>(assessment =>
