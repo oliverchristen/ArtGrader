@@ -279,6 +279,37 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         return [image];
     }
 
+    /// <summary>
+    /// Moves one photo of a work into a new work with a random name: the opposite of merging.
+    /// Returns null when the photo is the only one of its work, which would leave an empty work behind.
+    /// </summary>
+    public async Task<Submission?> SplitImageAsync(Guid imageId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var image = await db.Images.FirstOrDefaultAsync(i => i.Id == imageId);
+        if (image is null)
+        {
+            return null;
+        }
+        var source = await db.Submissions.Include(s => s.Images).FirstAsync(s => s.Id == image.SubmissionId);
+        if (source.Images.Count < 2)
+        {
+            return null;
+        }
+
+        var split = new Submission { ExamId = source.ExamId };
+        await ApplyNameAsync(db, split, null);
+        db.Submissions.Add(split);
+        image.SubmissionId = split.Id;
+        image.Order = 0;
+        foreach (var (rest, index) in source.Images.Where(i => i.Id != imageId).OrderBy(i => i.Order).Select((img, i) => (img, i)))
+        {
+            rest.Order = index;
+        }
+        await db.SaveChangesAsync();
+        return split;
+    }
+
     public async Task MergeSubmissionsAsync(Guid targetId, IReadOnlyList<Guid> sourceIds)
     {
         await using var db = await factory.CreateDbContextAsync();

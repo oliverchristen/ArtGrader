@@ -95,9 +95,18 @@ else
                     <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" OnClick="RemoveCurrentPhotoAsync" aria-label="Dieses Foto entfernen" />
                 }
             </div>
+            @if (submission.Images.Count > 1)
+            {
+                <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CallSplit" OnClick="SplitCurrentPhotoAsync">
+                    Als eigene Arbeit abtrennen
+                </MudButton>
+            }
             @if (!string.IsNullOrWhiteSpace(submission.AiDescription))
             {
-                <p class="ai-sees"><b>Was die KI sieht.</b> @submission.AiDescription</p>
+                <div class="ai-box mt-4">
+                    <div class="ai-label"><span class="ai-mark">✦ KI</span> Was die KI auf dem Foto sieht</div>
+                    <p>@submission.AiDescription</p>
+                </div>
             }
             @if (submission.ModelId is not null)
             {
@@ -127,6 +136,10 @@ else
                             <text>@LevelText.Label(submission.Status)</text>
                         }
                     </div>
+                    @if (AiOnlyCount() is > 0 and var aiOnly)
+                    {
+                        <div class="ai-legend mt-2"><span class="ai-mark">✦ KI</span> @aiOnly von @exam.OrderedCriteria().Count() Stufen sind Vorschläge der KI</div>
+                    }
                     @if (busy)
                     {
                         <div class="banner mt-3"><MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:var(--ink)" /> Die KI schaut sich die Arbeit an …</div>
@@ -137,13 +150,14 @@ else
                     }
                 </div>
                 <MudNumericField T="decimal?" Value="submission.FinalGradeOverride" ValueChanged="SetOverrideAsync" Label="Note selbst setzen"
-                                 Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="6" Step="0.25m" Clearable="true" Style="max-width: 170px" />
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="6" Step="0.25m" Clearable="true"
+                                 HideSpinButtons="true" Placeholder="z. B. 4.75" Style="width: 230px; flex: none" />
             </section>
 
             <section class="sheet">
                 <div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-2">
                     <h2 class="sheet-title">Beurteilung</h2>
-                    <span class="faint" style="font-size:.8rem">gestrichelt = Vorschlag der KI · farbig = gilt</span>
+                    <span class="ai-legend"><span class="ai-mark">✦ KI</span> = Vorschlag der KI · farbig gefüllt = gilt</span>
                 </div>
                 @foreach (var category in exam.Categories)
                 {
@@ -180,7 +194,10 @@ else
                             </div>
                             @if (!string.IsNullOrWhiteSpace(assessment.AiJustification))
                             {
-                                <div class="why">@assessment.AiJustification</div>
+                                <div class="ai-box why">
+                                    <div class="ai-label"><span class="ai-mark">✦ KI</span> Begründung der KI@(assessment.AiLevel is { } aiLevel ? $" für «{LevelText.Label(aiLevel)}»" : "")</div>
+                                    <p>@assessment.AiJustification</p>
+                                </div>
                             }
                             @if (assessment.TeacherLevel is not null && assessment.AiLevel is not null && assessment.TeacherLevel != assessment.AiLevel)
                             {
@@ -198,6 +215,8 @@ else
                 <p class="sheet-sub">Erscheint im PDF für die Schülerin oder den Schüler.</p>
                 @if (!string.IsNullOrWhiteSpace(submission.AiStrengths) || !string.IsNullOrWhiteSpace(submission.AiNextSteps))
                 {
+                    <div class="ai-box mb-4">
+                    <div class="ai-label"><span class="ai-mark">✦ KI</span> Vorschlag der KI</div>
                     <div class="notes-grid">
                         <div class="note-col">
                             <h4>Stärken</h4>
@@ -208,12 +227,16 @@ else
                             <ul>@foreach (var line in Lines(submission.AiNextSteps)) { <li>@line</li> }</ul>
                         </div>
                     </div>
+                    </div>
                 }
                 <MudTextField T="string" Value="submission.TeacherComment" ValueChanged="SetCommentAsync" Variant="Variant.Outlined" Lines="4" Sizing="InputSizing.Auto"
                               Label="Deine Rückmeldung" DebounceInterval="1000" />
                 @if (!string.IsNullOrWhiteSpace(submission.AiOverallComment) && submission.TeacherComment != submission.AiOverallComment)
                 {
-                    <div class="ai-quote">«@submission.AiOverallComment»</div>
+                    <div class="ai-box mt-3">
+                        <div class="ai-label"><span class="ai-mark">✦ KI</span> Rückmeldung, wie die KI sie vorschlägt</div>
+                        <p>«@submission.AiOverallComment»</p>
+                    </div>
                     <MudButton Class="btn-quiet mt-1" Size="Size.Small" StartIcon="@Icons.Material.Outlined.ContentPaste" OnClick="() => SetCommentAsync(submission.AiOverallComment)">
                         Vorschlag übernehmen
                     </MudButton>
@@ -301,6 +324,10 @@ else
         }
     }
 
+    /// <summary>Criteria whose level comes from the AI and was not set by the teacher.</summary>
+    private int AiOnlyCount() =>
+        exam!.OrderedCriteria().Count(c => submission!.Assessments.FirstOrDefault(a => a.CriterionId == c.Id) is { TeacherLevel: null, AiLevel: not null });
+
     private async Task SetLevelAsync(CriterionAssessment assessment, Level? level)
     {
         assessment.TeacherLevel = level is not null && level == assessment.AiLevel ? null : level;
@@ -380,6 +407,23 @@ else
             imageIndex = submission!.Images.Count - 1;
             Snackbar.Add("Foto hinzugefügt. Für eine neue Einschätzung «Neu bewerten» wählen.", Severity.Info);
         }
+    }
+
+    private async Task SplitCurrentPhotoAsync()
+    {
+        var image = submission!.Images[Math.Min(imageIndex, submission.Images.Count - 1)];
+        var split = await Repository.SplitImageAsync(image.Id);
+        if (split is null)
+        {
+            return;
+        }
+        imageIndex = 0;
+        await LoadAsync();
+        Events.Raise(ExamId, split.Id);
+        Snackbar.Add(
+            $"Das Foto ist jetzt die eigene Arbeit «{split.StudentName}»."
+                + (submission.GradedAt is null ? "" : " Diese Arbeit bei Bedarf neu bewerten lassen; der KI-Vorschlag bezog beide Fotos ein."),
+            Severity.Success);
     }
 
     private async Task RemoveCurrentPhotoAsync()

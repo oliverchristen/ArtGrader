@@ -304,9 +304,15 @@ else
     {
         var ordered = Exam.Submissions.Where(s => selected.Contains(s.Id)).OrderBy(s => s.CreatedAt).ToList();
         var target = ordered.First();
+        var others = ordered.Skip(1).ToList();
+        var lost = others.Where(s => !s.HasPlaceholderName || s.Assessments.Any(a => a.TeacherLevel is not null) || !string.IsNullOrWhiteSpace(s.TeacherComment))
+            .Select(s => $"«{s.StudentName}»")
+            .ToList();
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Zu einer Arbeit zusammenführen?",
-            $"Die Fotos von {ordered.Count} Karten werden zur Arbeit «{target.StudentName}» zusammengefasst. Bisherige KI-Vorschläge der anderen Karten gehen verloren.",
+            $"Die Fotos von {ordered.Count} Karten werden zur Arbeit «{target.StudentName}» zusammengefasst. Bisherige KI-Vorschläge der anderen Karten gehen verloren."
+                + (lost.Count == 0 ? "" : $" Achtung: Bei {string.Join(", ", lost)} gehen auch der eingetragene Name, deine Einstufungen und deine Rückmeldung verloren.")
+                + " Einzelne Fotos lassen sich später in der Arbeit wieder abtrennen.",
             yesText: "Zusammenführen",
             cancelText: "Abbrechen");
         if (confirmed != true)

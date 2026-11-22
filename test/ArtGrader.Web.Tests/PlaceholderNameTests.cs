@@ -152,5 +152,35 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         Assert.Equal(1, summaries.Single(e => e.Id == other.Id).PhotoCount);
     }
 
+    [Fact]
+    public async Task A_merged_photo_can_be_split_off_into_its_own_work_again()
+    {
+        var first = await repository.AddSubmissionAsync(exam.Id, "Lena Muster", [Image("a.jpg")]);
+        var second = await repository.AddSubmissionAsync(exam.Id, null, [Image("b.jpg")]);
+        await repository.MergeSubmissionsAsync(first.Id, [second.Id]);
+        var merged = (await repository.GetAsync(exam.Id))!.Submissions.Single();
+        Assert.Equal(2, merged.Images.Count);
+
+        var split = await repository.SplitImageAsync(merged.Images[1].Id);
+
+        Assert.NotNull(split);
+        Assert.True(split.HasPlaceholderName);
+        var stored = (await repository.GetAsync(exam.Id))!.Submissions.ToDictionary(s => s.Id);
+        Assert.Equal(["a.jpg"], stored[first.Id].Images.Select(i => i.OriginalName));
+        Assert.Equal(0, stored[first.Id].Images.Single().Order);
+        Assert.Equal(["b.jpg"], stored[split.Id].Images.Select(i => i.OriginalName));
+        Assert.Equal("Lena Muster", stored[first.Id].StudentName);
+        Assert.NotEqual(stored[first.Id].StudentName, stored[split.Id].StudentName);
+    }
+
+    [Fact]
+    public async Task The_only_photo_of_a_work_cannot_be_split_off()
+    {
+        var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
+
+        Assert.Null(await repository.SplitImageAsync(work.Images[0].Id));
+        Assert.Single((await repository.GetAsync(exam.Id))!.Submissions);
+    }
+
     private static SubmissionImage Image(string originalName) => new() { OriginalName = originalName, RelativePath = $"x/{Guid.NewGuid():N}.jpg" };
 }

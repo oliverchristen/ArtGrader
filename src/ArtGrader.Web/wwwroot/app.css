@@ -1403,19 +1403,6 @@ html:has(.exam-head) {
     cursor: pointer;
 }
 
-.ai-sees {
-    margin-top: 18px;
-    font-size: .92rem;
-    color: var(--ink-soft);
-    border-left: 4px solid var(--ochre);
-    padding: 2px 0 2px 14px;
-}
-
-.ai-sees b {
-    color: var(--ink);
-    font-weight: 800;
-}
-
 .grade-card {
     display: flex;
     align-items: center;
@@ -1583,21 +1570,21 @@ html:has(.exam-head) {
 .levels button.ai {
     border-style: dashed;
     border-width: 2px;
-    border-color: var(--stroke);
+    border-color: var(--ultramarine);
 }
 
 .levels button.ai::after {
-    content: "KI";
+    content: "✦ KI";
     position: absolute;
     top: -8px;
     right: 8px;
     background: var(--ultramarine);
     color: #fff;
-    font-size: .6rem;
+    font-size: .68rem;
     font-weight: 800;
     letter-spacing: .06em;
     border-radius: 999px;
-    padding: 1px 6px;
+    padding: 1px 7px;
 }
 
 .levels button.chosen {
@@ -1626,11 +1613,55 @@ html:has(.exam-head) {
     }
 }
 
+/* ---------- Everything that comes from the AI: blue box with a "✦ KI" label ---------- */
+
+.ai-box {
+    background: var(--ultramarine-wash);
+    border-left: 4px solid var(--ultramarine);
+    border-radius: 0 10px 10px 0;
+    padding: 10px 14px 12px;
+    font-size: .92rem;
+    line-height: 1.5;
+    color: var(--ink);
+}
+
+.ai-box p {
+    margin: 0;
+}
+
+.ai-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--ultramarine);
+    margin-bottom: 4px;
+}
+
+.ai-mark {
+    display: inline-flex;
+    align-items: center;
+    background: var(--ultramarine);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    border-radius: 999px;
+    padding: 1px 7px;
+    white-space: nowrap;
+}
+
+.ai-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .8rem;
+    color: var(--ink-soft);
+}
+
 .why {
     margin-top: 10px;
-    font-size: .9rem;
-    color: var(--ink-soft);
-    line-height: 1.5;
 }
 
 .revert {
@@ -1671,15 +1702,6 @@ html:has(.exam-head) {
     color: var(--ink-soft);
     font-size: .9rem;
     line-height: 1.5;
-}
-
-.ai-quote {
-    margin-top: 10px;
-    color: var(--ink-soft);
-    background: var(--paper-deep);
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: .95rem;
 }
 
 /* ---------- Overview ---------- */
