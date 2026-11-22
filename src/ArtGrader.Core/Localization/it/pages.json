@@ -143,5 +143,10 @@
   "The session could not be resumed. Reload the page and everything will be back.": "Non è stato possibile riprendere la sessione. Ricarica la pagina e ritroverai tutto.",
   "Try again": "Riprova",
   "Resume": "Riprendi",
-  "Reload page": "Ricarica la pagina"
+  "Reload page": "Ricarica la pagina",
+  "Theme": "Tema",
+  "Changes how ArtGrader looks. Assessments and exports stay the same.": "Cambia l'aspetto di ArtGrader. Valutazioni ed esportazioni restano invariate.",
+  "Atelier": "Atelier",
+  "Bright colours on white paper.": "Colori vivaci su carta bianca.",
+  "Black spray lines on grey concrete, in homage to the Sprayer of Zurich.": "Linee nere a spray su cemento grigio, in omaggio allo Sprayer di Zurigo."
 }

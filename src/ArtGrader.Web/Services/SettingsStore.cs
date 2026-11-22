@@ -60,6 +60,18 @@ public sealed class SettingsStore : IAiSettingsSource
         Changed?.Invoke();
     }
 
+    public AppTheme Theme => stored.Theme;
+
+    public void SaveTheme(AppTheme theme)
+    {
+        lock (gate)
+        {
+            stored = stored with { Theme = theme };
+            Persist();
+        }
+        Changed?.Invoke();
+    }
+
     /// <summary>Switches texts, AI output and date and number formats for the whole app.</summary>
     private static void ApplyLanguage(AppLanguage language)
     {
@@ -199,6 +211,7 @@ public sealed class SettingsStore : IAiSettingsSource
         public string? OllamaModel { get; init; }
         public List<string> RedactTerms { get; init; } = [];
         public AppLanguage Language { get; init; } = AppLanguage.De;
+        public AppTheme Theme { get; init; } = AppTheme.Atelier;
     }
 }
 

@@ -143,5 +143,10 @@
   "The session could not be resumed. Reload the page and everything will be back.": "La sesida n'ha betg pudì vegnir cuntinuada. Suenter chargiar danovamain è tut puspè qua.",
   "Try again": "Empruvar anc ina giada",
   "Resume": "Cuntinuar",
-  "Reload page": "Chargiar danovamain la pagina"
+  "Reload page": "Chargiar danovamain la pagina",
+  "Theme": "Design",
+  "Changes how ArtGrader looks. Assessments and exports stay the same.": "Mida l'apparientscha dad ArtGrader. Las valitaziuns ed ils exports restan medems.",
+  "Atelier": "Atelier",
+  "Bright colours on white paper.": "Colurs vivas sin palpiri alv.",
+  "Black spray lines on grey concrete, in homage to the Sprayer of Zurich.": "Lingias nairas spraiadas sin betun grisch, en undrament al Sprayer da Turitg."
 }

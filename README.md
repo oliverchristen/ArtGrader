@@ -48,6 +48,10 @@ Daten und Zahlen erscheinen im Schweizer Format der jeweiligen Sprache. Die fran
 rätoromanische Übersetzung ist maschinell erstellt und sollte von jemandem mit der Sprache als Muttersprache
 geprüft werden.
 
+Unter **Einstellungen → Design** gibt es zwei Designs: «Atelier» mit kräftigen Farben auf weissem Papier und
+«Harald Naegeli» mit schwarzen Spraylinien auf grauem Beton, eine Hommage an den Sprayer von Zürich. Das Design
+ändert nur das Aussehen von ArtGrader, nicht die Beurteilungen oder die Exporte.
+
 Alle Eingaben werden etwa eine Sekunde nach der letzten Änderung automatisch gespeichert. Jeder Schritt führt
 von oben nach unten; unten geht es mit einem Knopf zum nächsten Schritt.
 

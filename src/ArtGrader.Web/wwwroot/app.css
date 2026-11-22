@@ -42,6 +42,8 @@
     --sans: "DM Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     --radius: 10px;
     --shadow-lift: 6px 6px 0 var(--ochre);
+    /* Decoration (stamps, active step, covers); warnings keep using --ochre. */
+    --accent: var(--ochre);
 }
 
 html, body {
@@ -531,7 +533,7 @@ html:has(.exam-head.compact) {
 }
 
 .btn-soft.mud-button-root:hover {
-    background: var(--ochre);
+    background: var(--accent);
 }
 
 .btn-quiet.mud-button-root {
@@ -589,7 +591,7 @@ html:has(.exam-head.compact) {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--ochre);
+    background: var(--accent);
     color: var(--ink);
     border: 2px solid var(--stroke);
     display: inline-flex;
@@ -647,7 +649,7 @@ html:has(.exam-head.compact) {
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    background: var(--ochre);
+    background: var(--accent);
     pointer-events: none;
 }
 
@@ -679,7 +681,7 @@ html:has(.exam-head.compact) {
 .exam-cover {
     position: relative;
     height: 170px;
-    background: var(--ochre);
+    background: var(--accent);
     border-bottom: 2px solid var(--stroke);
     overflow: hidden;
 }
@@ -817,7 +819,7 @@ html:has(.exam-head.compact) {
 }
 
 .step.active .num {
-    background: var(--ochre);
+    background: var(--accent);
     color: var(--ink);
 }
 
@@ -1096,7 +1098,7 @@ html:has(.exam-head.compact) {
     border-radius: 50%;
     border: 2px solid var(--stroke);
     color: var(--ink);
-    background: var(--ochre);
+    background: var(--accent);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1261,7 +1263,7 @@ html:has(.exam-head.compact) {
 .brush-progress span {
     display: block;
     height: 100%;
-    background: var(--ochre);
+    background: var(--accent);
     border-radius: 999px;
     transition: width .4s ease;
 }
@@ -1472,7 +1474,7 @@ html:has(.exam-head.compact) {
     height: 116px;
     border-radius: 50%;
     border: 2.5px solid var(--stroke);
-    background: var(--ochre);
+    background: var(--accent);
     color: var(--ink);
     display: flex;
     flex-direction: column;
@@ -2493,4 +2495,154 @@ code {
     #components-reconnect-modal[open] .reconnect-card {
         animation: none !important;
     }
+}
+
+/* ---------- Theme picker ---------- */
+
+.theme-swatches {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.theme-swatches span {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--stroke);
+}
+
+/* ---------- Theme «Harald Naegeli» ----------
+   In homage to the Sprayer von Zürich: wiry black spray lines on grey concrete, a little overspray, paint that drips.
+   Only colours and surfaces change; the layout stays the same. */
+
+:root[data-theme="naegeli"] {
+    --paper: #c9c7c1;
+    --paper-deep: #b9b6af;
+    --card: #ecebe7;
+    --ink: #0d0d0d;
+    --ink-soft: #3d3c39;
+    --ink-faint: #67645e;
+    --line: #b3b0a9;
+    --line-strong: #8f8c86;
+    --stroke: #0d0d0d;
+    --terracotta: #d1301f;
+    --terracotta-wash: #f3ddd8;
+    --ochre-wash: #f4f1e6;
+    --radius: 3px;
+    --shadow-lift: 5px 5px 0 var(--ink);
+    --overspray: 0 0 0 1px rgba(13, 13, 13, .12), 0 0 7px rgba(13, 13, 13, .28);
+}
+
+/* Concrete: fine grain over the grey. */
+:root[data-theme="naegeli"] body {
+    background-color: var(--paper);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.22'/></svg>");
+}
+
+/* A wiry figure sprayed on the wall, out of the way in the corner. */
+:root[data-theme="naegeli"] body::after {
+    content: "";
+    position: fixed;
+    right: 28px;
+    bottom: 0;
+    width: 170px;
+    height: 280px;
+    pointer-events: none;
+    opacity: .5;
+    z-index: 0;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 330'><filter id='s'><feGaussianBlur stdDeviation='.7'/></filter><g fill='none' stroke='%230d0d0d' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' filter='url(%23s)'><circle cx='104' cy='38' r='15'/><path d='M103 53 C 96 100, 108 140, 99 196'/><path d='M52 104 C 74 108, 88 98, 101 92 C 118 86, 136 64, 158 52'/><path d='M99 196 C 86 236, 78 268, 66 306'/><path d='M99 196 C 114 238, 121 266, 136 304'/><path d='M158 52 C 166 47, 171 40, 170 31'/><path d='M158 52 L 158 80'/><path d='M66 306 L 66 324'/><path d='M136 304 L 136 316'/></g><g fill='%230d0d0d' filter='url(%23s)'><circle cx='158' cy='82' r='2.6'/><circle cx='66' cy='326' r='2.4'/><circle cx='136' cy='318' r='2.2'/></g></svg>") bottom right / contain no-repeat;
+}
+
+:root[data-theme="naegeli"] .page,
+:root[data-theme="naegeli"] .topbar {
+    position: relative;
+    z-index: 1;
+}
+
+:root[data-theme="naegeli"] .topbar {
+    position: sticky;
+    z-index: 100;
+    background: rgba(201, 199, 193, .92);
+}
+
+@media (max-width: 1100px) {
+    :root[data-theme="naegeli"] body::after {
+        display: none;
+    }
+}
+
+/* The ArtGrader underline becomes a black spray line that runs. */
+:root[data-theme="naegeli"] .brand-name em {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 8' preserveAspectRatio='none'><filter id='s'><feGaussianBlur stdDeviation='.4'/></filter><path d='M2 5 C 20 1, 35 8, 52 4 S 85 2, 98 5' fill='none' stroke='%230d0d0d' stroke-width='3' stroke-linecap='round' filter='url(%23s)'/></svg>");
+}
+
+/* Lines look sprayed: a soft haze around every hard edge. */
+:root[data-theme="naegeli"] .sheet,
+:root[data-theme="naegeli"] .choice.on,
+:root[data-theme="naegeli"] .exam-head {
+    box-shadow: var(--overspray);
+}
+
+:root[data-theme="naegeli"] .choice.on {
+    box-shadow: var(--overspray), 4px 4px 0 var(--stroke);
+}
+
+:root[data-theme="naegeli"] .choice,
+:root[data-theme="naegeli"] .model-card {
+    background: var(--card);
+}
+
+:root[data-theme="naegeli"] h1,
+:root[data-theme="naegeli"] h2,
+:root[data-theme="naegeli"] .page-title,
+:root[data-theme="naegeli"] .sheet-title,
+:root[data-theme="naegeli"] .brand-name {
+    text-shadow: 0 0 1.5px rgba(13, 13, 13, .45);
+}
+
+:root[data-theme="naegeli"] .btn-ink.mud-button-root {
+    border-radius: 3px;
+    box-shadow: 0 0 5px rgba(13, 13, 13, .35);
+}
+
+:root[data-theme="naegeli"] .btn-ink.mud-button-root:hover {
+    background: var(--terracotta);
+}
+
+:root[data-theme="naegeli"] ::selection {
+    background: rgba(13, 13, 13, .18);
+}
+
+/* Highlights: a sprayed black stroke with a drip instead of the yellow marker and the red dash. */
+:root[data-theme="naegeli"] .page-title em {
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 14' preserveAspectRatio='none'><filter id='s'><feGaussianBlur stdDeviation='.5'/></filter><g filter='url(%23s)' stroke='%230d0d0d' stroke-linecap='round' fill='none'><path d='M2 5 C 25 2, 60 7, 98 3' stroke-width='3'/><path d='M71 5 L 71 12' stroke-width='1.6'/></g></svg>") bottom / 100% .32em no-repeat;
+    padding-bottom: .12em;
+}
+
+:root[data-theme="naegeli"] .eyebrow::before {
+    background: var(--ink);
+    height: 4px;
+    box-shadow: 0 0 3px rgba(13, 13, 13, .5);
+}
+
+:root[data-theme="naegeli"] {
+    --accent: #f4f1e6;
+}
+
+:root[data-theme="naegeli"] .exam-cover {
+    background: var(--paper-deep);
+}
+
+:root[data-theme="naegeli"] .work .work-photo::before {
+    background: rgba(236, 235, 231, .85);
+}
+
+:root[data-theme="naegeli"] .grade-stamp,
+:root[data-theme="naegeli"] .stamp {
+    box-shadow: 0 0 6px rgba(13, 13, 13, .35);
+}
+
+:root[data-theme="naegeli"] .brush-progress span {
+    background: var(--ink);
 }

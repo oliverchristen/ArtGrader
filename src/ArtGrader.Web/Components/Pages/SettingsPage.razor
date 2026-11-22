@@ -32,6 +32,27 @@
         </div>
     </section>
 
+    <section class="sheet">
+        <h2 class="sheet-title">@T("Theme")</h2>
+        <p class="sheet-sub">@T("Changes how ArtGrader looks. Assessments and exports stay the same.")</p>
+        <div class="choice-grid" role="radiogroup" aria-label="@T("Theme")">
+            @foreach (var (theme, name, description, swatches) in Themes.All)
+            {
+                var on = Settings.Theme == theme;
+                <button type="button" role="radio" aria-checked="@on" class="@($"choice {(on ? "on" : "")}")" @onclick="() => SetTheme(theme)">
+                    <span class="theme-swatches" aria-hidden="true">
+                        @foreach (var colour in swatches)
+                        {
+                            <span style="@($"background:{colour}")"></span>
+                        }
+                    </span>
+                    <span class="c-title">@name</span>
+                    <span class="c-text">@description</span>
+                </button>
+            }
+        </div>
+    </section>
+
         <section class="sheet">
             <div class="choice-grid" role="radiogroup" aria-label="@T("AI provider")">
                 <button type="button" role="radio" aria-checked="@(provider == AiProvider.Anthropic)" class="@($"choice {(provider == AiProvider.Anthropic ? "on" : "")}")"
@@ -282,6 +303,17 @@
     {
         ollamaModel = name;
         Changed();
+    }
+
+    private void SetTheme(AppTheme theme)
+    {
+        if (theme == Settings.Theme)
+        {
+            return;
+        }
+        Settings.SaveTheme(theme);
+        // Reload so the page and the components pick up the new colours.
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
     }
 
     private void SetLanguage(AppLanguage language)
