@@ -60,12 +60,12 @@ Unter **Einstellungen → Lokal (Ollama)** bewertet ein Modell auf dem eigenen C
 Computer, und es entstehen keine Kosten. Dafür ist es langsamer und weniger genau.
 
 1. [Ollama](https://ollama.com/download) installieren und starten.
-2. Im Terminal ein Bildmodell laden, für einen Mac mit 48 GB Arbeitsspeicher z. B.:
-   `ollama pull qwen3-vl:32b` (21 GB Download).
-3. In ArtGrader unter Einstellungen «Lokal (Ollama)» wählen, das Modell auswählen und speichern.
+2. In ArtGrader unter Einstellungen «Lokal (Ollama)» wählen und ein Modell herunterladen. Empfohlen ist
+   `qwen3.8:27b` (18 GB, ab 32 GB Arbeitsspeicher) im Modus «Schnell». Andere Bildmodelle lassen sich im Terminal
+   mit `ollama pull <name>` laden.
+3. Das Modell auswählen und speichern.
 
-Das lokale Modell kann keine PDF-Dateien lesen: Aufgabe und Beurteilungsbogen als Word hochladen oder den Text
-einfügen. Die Arbeiten werden nacheinander bewertet.
+Die Arbeiten werden nacheinander bewertet. PDF-Seiten gehen als Bilder an das Modell.
 
 ### Datenschutz
 

@@ -15,13 +15,21 @@ public static class LocalModelCatalog
     public static IReadOnlyList<LocalModel> Recommended { get; } =
     [
         new(
+            "qwen3.8:27b",
+            "Empfohlen",
+            "Im Vergleich am nächsten an Claude: ordnet die Arbeiten am ähnlichsten ein. Neueres Modell, etwas kleiner.",
+            17.7,
+            32,
+            "mehr als 2",
+            "2"),
+        new(
             "qwen3-vl:32b",
             "Genau",
             "Das stärkste Bildmodell, das auf einem Mac mit 48 GB läuft. Liest alle Bildteile mit voller Rechenleistung.",
             20.9,
             32,
-            "6–7",
-            "2–3",
+            "9–10",
+            "4–5",
             "qwen3-vl:32b-instruct"),
         new(
             "qwen3-vl:30b",
@@ -29,7 +37,7 @@ public static class LocalModelCatalog
             "Gleich gross, aber pro Wort rechnet nur ein kleiner Teil des Modells mit (Mixture of Experts). Deutlich schneller, etwas ungenauer.",
             19.6,
             32,
-            "1–2",
+            "2–3",
             "unter 1",
             "qwen3-vl:30b-a3b-instruct"),
     ];
