@@ -174,6 +174,16 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Points_in_the_wrong_order_are_not_saved()
+    {
+        Assert.False(await repository.UpdateGradingSettingsAsync(exam.Id, new GradingSettings { PointsUebertroffen = 1, PointsErfuellt = 5, PointsTeilweise = 4, PointsNicht = 3 }));
+        Assert.Equal(6, (await repository.GetAsync(exam.Id))!.Settings.PointsUebertroffen);
+
+        Assert.True(await repository.UpdateGradingSettingsAsync(exam.Id, new GradingSettings { PointsUebertroffen = 10, PointsErfuellt = 5, PointsTeilweise = 4, PointsNicht = 3 }));
+        Assert.Equal(10, (await repository.GetAsync(exam.Id))!.Settings.PointsUebertroffen);
+    }
+
+    [Fact]
     public async Task The_only_photo_of_a_work_cannot_be_split_off()
     {
         var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);

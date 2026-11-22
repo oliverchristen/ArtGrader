@@ -91,8 +91,13 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         await db.SaveChangesAsync();
     }
 
-    public async Task UpdateGradingSettingsAsync(Guid examId, GradingSettings settings)
+    /// <summary>Saves the grade calculation. Points that do not decrease from «übertroffen» to «nicht erfüllt» are not saved.</summary>
+    public async Task<bool> UpdateGradingSettingsAsync(Guid examId, GradingSettings settings)
     {
+        if (!settings.HasDescendingPoints)
+        {
+            return false;
+        }
         await using var db = await factory.CreateDbContextAsync();
         var exam = await db.Exams.FirstAsync(e => e.Id == examId);
         exam.Settings = new GradingSettings
@@ -106,6 +111,7 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
             MaxGrade = settings.MaxGrade,
         };
         await db.SaveChangesAsync();
+        return true;
     }
 
     public async Task SaveRubricAsync(Guid examId, IReadOnlyList<RubricCategory> categories)

@@ -6,11 +6,18 @@
     <h2 class="sheet-title">@T("Notenberechnung")</h2>
     <p class="sheet-sub">@T("So wird aus den Stufen eine Note. Änderungen gelten sofort für alle Arbeiten unten.")</p>
     <div class="points-grid">
-        <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="settings.PointsUebertroffen" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Übertroffen")" Variant="Variant.Text" Min="0" Max="10" /></div>
-        <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="settings.PointsErfuellt" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Erfüllt")" Variant="Variant.Text" Min="0" Max="10" /></div>
-        <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="settings.PointsTeilweise" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Teilweise")" Variant="Variant.Text" Min="0" Max="10" /></div>
-        <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="settings.PointsNicht" @bind-Value:after="SettingsChanged" Immediate="true" Label="@T("Nicht erfüllt")" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-3)"></span><MudNumericField @bind-Value="settings.PointsUebertroffen" @bind-Value:after="SettingsChanged" Immediate="true" Error="@(!settings.HasDescendingPoints)" Label="@T("Übertroffen")" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-2)"></span><MudNumericField @bind-Value="settings.PointsErfuellt" @bind-Value:after="SettingsChanged" Immediate="true" Error="@(!settings.HasDescendingPoints)" Label="@T("Erfüllt")" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-1)"></span><MudNumericField @bind-Value="settings.PointsTeilweise" @bind-Value:after="SettingsChanged" Immediate="true" Error="@(!settings.HasDescendingPoints)" Label="@T("Teilweise")" Variant="Variant.Text" Min="0" Max="10" /></div>
+        <div class="point-swatch"><span class="sw" style="background:var(--level-0)"></span><MudNumericField @bind-Value="settings.PointsNicht" @bind-Value:after="SettingsChanged" Immediate="true" Error="@(!settings.HasDescendingPoints)" Label="@T("Nicht erfüllt")" Variant="Variant.Text" Min="0" Max="10" /></div>
     </div>
+    @if (!settings.HasDescendingPoints)
+    {
+        <div class="banner error mt-3">
+            <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" />
+            <span>@T("Die Punkte müssen von links nach rechts abnehmen: Übertroffen mehr als Erfüllt, Erfüllt mehr als Teilweise, Teilweise mehr als Nicht erfüllt. So wird nichts gespeichert; die Noten unten rechnen mit den letzten gültigen Punkten.")</span>
+        </div>
+    }
     <MudSelect T="decimal" @bind-Value="settings.RoundingStep" @bind-Value:after="SettingsChanged" Label="@T("Runden auf")" Variant="Variant.Outlined" Class="mt-4">
         <MudSelectItem T="decimal" Value="0.5m">@T("Halbe Noten (4.5)")</MudSelectItem>
         <MudSelectItem T="decimal" Value="0.25m">@T("Viertelnoten (4.25)")</MudSelectItem>
@@ -76,6 +83,9 @@ else
 
     private readonly Debouncer saver = new();
     private GradingSettings settings = new();
+
+    /// <summary>The last points in a valid order; saved and used for the grades while the input is not valid.</summary>
+    private GradingSettings lastValid = new();
     private Guid loadedFor;
 
     /// <summary>The exam with the settings as currently edited, so the grades follow each change at once.</summary>
@@ -87,11 +97,12 @@ else
         {
             loadedFor = Exam.Id;
             settings = Copy(Exam.Settings);
+            lastValid = Copy(Exam.Settings);
         }
         shown = new Exam
         {
             Id = Exam.Id,
-            Settings = settings,
+            Settings = settings.HasDescendingPoints ? settings : lastValid,
             Categories = Exam.Categories,
             Submissions = Exam.Submissions,
         };
@@ -111,21 +122,31 @@ else
     private string Example()
     {
         var count = Math.Max(1, Exam.Categories.Sum(c => c.Criteria.Count(k => k.Weight > 0)));
-        var max = count * settings.MaxLevelPoints;
+        var used = settings.HasDescendingPoints ? settings : lastValid;
+        var max = count * used.MaxLevelPoints;
         if (max == 0)
         {
             return "";
         }
-        var points = count * settings.PointsErfuellt;
-        var grade = GradeCalculator.ToGrade(points, max, settings);
+        var points = count * used.PointsErfuellt;
+        var grade = GradeCalculator.ToGrade(points, max, used);
         return T("alles «erfüllt» = {0}/{1} Punkte → {2:0.0#}", points, max, grade);
     }
 
-    private void SettingsChanged() => saver.Schedule(() => InvokeAsync(SaveAsync));
+    private void SettingsChanged()
+    {
+        // Typing «10» passes «1» first: an invalid order is shown but not saved until it is valid again.
+        if (!settings.HasDescendingPoints)
+        {
+            return;
+        }
+        lastValid = Copy(settings);
+        saver.Schedule(() => InvokeAsync(SaveAsync));
+    }
 
     private async Task SaveAsync()
     {
-        await Repository.UpdateGradingSettingsAsync(Exam.Id, settings);
+        await Repository.UpdateGradingSettingsAsync(Exam.Id, lastValid);
         await Changed.InvokeAsync();
     }
 

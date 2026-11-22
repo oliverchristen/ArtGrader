@@ -38,6 +38,19 @@ public class GradeCalculatorTests
         Assert.Equal(4.75m, GradeCalculator.Calculate(Levels(Level.Erfuellt, Level.Teilweise, Level.Erfuellt, Level.Teilweise), defaults).Grade);
     }
 
+    [Theory]
+    [InlineData(6, 5, 4, 3, true)]
+    [InlineData(3, 2, 1, 0, true)]
+    [InlineData(1, 5, 4, 3, false)]
+    [InlineData(6, 5, 5, 3, false)]
+    [InlineData(6, 5, 4, 4, false)]
+    [InlineData(3, 2, 1, -1, false)]
+    public void Points_must_decrease_from_exceeded_to_not_met(int exceeded, int met, int partly, int notMet, bool valid)
+    {
+        var settings = new GradingSettings { PointsUebertroffen = exceeded, PointsErfuellt = met, PointsTeilweise = partly, PointsNicht = notMet };
+        Assert.Equal(valid, settings.HasDescendingPoints);
+    }
+
     [Fact]
     public void All_criteria_not_met_gives_one()
     {

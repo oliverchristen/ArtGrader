@@ -137,5 +137,6 @@
   "{0} Fotos": "{0} photos",
   "{0:0.##} / {1:0.##} Punkte": "{0:0.##} / {1:0.##} points",
   "Vorläufig – noch {0} Kriterium/en der Lehrperson offen": "Provisional – {0} teacher criterion/criteria still open",
-  "Fotos kannst du schon jetzt erfassen. Für die Bewertung braucht es Kriterien.": "You can already add photos. Assessing needs criteria."
+  "Fotos kannst du schon jetzt erfassen. Für die Bewertung braucht es Kriterien.": "You can already add photos. Assessing needs criteria.",
+  "Die Punkte müssen von links nach rechts abnehmen: Übertroffen mehr als Erfüllt, Erfüllt mehr als Teilweise, Teilweise mehr als Nicht erfüllt. So wird nichts gespeichert; die Noten unten rechnen mit den letzten gültigen Punkten.": "Points must decrease from left to right: Exceeded more than Met, Met more than Partly met, Partly met more than Not met. Nothing is saved like this; the grades below use the last valid points."
 }

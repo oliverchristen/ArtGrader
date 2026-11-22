@@ -19,5 +19,12 @@ public sealed class GradingSettings
             _ => PointsNicht,
         };
 
+    /// <summary>
+    /// Each level is worth more than the next lower one and no level is negative. Otherwise «erfüllt» could be worth as
+    /// much as «übertroffen», and a better level could lead to a worse grade.
+    /// </summary>
+    public bool HasDescendingPoints =>
+        PointsUebertroffen > PointsErfuellt && PointsErfuellt > PointsTeilweise && PointsTeilweise > PointsNicht && PointsNicht >= 0;
+
     public int MaxLevelPoints => new[] { PointsUebertroffen, PointsErfuellt, PointsTeilweise, PointsNicht }.Max();
 }
