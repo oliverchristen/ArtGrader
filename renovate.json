@@ -4,23 +4,14 @@
   "timezone": "Europe/Zurich",
   "schedule": ["before 6am on monday"],
   "labels": ["dependencies"],
-  "prConcurrentLimit": 5,
   "dependencyDashboardApproval": false,
+  "separateMajorMinor": false,
   "packageRules": [
     {
-      "description": "Keep the EF Core packages on the same version.",
-      "groupName": "EF Core",
-      "matchPackageNames": ["Microsoft.EntityFrameworkCore{/,}**"]
-    },
-    {
-      "description": "Update the test tools together.",
-      "groupName": "test tools",
-      "matchPackageNames": ["xunit{/,}**", "Microsoft.NET.Test.Sdk", "coverlet.collector"]
-    },
-    {
-      "description": "Update the GitHub Actions together.",
-      "groupName": "GitHub Actions",
-      "matchManagers": ["github-actions"]
+      "description": "All updates, major ones included, in a single pull request.",
+      "matchPackageNames": ["*"],
+      "groupName": "all dependencies",
+      "groupSlug": "all"
     },
     {
       "description": "SDK in global.json: only follow updates of the same major version (net11).",
