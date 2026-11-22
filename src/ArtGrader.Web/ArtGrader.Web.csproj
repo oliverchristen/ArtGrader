@@ -46,9 +46,10 @@
     <ProjectReference Include="..\ArtGrader.Core\ArtGrader.Core.csproj" />
   </ItemGroup>
 
-  <!-- The overview for school management lives in docs/ and is served by the app as /schulleitung.html. -->
+  <!-- The overview for school management lives in docs/ and is built into the app, which serves it as
+       /schulleitung.html (see Program.cs). A linked wwwroot file came out empty when running from the IDE. -->
   <ItemGroup>
-    <Content Include="..\..\docs\schulleitung.html" Link="wwwroot\schulleitung.html" />
+    <EmbeddedResource Include="..\..\docs\schulleitung.html" LogicalName="schulleitung.html" />
   </ItemGroup>
 
 </Project>

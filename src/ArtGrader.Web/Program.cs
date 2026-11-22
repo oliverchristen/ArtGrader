@@ -101,6 +101,10 @@ app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.MapGet(SingleInstance.PingPath, () => SingleInstance.PingAnswer);
 
+// The overview for school management (docs/schulleitung.html), built into the app.
+app.MapGet("/schulleitung.html", () =>
+    Results.Stream(typeof(Program).Assembly.GetManifestResourceStream("schulleitung.html")!, "text/html; charset=utf-8"));
+
 app.MapPost("/beenden", (HttpContext context, IHostApplicationLifetime lifetime) =>
 {
     var site = context.Request.Headers["Sec-Fetch-Site"].ToString();
