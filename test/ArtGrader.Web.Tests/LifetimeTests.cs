@@ -44,12 +44,12 @@ public class LifetimeTests
             using (var provider = new FileLoggerProvider(folder))
             {
                 var logger = provider.CreateLogger("ArtGrader.Test");
-                logger.LogWarning(new InvalidOperationException("kaputt"), "Bewertung von {Id} fehlgeschlagen", 7);
+                logger.LogWarning(new InvalidOperationException("broken"), "Grading of {Id} failed", 7);
             }
 
             var text = File.ReadAllText(Assert.Single(Directory.GetFiles(folder, "artgrader-*.log")));
-            Assert.Contains("[Warning] ArtGrader.Test: Bewertung von 7 fehlgeschlagen", text);
-            Assert.Contains("InvalidOperationException: kaputt", text);
+            Assert.Contains("[Warning] ArtGrader.Test: Grading of 7 failed", text);
+            Assert.Contains("InvalidOperationException: broken", text);
         }
         finally
         {

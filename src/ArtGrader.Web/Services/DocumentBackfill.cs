@@ -40,7 +40,7 @@ public static class DocumentBackfill
         catch (Exception ex) when (ex is UnsupportedDocumentException or InvalidDataException or IOException
             or DocumentFormat.OpenXml.Packaging.OpenXmlPackageException)
         {
-            logger.LogWarning(ex, "Dokument {File} konnte nicht nachträglich gelesen werden.", file.OriginalName);
+            logger.LogWarning(ex, "Could not read document {File} afterwards.", file.OriginalName);
         }
     }
 }

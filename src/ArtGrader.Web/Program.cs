@@ -24,7 +24,7 @@ var accessKey = AccessGate.LoadOrCreateKey(paths.AccessKeyFile);
 var gate = new AccessGate(accessKey, TimeProvider.System);
 if (await SingleInstance.IsRunningAsync(url))
 {
-    Console.WriteLine($"ArtGrader läuft bereits auf {url}.");
+    Console.WriteLine($"ArtGrader is already running on {url}.");
     if (Environment.GetEnvironmentVariable("ARTGRADER_NO_BROWSER") is null)
     {
         // The running ArtGrader hands out a ticket only to someone who can read this user's access key.
@@ -86,12 +86,12 @@ try
     var removed = KeyLock.RemovePlaintextKeys(app.Services, paths.Keys, settings.ReprotectApiKey);
     if (removed > 0)
     {
-        app.Logger.LogInformation("Schlüssel an das Benutzerkonto gebunden, {Count} ungeschützte Schlüsseldatei(en) entfernt.", removed);
+        app.Logger.LogInformation("Bound the keys to the user account and removed {Count} unprotected key file(s).", removed);
     }
 }
 catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or InvalidOperationException or IOException)
 {
-    app.Logger.LogWarning(ex, "Die Schlüssel konnten nicht an das Benutzerkonto gebunden werden.");
+    app.Logger.LogWarning(ex, "Could not bind the keys to the user account.");
 }
 
 app.Use(gate.InvokeAsync);
@@ -213,11 +213,11 @@ app.MapGet(
 app.Lifetime.ApplicationStarted.Register(() =>
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("ArtGrader läuft auf {Url}. Daten: {Data}", url, paths.Root);
+    logger.LogInformation("ArtGrader is running on {Url}. Data: {Data}", url, paths.Root);
     if (app.Environment.IsDevelopment())
     {
         // Only on the console, never in the log file: this link lets a browser in.
-        Console.WriteLine($"Im Browser öffnen (10 Minuten gültig): {AccessGate.Link(url, gate.NewTicket(TimeSpan.FromMinutes(10)))}");
+        Console.WriteLine($"Open in the browser (valid for 10 minutes): {AccessGate.Link(url, gate.NewTicket(TimeSpan.FromMinutes(10)))}");
     }
     else if (Environment.GetEnvironmentVariable("ARTGRADER_NO_BROWSER") is null)
     {

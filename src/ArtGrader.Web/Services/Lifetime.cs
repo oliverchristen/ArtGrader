@@ -65,7 +65,7 @@ public sealed class IdleShutdown(
         {
             if (ShouldStop(tabs.Count, queue.IsBusy || downloads.IsBusy, tabs.LastChange, clock.GetUtcNow(), idle))
             {
-                logger.LogInformation("Seit {Minutes} Minuten ist kein ArtGrader-Fenster offen. ArtGrader beendet sich.", idle.TotalMinutes);
+                logger.LogInformation("No ArtGrader window has been open for {Minutes} minutes. ArtGrader is shutting down.", idle.TotalMinutes);
                 lifetime.StopApplication();
                 return;
             }

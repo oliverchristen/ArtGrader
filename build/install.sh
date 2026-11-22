@@ -6,17 +6,17 @@ target="$HOME/Applications/ArtGrader.app"
 url="http://localhost:5080"
 
 if [[ "$(uname)" != "Darwin" ]]; then
-    echo "Dieses Skript ist für macOS." >&2
+    echo "This script is for macOS." >&2
     exit 1
 fi
 
 if [[ ! -d "$source_dir/ArtGrader.app" ]]; then
-    echo "Im Ordner $source_dir fehlt «ArtGrader.app». Bitte das Skript im entpackten ArtGrader-Ordner starten." >&2
+    echo "'ArtGrader.app' is missing in $source_dir. Please run the script in the unzipped ArtGrader folder." >&2
     exit 1
 fi
 
 if curl -fs "$url/api/ping" 2>/dev/null | grep -q ArtGrader; then
-    echo "ArtGrader läuft noch und wird beendet …"
+    echo "ArtGrader is still running and will be stopped …"
     # ArtGrader only obeys someone who can read this account's access key. The key goes to curl
     # through stdin so that it never shows up in the process list.
     key="$(cat "${ARTGRADER_DATA:-$HOME/Library/Application Support/ArtGrader}/access-key" 2>/dev/null || true)"
@@ -28,7 +28,7 @@ if curl -fs "$url/api/ping" 2>/dev/null | grep -q ArtGrader; then
     done
 fi
 
-echo "Installiere nach $target …"
+echo "Installing to $target …"
 mkdir -p "$HOME/Applications"
 rm -rf "$target.new"
 cp -R "$source_dir/ArtGrader.app" "$target.new"
@@ -40,8 +40,8 @@ chmod +x "$target/Contents/MacOS/ArtGrader" "$target/Contents/Resources/app/ArtG
 codesign --force --sign - "$target/Contents/Resources/app/ArtGrader" > /dev/null
 
 echo
-echo "ArtGrader ist installiert und startet jetzt."
-echo "Später starten: im Finder «Programme» im Benutzerordner öffnen und ArtGrader doppelklicken."
-echo "Tipp: ArtGrader ins Dock ziehen. Beenden geht in ArtGrader oben rechts."
-echo "Deine Prüfungen und Einstellungen liegen unverändert in ~/Library/Application Support/ArtGrader."
+echo "ArtGrader is installed and starting now."
+echo "To start it later: open 'Applications' in your home folder in the Finder and double-click ArtGrader."
+echo "Tip: drag ArtGrader to the Dock. To quit, use the button at the top right in ArtGrader."
+echo "Your assignments and settings remain unchanged in ~/Library/Application Support/ArtGrader."
 open "$target"
