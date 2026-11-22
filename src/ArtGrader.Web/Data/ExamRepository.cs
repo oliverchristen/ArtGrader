@@ -75,6 +75,7 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         exam.ExerciseText = source.ExerciseText;
         exam.ExerciseFile = source.ExerciseFile;
         exam.RubricFile = source.RubricFile;
+        exam.LocalOnly = source.LocalOnly;
         exam.Settings = new GradingSettings
         {
             PointsUebertroffen = source.Settings.PointsUebertroffen,
@@ -162,6 +163,20 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
             image.Order = ++next;
             db.Images.Add(image);
         }
+        await db.SaveChangesAsync();
+    }
+
+    public async Task<SubmissionImage?> GetImageAsync(Guid imageId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.Images.AsNoTracking().FirstOrDefaultAsync(i => i.Id == imageId);
+    }
+
+    public async Task SetCoversAsync(Guid imageId, IReadOnlyList<CoverArea> covers)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var image = await db.Images.FirstAsync(i => i.Id == imageId);
+        image.Covers = covers.Select(c => new CoverArea { X = c.X, Y = c.Y, Width = c.Width, Height = c.Height }).ToList();
         await db.SaveChangesAsync();
     }
 

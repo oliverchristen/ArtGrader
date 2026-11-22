@@ -76,5 +76,34 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         Assert.False(stored[real.Id].HasPlaceholderName);
     }
 
+    [Fact]
+    public async Task Covers_and_the_local_only_flag_are_stored()
+    {
+        var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
+
+        await repository.SetCoversAsync(work.Images[0].Id, [new CoverArea { X = 0.7, Y = 0.8, Width = 0.3, Height = 0.2 }]);
+        await repository.UpdateExamDetailsAsync(new Exam { Id = exam.Id, Title = exam.Title, LocalOnly = true });
+
+        var stored = (await repository.GetAsync(exam.Id))!;
+        Assert.True(stored.LocalOnly);
+        var cover = Assert.Single(stored.Submissions.Single().Images.Single().Covers);
+        Assert.Equal(0.7, cover.X, 6);
+        Assert.Equal(0.2, cover.Height, 6);
+    }
+
+    [Fact]
+    public async Task Images_from_before_covers_existed_load_without_covers()
+    {
+        var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
+        await using (var db = factory.CreateDbContext())
+        {
+            await db.Database.ExecuteSqlRawAsync("UPDATE Images SET Covers = NULL");
+        }
+
+        var image = (await repository.GetAsync(exam.Id))!.Submissions.Single(s => s.Id == work.Id).Images.Single();
+
+        Assert.Empty(image.Covers);
+    }
+
     private static SubmissionImage Image(string originalName) => new() { OriginalName = originalName, RelativePath = $"x/{Guid.NewGuid():N}.jpg" };
 }

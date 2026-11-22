@@ -35,6 +35,20 @@
     }
 </div>
 <MudSwitch @bind-Value="oneSubmission" Color="Color.Primary" Label="Alle Fotos dieses Uploads gehören zu einer Arbeit" Class="mt-1" />
+@if (Exam.LocalOnly)
+{
+    <div class="banner info mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.Lock" />
+        <span>Diese Prüfung wird nur lokal bewertet. Fotos verlassen den Computer nicht.</span>
+    </div>
+}
+else
+{
+    <div class="banner info mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
+        <span>Steht auf einer Arbeit ein Name oder eine Signatur? Öffne die Arbeit und decke die Stelle ab, bevor du bewerten lässt. Sonst sieht die KI sie.</span>
+    </div>
+}
 
 @if (Exam.Submissions.Count > 0)
 {
@@ -66,7 +80,7 @@
         <div class="banner mb-5">
             <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:#8a5f0c" />
             <span>
-                Noch @running Arbeit(en) in Bearbeitung · @(Settings.Provider == AiProvider.Ollama
+                Noch @running Arbeit(en) in Bearbeitung · @(Settings.RunsLocally(Exam)
                     ? "lokal etwa 1–3 Minuten pro Arbeit, eine nach der anderen"
                     : "etwa 30–60 Sekunden pro Arbeit") – du kannst inzwischen weiterarbeiten.
             </span>
@@ -91,7 +105,7 @@
                 <a class="work-photo" href="@ReviewUrl(submission)">
                     @if (submission.Images.Count > 0)
                     {
-                        <img src="@($"/files/{submission.Images[0].RelativePath}")" alt="Foto der Arbeit von @submission.StudentName" loading="lazy" />
+                        <img src="@ImageUrls.Covered(submission.Images[0])" alt="Foto der Arbeit von @submission.StudentName" loading="lazy" />
                     }
                     else
                     {
@@ -155,7 +169,7 @@
     private List<Submission> ungraded = [];
     private int running;
 
-    private bool CanGrade => Settings.IsConfigured && Exam.Categories.SelectMany(c => c.Criteria).Any(k => k.AssessedBy == AssessedBy.Ai);
+    private bool CanGrade => Settings.CanGrade(Exam) && Exam.Categories.SelectMany(c => c.Criteria).Any(k => k.AssessedBy == AssessedBy.Ai);
 
     protected override void OnParametersSet()
     {

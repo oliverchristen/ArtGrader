@@ -1,0 +1,121 @@
+@using ArtGrader.Core.Images
+@inject ExamRepository Repository
+@inject IJSRuntime JS
+
+<div class="cover-tools">
+    @if (editing)
+    {
+        <span class="cover-hint">Rechteck über Namen oder Signatur ziehen.</span>
+        <span class="topbar-spacer"></span>
+        <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Undo" Disabled="@(Image.Covers.Count == 0)" OnClick="RemoveLastAsync">Letzten Balken entfernen</MudButton>
+        <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => editing = false">Fertig</MudButton>
+    }
+    else
+    {
+        <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="StartEditing">Name oder Signatur abdecken</MudButton>
+        @if (Image.Covers.Count > 0)
+        {
+            <span class="cover-hint">@Image.Covers.Count @(Image.Covers.Count == 1 ? "Stelle" : "Stellen") abgedeckt · die KI sieht dort schwarze Balken</span>
+        }
+    }
+</div>
+
+<div class="@($"frame {(zoomed && !editing ? "zoomed" : "")}")">
+    <div class="@($"cover-box {(editing ? "editing" : "")}")">
+        <img src="@ImageUrls.Original(Image)" alt="@Alt" @onclick="() => zoomed = !editing && !zoomed" />
+        @foreach (var cover in Image.Covers)
+        {
+            <span class="cover" style="@Style(cover)"></span>
+        }
+        @if (draft is not null)
+        {
+            <span class="cover draft" style="@Style(draft)"></span>
+        }
+        @if (editing)
+        {
+            <div class="cover-surface" @ref="surface"
+                 @onpointerdown="StartAsync" @onpointermove="Move" @onpointerup="FinishAsync" @onpointerleave="FinishAsync"></div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public SubmissionImage Image { get; set; } = null!;
+    [Parameter] public string Alt { get; set; } = "";
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private ElementReference surface;
+    private bool editing;
+    private bool zoomed;
+    private Guid shownImage;
+    private (double X, double Y)? start;
+    private double width;
+    private double height;
+    private CoverArea? draft;
+
+    protected override void OnParametersSet()
+    {
+        if (shownImage != Image.Id)
+        {
+            shownImage = Image.Id;
+            editing = false;
+            zoomed = false;
+            start = null;
+            draft = null;
+        }
+    }
+
+    private static string Style(CoverArea area) =>
+        $"left:{ImageUrls.Percent(area.X)};top:{ImageUrls.Percent(area.Y)};width:{ImageUrls.Percent(area.Width)};height:{ImageUrls.Percent(area.Height)}";
+
+    private void StartEditing()
+    {
+        zoomed = false;
+        editing = true;
+    }
+
+    private async Task StartAsync(PointerEventArgs e)
+    {
+        var size = await JS.InvokeAsync<double[]>("artGrader.size", surface);
+        (width, height) = (size[0], size[1]);
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+        start = (e.OffsetX / width, e.OffsetY / height);
+        draft = null;
+    }
+
+    private void Move(PointerEventArgs e)
+    {
+        if (start is { } from)
+        {
+            draft = ImageCover.Normalize(from.X, from.Y, e.OffsetX / width, e.OffsetY / height);
+        }
+    }
+
+    private async Task FinishAsync(PointerEventArgs e)
+    {
+        if (start is not { } from)
+        {
+            return;
+        }
+        var area = ImageCover.Normalize(from.X, from.Y, e.OffsetX / width, e.OffsetY / height);
+        start = null;
+        draft = null;
+        if (area.Width < 0.01 || area.Height < 0.01)
+        {
+            return;
+        }
+        await SaveAsync([.. Image.Covers, area]);
+    }
+
+    private Task RemoveLastAsync() => SaveAsync(Image.Covers.Take(Image.Covers.Count - 1).ToList());
+
+    private async Task SaveAsync(List<CoverArea> covers)
+    {
+        await Repository.SetCoversAsync(Image.Id, covers);
+        Image.Covers = covers;
+        await Changed.InvokeAsync();
+    }
+}

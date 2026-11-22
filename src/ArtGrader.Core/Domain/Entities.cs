@@ -10,6 +10,7 @@ public sealed class Exam
     public StoredFile? ExerciseFile { get; set; }
     public StoredFile? RubricFile { get; set; }
     public GradingSettings Settings { get; set; } = new();
+    public bool LocalOnly { get; set; }
     public List<RubricCategory> Categories { get; set; } = [];
     public List<Submission> Submissions { get; set; } = [];
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
@@ -83,6 +84,15 @@ public sealed class SubmissionImage
     public string OriginalName { get; set; } = "";
     public string RelativePath { get; set; } = "";
     public int Order { get; set; }
+    public List<CoverArea> Covers { get; set; } = [];
+}
+
+public sealed class CoverArea
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Width { get; set; }
+    public double Height { get; set; }
 }
 
 public sealed class CriterionAssessment

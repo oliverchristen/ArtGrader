@@ -82,6 +82,17 @@ app.MapGet("/files/{**path}", (string path, FileStore files) =>
     return Results.File(full, contentType, enableRangeProcessing: true);
 });
 
+app.MapGet("/bild/{imageId:guid}", async (Guid imageId, ExamRepository repository, FileStore files, CancellationToken ct) =>
+{
+    var image = await repository.GetImageAsync(imageId);
+    if (image is null || files.TryResolveExisting(image.RelativePath) is null)
+    {
+        return Results.NotFound();
+    }
+    var bytes = await files.ReadAsync(image.RelativePath, ct);
+    return Results.File(ArtGrader.Core.Images.ImageCover.Apply(bytes, image.Covers), "image/jpeg");
+});
+
 app.MapGet("/export/{examId:guid}/noten.xlsx", async (Guid examId, ExamRepository repository) =>
 {
     var exam = await repository.GetAsync(examId);
@@ -112,7 +123,8 @@ app.MapGet(
         {
             if (files.TryResolveExisting(image.RelativePath) is not null)
             {
-                await using var original = new MemoryStream(await files.ReadAsync(image.RelativePath, ct));
+                var covered = ArtGrader.Core.Images.ImageCover.Apply(await files.ReadAsync(image.RelativePath, ct), image.Covers);
+                await using var original = new MemoryStream(covered);
                 images[image.Id] = await ArtGrader.Core.Images.ImagePreprocessor.ToJpegAsync(original, 1200, ct);
             }
         }

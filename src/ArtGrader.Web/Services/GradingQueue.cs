@@ -48,14 +48,8 @@ public sealed class GradingQueue(
     {
         await foreach (var (examId, submissionId) in channel.Reader.ReadAllAsync(stoppingToken))
         {
-            var local = false;
             try
             {
-                if (settings.Current().Provider == AiProvider.Ollama)
-                {
-                    await localModelGate.WaitAsync(stoppingToken);
-                    local = true;
-                }
                 await GradeAsync(examId, submissionId, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -72,13 +66,6 @@ public sealed class GradingQueue(
                 logger.LogError(ex, "Unexpected error while grading submission {SubmissionId}", submissionId);
                 await repository.SetStatusAsync(submissionId, SubmissionStatus.Fehler, "Unerwarteter Fehler: " + ex.Message);
             }
-            finally
-            {
-                if (local)
-                {
-                    localModelGate.Release();
-                }
-            }
             events.Raise(examId, submissionId);
         }
     }
@@ -92,13 +79,35 @@ public sealed class GradingQueue(
             return;
         }
 
+        var local = RoutingModelGateway.RunsLocally(settings.Current(), exam.LocalOnly);
+        if (local)
+        {
+            await localModelGate.WaitAsync(cancellationToken);
+        }
+        try
+        {
+            await GradeLockedAsync(exam, submission, cancellationToken);
+        }
+        finally
+        {
+            if (local)
+            {
+                localModelGate.Release();
+            }
+        }
+    }
+
+    private async Task GradeLockedAsync(Exam exam, Submission submission, CancellationToken cancellationToken)
+    {
+        var examId = exam.Id;
+        var submissionId = submission.Id;
         await repository.SetStatusAsync(submissionId, SubmissionStatus.WirdBewertet);
         events.Raise(examId, submissionId);
 
         var images = new List<byte[]>();
         foreach (var image in submission.Images)
         {
-            images.Add(await files.ReadAsync(image.RelativePath, cancellationToken));
+            images.Add(ImageCover.Apply(await files.ReadAsync(image.RelativePath, cancellationToken), image.Covers));
         }
 
         byte[]? exercisePdf = null;

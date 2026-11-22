@@ -15,6 +15,17 @@ public static class FeedbackPdf
     private const string Terracotta = "#c0533a";
     private const float PhotoColumnWidth = 160;
 
+    public const string AiNotice =
+        "Die Einschätzung wurde mit Unterstützung einer KI vorbereitet. Die Lehrperson hat jedes Kriterium geprüft und die Note festgelegt.";
+
+    public const string AiDraftNotice =
+        "Entwurf: Die Einschätzung wurde mit Unterstützung einer KI vorbereitet. Die Lehrperson hat sie noch nicht abgeschlossen.";
+
+    public static string? AiNoticeFor(Submission submission) =>
+        submission.ModelId is null ? null
+        : submission.Status == SubmissionStatus.Abgeschlossen ? AiNotice
+        : AiDraftNotice;
+
     public static byte[] Create(
         Exam exam,
         IEnumerable<Submission> submissions,
@@ -85,7 +96,14 @@ public static class FeedbackPdf
             column.Item().Element(c => ComposeTable(c, exam, submission, includeJustifications));
         });
 
-        page.Footer().AlignCenter().Text("Bildnerisches Gestalten").FontSize(7).FontColor(InkSoft);
+        page.Footer().Column(footer =>
+        {
+            if (AiNoticeFor(submission) is { } notice)
+            {
+                footer.Item().PaddingBottom(4).AlignCenter().Text(notice).FontSize(7.5f).FontColor(InkSoft);
+            }
+            footer.Item().AlignCenter().Text("Bildnerisches Gestalten").FontSize(7).FontColor(InkSoft);
+        });
     }
 
     private static void ComposePhotos(ColumnDescriptor column, IReadOnlyList<byte[]> photos)

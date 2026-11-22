@@ -6,7 +6,7 @@ namespace ArtGrader.Core.Ai;
 
 public sealed record GradingCriterion(Guid Id, string Category, string Text);
 
-public sealed record GradingContext(string ExerciseText, byte[]? ExercisePdf, IReadOnlyList<GradingCriterion> Criteria)
+public sealed record GradingContext(string ExerciseText, byte[]? ExercisePdf, IReadOnlyList<GradingCriterion> Criteria, bool LocalOnly = false)
 {
     public static GradingContext From(Exam exam, byte[]? exercisePdf) =>
         new(
@@ -17,7 +17,8 @@ public sealed record GradingContext(string ExerciseText, byte[]? ExercisePdf, IR
                     c.Criteria.OrderBy(k => k.Order)
                         .Where(k => k.AssessedBy == AssessedBy.Ai)
                         .Select(k => new GradingCriterion(k.Id, c.Name, k.Text)))
-                .ToList());
+                .ToList(),
+            exam.LocalOnly);
 }
 
 public sealed record CriterionSuggestion(Guid CriterionId, Level Level, string Justification, Confidence Confidence);
@@ -61,7 +62,7 @@ public sealed class SubmissionGradingService(IModelGateway claude)
         content.Add(new TextPart(Prompts.GradingInstruction(images.Count)));
 
         var response = await claude.CompleteJsonAsync(
-            new ModelJsonRequest(Prompts.GradingSystem, SharedContext(context, keys), content, Schemas.Grading()),
+            new ModelJsonRequest(Prompts.GradingSystem, SharedContext(context, keys), content, Schemas.Grading(), LocalOnly: context.LocalOnly),
             cancellationToken);
 
         var parsed = GradingResponseValidator.Parse(response.Json, keys);

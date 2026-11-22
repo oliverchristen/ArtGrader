@@ -16,7 +16,8 @@ public sealed record ModelJsonRequest(
     IReadOnlyList<ContentPart> Content,
     JsonObject Schema,
     int MaxTokens = 16000,
-    bool Quick = false);
+    bool Quick = false,
+    bool LocalOnly = false);
 
 public sealed record ModelJsonResponse(string Json, string Model, ModelUsage Usage);
 

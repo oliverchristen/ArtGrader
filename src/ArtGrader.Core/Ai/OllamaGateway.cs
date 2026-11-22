@@ -243,8 +243,22 @@ public sealed class RoutingModelGateway(
     AnthropicClaudeGateway anthropic,
     OllamaGateway ollama) : IModelGateway
 {
-    public Task<ModelJsonResponse> CompleteJsonAsync(ModelJsonRequest request, CancellationToken cancellationToken) =>
-        settings.Current().Provider == AiProvider.Ollama
-            ? ollama.CompleteJsonAsync(request, cancellationToken)
-            : anthropic.CompleteJsonAsync(request, cancellationToken);
+    public const string LocalOnlyWithoutModel =
+        "Diese Prüfung darf nur lokal bewertet werden, es ist aber kein lokales Modell eingerichtet. Bitte unter «Einstellungen» ein lokales Modell wählen.";
+
+    public static bool RunsLocally(AiSettings current, bool localOnly) => current.Provider == AiProvider.Ollama || localOnly;
+
+    public Task<ModelJsonResponse> CompleteJsonAsync(ModelJsonRequest request, CancellationToken cancellationToken)
+    {
+        var current = settings.Current();
+        if (!RunsLocally(current, request.LocalOnly))
+        {
+            return anthropic.CompleteJsonAsync(request, cancellationToken);
+        }
+        if (string.IsNullOrWhiteSpace(current.OllamaModel))
+        {
+            throw new ModelNotConfiguredException(LocalOnlyWithoutModel);
+        }
+        return ollama.CompleteJsonAsync(request, cancellationToken);
+    }
 }

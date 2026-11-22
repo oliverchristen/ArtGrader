@@ -42,6 +42,17 @@ public class ExportTests
     }
 
     [Fact]
+    public void Pdf_states_that_ai_helped_and_whether_the_teacher_has_completed_it()
+    {
+        var done = new Submission { ModelId = "claude-opus-5-5", Status = SubmissionStatus.Abgeschlossen };
+        var draft = new Submission { ModelId = "claude-opus-5-5", Status = SubmissionStatus.Vorschlag };
+
+        Assert.Equal(FeedbackPdf.AiNotice, FeedbackPdf.AiNoticeFor(done));
+        Assert.Equal(FeedbackPdf.AiDraftNotice, FeedbackPdf.AiNoticeFor(draft));
+        Assert.Null(FeedbackPdf.AiNoticeFor(new Submission { Status = SubmissionStatus.Abgeschlossen }));
+    }
+
+    [Fact]
     public void Excel_lists_every_student_with_grade_and_open_grade_as_blank()
     {
         var exam = ExampleExam();

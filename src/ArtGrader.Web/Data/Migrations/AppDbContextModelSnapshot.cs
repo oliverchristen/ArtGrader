@@ -67,6 +67,9 @@ namespace ArtGrader.Web.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("LocalOnly")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("SchoolClass")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -363,6 +366,35 @@ namespace ArtGrader.Web.Data.Migrations
                         .HasForeignKey("SubmissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.OwnsMany("ArtGrader.Core.Domain.CoverArea", "Covers", b1 =>
+                        {
+                            b1.Property<Guid>("SubmissionImageId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<double>("Height");
+
+                            b1.Property<double>("Width");
+
+                            b1.Property<double>("X");
+
+                            b1.Property<double>("Y");
+
+                            b1.HasKey("SubmissionImageId", "__synthesizedOrdinal");
+
+                            b1.ToTable("Images");
+
+                            b1
+                                .ToJson("Covers")
+                                .HasColumnType("TEXT");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SubmissionImageId");
+                        });
+
+                    b.Navigation("Covers");
                 });
 
             modelBuilder.Entity("ArtGrader.Core.Domain.Exam", b =>

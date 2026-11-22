@@ -9,6 +9,7 @@ public sealed class RubricImportService(IModelGateway claude)
     public async Task<List<RubricCategory>> ImportAsync(
         DocumentContent rubric,
         string? exerciseText,
+        bool localOnly,
         CancellationToken cancellationToken)
     {
         var shared = new List<ContentPart>();
@@ -27,7 +28,8 @@ public sealed class RubricImportService(IModelGateway claude)
                 shared,
                 [new TextPart(Prompts.RubricImportInstruction(exerciseText))],
                 Schemas.Rubric(),
-                Quick: true),
+                Quick: true,
+                LocalOnly: localOnly),
             cancellationToken);
 
         return Parse(response.Json);

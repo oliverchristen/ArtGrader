@@ -53,6 +53,23 @@
                 <MudSelectItem T="decimal" Value="0.1m">Zehntel (4.3)</MudSelectItem>
             </MudSelect>
             <div class="formula">Note = Punkte ÷ Maximum × 5 + 1 &nbsp;·&nbsp; <span class="muted" style="font-style:normal">@Example()</span></div>
+            <div class="@($"privacy-choice {(draft.LocalOnly ? "on" : "")}")">
+                <MudSwitch T="bool" Value="draft.LocalOnly" ValueChanged="SetLocalOnlyAsync" Color="Color.Success" Label="Nur lokal bewerten" />
+                <p>
+                    @if (draft.LocalOnly)
+                    {
+                        <text>Fotos und Kriterien dieser Prüfung gehen nie ins Internet. Bewertet wird mit dem lokalen Modell@(string.IsNullOrWhiteSpace(Settings.OllamaModel) ? "" : $" «{Settings.OllamaModel}»").</text>
+                    }
+                    else
+                    {
+                        <text>Einschalten, wenn für diese Prüfung nichts in die Cloud gehen darf. Das lokale Modell ist langsamer und etwas weniger genau.</text>
+                    }
+                </p>
+                @if (draft.LocalOnly && string.IsNullOrWhiteSpace(Settings.OllamaModel))
+                {
+                    <div class="banner mt-2">Es ist noch kein lokales Modell eingerichtet. <a href="/einstellungen">Zu den Einstellungen</a></div>
+                }
+            </div>
             <div class="d-flex justify-end mt-4">
                 <MudButton Class="btn-ink" OnClick="SaveDetailsAsync" StartIcon="@Icons.Material.Filled.Check">Speichern</MudButton>
             </div>
@@ -191,6 +208,7 @@
                 ExerciseText = Exam.ExerciseText,
                 ExerciseFile = Exam.ExerciseFile,
                 RubricFile = Exam.RubricFile,
+                LocalOnly = Exam.LocalOnly,
                 Settings = new GradingSettings
                 {
                     PointsUebertroffen = Exam.Settings.PointsUebertroffen,
@@ -253,6 +271,15 @@
         rubricDirty = true;
     }
 
+    private async Task SetLocalOnlyAsync(bool value)
+    {
+        draft.LocalOnly = value;
+        draft.Date = DateOnly.FromDateTime(date ?? DateTime.Today);
+        await Repository.UpdateExamDetailsAsync(draft);
+        Snackbar.Add(value ? "Diese Prüfung wird nur noch lokal bewertet." : "Diese Prüfung darf wieder mit Claude bewertet werden.", Severity.Success);
+        await Changed.InvokeAsync();
+    }
+
     private async Task SaveDetailsAsync()
     {
         draft.Date = DateOnly.FromDateTime(date ?? DateTime.Today);
@@ -298,9 +325,11 @@
 
     private async Task UploadRubricAsync(InputFileChangeEventArgs e)
     {
-        if (!Settings.IsConfigured)
+        if (!Settings.CanGrade(draft))
         {
-            Snackbar.Add("Bitte zuerst unter «Einstellungen» Claude oder ein lokales Modell einrichten.", Severity.Warning);
+            Snackbar.Add(draft.LocalOnly
+                ? RoutingModelGateway.LocalOnlyWithoutModel
+                : "Bitte zuerst unter «Einstellungen» Claude oder ein lokales Modell einrichten.", Severity.Warning);
             return;
         }
         var upload = await ReadUploadAsync(e.File);
@@ -335,7 +364,7 @@
             draft.Date = DateOnly.FromDateTime(date ?? DateTime.Today);
             await Repository.UpdateExamDetailsAsync(draft);
 
-            categories = await RubricImport.ImportAsync(content, draft.ExerciseText, CancellationToken.None);
+            categories = await RubricImport.ImportAsync(content, draft.ExerciseText, draft.LocalOnly, CancellationToken.None);
             await Repository.SaveRubricAsync(Exam.Id, categories);
             rubricDirty = false;
             var teacherOnly = categories.SelectMany(c => c.Criteria).Count(k => k.AssessedBy == AssessedBy.Teacher);

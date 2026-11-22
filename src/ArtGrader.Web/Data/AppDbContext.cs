@@ -40,6 +40,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                 v => v.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(v.Value) : null);
         });
 
+        modelBuilder.Entity<SubmissionImage>().OwnsMany(i => i.Covers, covers => covers.ToJson());
+
         modelBuilder.Entity<CriterionAssessment>(assessment =>
         {
             assessment.HasOne<RubricCriterion>().WithMany().HasForeignKey(a => a.CriterionId).OnDelete(DeleteBehavior.Cascade);

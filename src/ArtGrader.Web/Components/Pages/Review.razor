@@ -53,7 +53,7 @@ else
             {
                 <span class="faint" style="font-size:.85rem">✓ gespeichert</span>
             }
-            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.AutoAwesome" Disabled="@(busy || !Settings.IsConfigured)" OnClick="RegradeAsync">
+            <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.AutoAwesome" Disabled="@(busy || !Settings.CanGrade(exam))" OnClick="RegradeAsync">
                 @(submission.GradedAt is null ? "KI-Vorschlag holen" : "Neu bewerten")
             </MudButton>
             <MudButton Class="btn-soft" StartIcon="@Icons.Material.Outlined.PictureAsPdf" Target="_blank"
@@ -76,15 +76,13 @@ else
             @if (submission.Images.Count > 0)
             {
                 var current = submission.Images[Math.Min(imageIndex, submission.Images.Count - 1)];
-                <div class="@($"frame {(zoomed ? "zoomed" : "")}")">
-                    <img src="@($"/files/{current.RelativePath}")" alt="Foto @(imageIndex + 1) der Arbeit" @onclick="() => zoomed = !zoomed" />
-                </div>
+                <CoverEditor Image="current" Alt="@($"Foto {imageIndex + 1} der Arbeit")" Changed="StateHasChanged" />
             }
             <div class="thumbs">
                 @for (var i = 0; i < submission.Images.Count; i++)
                 {
                     var n = i;
-                    <img src="@($"/files/{submission.Images[n].RelativePath}")" class="@(n == imageIndex ? "current" : "")" alt="Foto @(n + 1)" @onclick="() => imageIndex = n" />
+                    <img src="@ImageUrls.Covered(submission.Images[n])" class="@(n == imageIndex ? "current" : "")" alt="Foto @(n + 1)" @onclick="() => imageIndex = n" />
                 }
                 <label class="add-photo" title="Weiteres Foto (Detail, Rückseite …)">
                     <InputFile OnChange="AddPhotosAsync" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.heic" aria-label="Foto hinzufügen" />
@@ -233,7 +231,6 @@ else
     private Submission? submission;
     private bool loaded;
     private bool saved;
-    private bool zoomed;
     private int imageIndex;
 
     protected override void OnInitialized() => Events.SubmissionChanged += OnSubmissionChanged;
@@ -241,7 +238,6 @@ else
     protected override async Task OnParametersSetAsync()
     {
         imageIndex = 0;
-        zoomed = false;
         saved = false;
         await LoadAsync();
     }

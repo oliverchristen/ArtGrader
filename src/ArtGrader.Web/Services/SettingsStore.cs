@@ -38,6 +38,11 @@ public sealed class SettingsStore : IAiSettingsSource
     public bool IsConfigured =>
         stored.Provider == AiProvider.Ollama ? !string.IsNullOrWhiteSpace(stored.OllamaModel) : KeyFromEnvironment || HasStoredKey;
 
+    public bool CanGrade(ArtGrader.Core.Domain.Exam exam) =>
+        exam.LocalOnly ? !string.IsNullOrWhiteSpace(stored.OllamaModel) : IsConfigured;
+
+    public bool RunsLocally(ArtGrader.Core.Domain.Exam exam) => stored.Provider == AiProvider.Ollama || exam.LocalOnly;
+
     public string Model => stored.Model;
 
     public string Effort => stored.Effort;
