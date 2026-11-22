@@ -37,6 +37,7 @@ builder.Services.AddSingleton<ModelDownloads>();
 builder.Services.AddSingleton<RubricImportService>();
 builder.Services.AddSingleton<SubmissionGradingService>();
 builder.Services.AddSingleton<GradingEvents>();
+builder.Services.AddScoped<CurrentExam>();
 builder.Services.AddSingleton<GradingQueue>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GradingQueue>());
 

@@ -178,6 +178,12 @@ h1:focus {
     background: var(--ochre);
 }
 
+.provider-pill.local-only:not(.warn) {
+    border-color: #3f7353;
+    background: rgba(63, 115, 83, .08);
+    color: #2f5a40;
+}
+
 .page {
     max-width: 1440px;
     margin: 0 auto;

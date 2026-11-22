@@ -1,6 +1,7 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @using ArtGrader.Core.Ai
 @inject SettingsStore Settings
+@inject CurrentExam Current
 @implements IDisposable
 
 <MudThemeProvider Theme="theme" />
@@ -18,7 +19,7 @@
             </span>
         </a>
         <span class="topbar-spacer"></span>
-        <a href="/einstellungen" class="@($"provider-pill {(Settings.IsConfigured ? "" : "warn")}")" title="Einstellungen">
+        <a href="/einstellungen" class="@($"provider-pill {(Ready ? "" : "warn")} {(LocalOnly ? "local-only" : "")}")" title="@(LocalOnly ? "Diese Prüfung wird nur lokal bewertet" : "Einstellungen")">
             <span class="dot"></span>
             <span class="label">@ProviderLabel()</span>
             <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
@@ -70,8 +71,16 @@
         LayoutProperties = new LayoutProperties { DefaultBorderRadius = "10px" },
     };
 
+    private bool LocalOnly => Current.Value?.LocalOnly == true;
+
+    private bool Ready => Current.Value is { } exam ? Settings.CanGrade(exam) : Settings.IsConfigured;
+
     private string ProviderLabel()
     {
+        if (LocalOnly)
+        {
+            return string.IsNullOrWhiteSpace(Settings.OllamaModel) ? "Nur lokal · Modell fehlt" : $"Nur lokal · {Settings.OllamaModel}";
+        }
         if (!Settings.IsConfigured)
         {
             return Settings.Provider == AiProvider.Ollama ? "Lokales Modell wählen" : "API-Schlüssel fehlt";
@@ -79,9 +88,17 @@
         return Settings.Provider == AiProvider.Ollama ? $"Lokal · {Settings.OllamaModel}" : "Claude · Cloud";
     }
 
-    protected override void OnInitialized() => Settings.Changed += OnSettingsChanged;
+    protected override void OnInitialized()
+    {
+        Settings.Changed += OnSettingsChanged;
+        Current.Changed += OnSettingsChanged;
+    }
 
     private void OnSettingsChanged() => InvokeAsync(StateHasChanged);
 
-    public void Dispose() => Settings.Changed -= OnSettingsChanged;
+    public void Dispose()
+    {
+        Settings.Changed -= OnSettingsChanged;
+        Current.Changed -= OnSettingsChanged;
+    }
 }

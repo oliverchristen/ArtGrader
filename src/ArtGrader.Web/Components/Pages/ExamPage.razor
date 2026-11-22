@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject IDialogService Dialogs
 @inject FileStore Files
+@inject CurrentExam Current
 @implements IDisposable
 
 <PageTitle>@(exam?.Title ?? "Prüfung") · ArtGrader</PageTitle>
@@ -86,6 +87,7 @@ else
     {
         exam = await Repository.GetAsync(Id);
         notFound = exam is null;
+        Current.Set(exam);
         if (exam is not null)
         {
             running = exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet);
@@ -116,5 +118,9 @@ else
         }
     }
 
-    public void Dispose() => Events.SubmissionChanged -= OnSubmissionChanged;
+    public void Dispose()
+    {
+        Events.SubmissionChanged -= OnSubmissionChanged;
+        Current.Clear(Id);
+    }
 }

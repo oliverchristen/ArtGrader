@@ -7,6 +7,7 @@
 @inject ISnackbar Snackbar
 @inject SettingsStore Settings
 @inject NavigationManager Navigation
+@inject CurrentExam Current
 @implements IDisposable
 
 <PageTitle>@(submission?.StudentName ?? "Arbeit") · ArtGrader</PageTitle>
@@ -247,6 +248,7 @@ else
         exam = await Repository.GetAsync(ExamId);
         submission = exam?.Submissions.FirstOrDefault(s => s.Id == SubmissionId);
         loaded = true;
+        Current.Set(exam);
     }
 
     private string Url(Submission s) => $"/pruefung/{ExamId}/arbeit/{s.Id}";
@@ -358,5 +360,9 @@ else
         await LoadAsync();
     }
 
-    public void Dispose() => Events.SubmissionChanged -= OnSubmissionChanged;
+    public void Dispose()
+    {
+        Events.SubmissionChanged -= OnSubmissionChanged;
+        Current.Clear(ExamId);
+    }
 }
