@@ -42,8 +42,11 @@ gehen, warum die Lehrperson entscheidet und was die Schule klären sollte. Sie �
    Rückmeldung (einzeln oder für die ganze Klasse). Das PDF vermerkt, dass die Einschätzung mit KI-Unterstützung
    entstand, mit welchem Modell, und ob die Lehrperson sie abgeschlossen hat.
 
-ArtGrader gibt es auf Deutsch und Englisch (**Einstellungen → Sprache**). Die Sprache gilt auch für die
-Beurteilungsbögen und für die Texte, die die KI schreibt.
+ArtGrader gibt es auf Deutsch, Französisch, Italienisch, Rätoromanisch (Rumantsch Grischun) und Englisch
+(**Einstellungen → Sprache**). Die Sprache gilt auch für die Beurteilungsbögen und für die Texte, die die KI schreibt.
+Daten und Zahlen erscheinen im Schweizer Format der jeweiligen Sprache. Die französische, italienische und
+rätoromanische Übersetzung ist maschinell erstellt und sollte von jemandem mit der Sprache als Muttersprache
+geprüft werden.
 
 Alle Eingaben werden etwa eine Sekunde nach der letzten Änderung automatisch gespeichert. Jeder Schritt führt
 von oben nach unten; unten geht es mit einem Knopf zum nächsten Schritt.
@@ -197,3 +200,16 @@ dotnet run --project src/ArtGrader.Web            # http://localhost:5080
 
 QuestPDF läuft unter der Community-Lizenz (gratis für Einzelpersonen, Non-Profits und Organisationen unter
 1 Mio. USD Jahresumsatz). Alle anderen Bibliotheken stehen unter MIT-, Apache- oder BSD-Lizenzen.
+
+## Lizenz und Haftung
+
+ArtGrader ist kostenlos und der Quellcode ist offen. Er steht unter der
+[PolyForm Noncommercial License 1.0.0](LICENSE.md): Alle dürfen ArtGrader für nicht-kommerzielle Zwecke nutzen,
+verändern und weitergeben, auch Schulen und andere öffentliche Einrichtungen. Wer ArtGrader verkauft, in ein
+kostenpflichtiges Produkt einbaut oder sonst damit Geld verdient, braucht eine eigene Erlaubnis.
+
+ArtGrader wird so angeboten, wie es ist, ohne Gewährleistung und ohne Haftung, soweit das Gesetz es zulässt. Das gilt
+auch für den Datenschutz: Die Schule und die Lehrperson entscheiden selbst, ob und wie sie ArtGrader einsetzen, und
+sind dafür verantwortlich, dass dabei die Vorgaben zum Datenschutz eingehalten werden (siehe die Übersicht für die
+Schulleitung in ArtGrader unter **Einstellungen → Datenschutz**). Die Vorschläge der KI können falsch sein; die
+Beurteilung bleibt Sache der Lehrperson.
