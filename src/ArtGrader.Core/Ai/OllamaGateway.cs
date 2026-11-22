@@ -88,7 +88,8 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
             return new ModelJsonResponse(
                 response.Message?.Content ?? "",
                 body["model"]!.GetValue<string>(),
-                new ModelUsage(response.PromptEvalCount, response.EvalCount, 0, 0));
+                new ModelUsage(response.PromptEvalCount, response.EvalCount, 0, 0),
+                AiProvider.Ollama);
         }
         finally
         {

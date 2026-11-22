@@ -1,4 +1,5 @@
 using ArtGrader.Core.Domain;
+using ArtGrader.Core.Ai;
 using ArtGrader.Core.Grading;
 using ArtGrader.Core.Localization;
 using QuestPDF.Fluent;
@@ -17,16 +18,12 @@ public static class FeedbackPdf
     private const string Terracotta = "#c0533a";
     private const float PhotoColumnWidth = 160;
 
-    public static string AiNotice =>
-        T("This assessment was prepared with AI support. The teacher checked every criterion and set the grade.");
-
-    public static string AiDraftNotice =>
-        T("Draft: this assessment was prepared with AI support. The teacher has not completed it yet.");
-
+    /// <summary>Declares the AI use and names the model; null if no AI assessed the work.</summary>
     public static string? AiNoticeFor(Submission submission) =>
-        submission.ModelId is null ? null
-        : submission.Status == SubmissionStatus.Abgeschlossen ? AiNotice
-        : AiDraftNotice;
+        ModelNames.Describe(submission) is not { } model ? null
+        : submission.Status == SubmissionStatus.Abgeschlossen
+            ? T("This assessment was prepared with AI support ({0}). The teacher checked every criterion and set the grade.", model)
+            : T("Draft: this assessment was prepared with AI support ({0}). The teacher has not completed it yet.", model);
 
     public static byte[] Create(
         Exam exam,

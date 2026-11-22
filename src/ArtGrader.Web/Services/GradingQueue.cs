@@ -156,6 +156,7 @@ public sealed class GradingQueue(
         submission.AiStrengths = string.Join("\n", suggestion.Strengths);
         submission.AiNextSteps = string.Join("\n", suggestion.NextSteps);
         submission.ModelId = suggestion.Model;
+        submission.ModelProvider = suggestion.Provider;
         submission.GradedAt = DateTimeOffset.Now;
         submission.Status = SubmissionStatus.Vorschlag;
         submission.ErrorMessage = null;

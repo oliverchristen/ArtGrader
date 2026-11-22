@@ -1,0 +1,21 @@
+@* Warns when the works of one assignment were assessed by different AI models: their suggestions are not directly comparable. *@
+@using ArtGrader.Core.Ai
+
+@if (ModelNames.Used(Exam.Submissions) is { Count: > 1 } used)
+{
+    <div class="@($"banner {Class}")" role="alert">
+        <MudIcon Icon="@Icons.Material.Outlined.WarningAmber" />
+        <span>
+            <b>@T("Not all works were assessed by the same model.")</b>
+            @string.Join("; ", used.Select(m => T("{0} × {1}", m.Works, m.Model))).
+            @T("Different models assess differently. For comparable grades, reassess the works with one model: select them in step 3 and click ‘Reassess selection’.")
+        </span>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
+
+    /// <summary>Spacing classes such as «mb-4».</summary>
+    [Parameter] public string Class { get; set; } = "";
+}

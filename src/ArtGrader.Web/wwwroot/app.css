@@ -1631,7 +1631,7 @@ html:has(.exam-head.compact) {
 }
 
 .levels button.ai::after {
-    content: "✦ KI";
+    content: "✦ AI";
     position: absolute;
     top: -8px;
     right: 8px;
@@ -1670,7 +1670,12 @@ html:has(.exam-head.compact) {
     }
 }
 
-/* ---------- Everything that comes from the AI: blue box with a "✦ KI" label ---------- */
+/* The badge is CSS content, so it follows the page language instead of T(). */
+:lang(de) .levels button.ai::after {
+    content: "✦ KI";
+}
+
+/* ---------- Everything that comes from the AI: blue box with a "✦ AI" label ---------- */
 
 .ai-box {
     background: var(--ultramarine-wash);
@@ -1694,6 +1699,12 @@ html:has(.exam-head.compact) {
     font-weight: 700;
     color: var(--ultramarine);
     margin-bottom: 4px;
+}
+
+.ai-label.model-used {
+    margin: 12px 0 0;
+    font-weight: 600;
+    flex-wrap: wrap;
 }
 
 .ai-mark {

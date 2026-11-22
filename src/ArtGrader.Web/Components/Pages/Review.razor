@@ -1,5 +1,6 @@
 ﻿@page "/pruefung/{ExamId:guid}/arbeit/{SubmissionId:guid}"
 @using ArtGrader.Core.Images
+@using ArtGrader.Core.Ai
 @inject ExamRepository Repository
 @inject GradingEvents Events
 @inject GradingQueue Queue
@@ -103,7 +104,10 @@ else
             }
             @if (submission.ModelId is not null)
             {
-                <p class="faint" style="font-size:.78rem">@T("Suggestion from") <code>@submission.ModelId</code>@(submission.GradedAt is { } at ? " · " + at.ToString(T("dd/MM/yyyy HH:mm"), Language.Culture) : "")</p>
+                <div class="ai-label model-used">
+                    <span class="ai-mark">@T("✦ AI")</span>
+                    <span>@T("Suggestion from {0}, {1}", ModelNames.Describe(submission)!, ModelNames.WhereItRan(submission)!)@(submission.GradedAt is { } at ? " · " + at.ToString(T("dd/MM/yyyy HH:mm"), Language.Culture) : "")</span>
+                </div>
             }
         </div>
 

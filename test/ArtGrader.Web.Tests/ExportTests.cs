@@ -1,3 +1,4 @@
+using ArtGrader.Core.Ai;
 using ArtGrader.Core.Domain;
 using ArtGrader.Web.Export;
 using ClosedXML.Excel;
@@ -47,13 +48,17 @@ public class ExportTests
     }
 
     [Fact]
-    public void Pdf_states_that_ai_helped_and_whether_the_teacher_has_completed_it()
+    public void Pdf_states_that_ai_helped_which_model_it_was_and_whether_the_teacher_has_completed_it()
     {
-        var done = new Submission { ModelId = "claude-opus-5-5", Status = SubmissionStatus.Abgeschlossen };
-        var draft = new Submission { ModelId = "claude-opus-5-5", Status = SubmissionStatus.Vorschlag };
+        var done = new Submission { ModelId = "claude-opus-5-5", ModelProvider = AiProvider.Anthropic, Status = SubmissionStatus.Abgeschlossen };
+        var draft = new Submission { ModelId = "qwen3.8:27b", ModelProvider = AiProvider.Ollama, Status = SubmissionStatus.Vorschlag };
 
-        Assert.Equal(FeedbackPdf.AiNotice, FeedbackPdf.AiNoticeFor(done));
-        Assert.Equal(FeedbackPdf.AiDraftNotice, FeedbackPdf.AiNoticeFor(draft));
+        Assert.Equal(
+            "Die Einschätzung wurde mit Unterstützung einer KI vorbereitet (Claude, Modell claude-opus-5-5). Die Lehrperson hat jedes Kriterium geprüft und die Note festgelegt.",
+            FeedbackPdf.AiNoticeFor(done));
+        Assert.Equal(
+            "Entwurf: Die Einschätzung wurde mit Unterstützung einer KI vorbereitet (lokales Modell qwen3.8:27b). Die Lehrperson hat sie noch nicht abgeschlossen.",
+            FeedbackPdf.AiNoticeFor(draft));
         Assert.Null(FeedbackPdf.AiNoticeFor(new Submission { Status = SubmissionStatus.Abgeschlossen }));
     }
 

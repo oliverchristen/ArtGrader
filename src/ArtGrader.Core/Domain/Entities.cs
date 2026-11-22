@@ -68,6 +68,9 @@ public sealed class Submission
     public string TeacherComment { get; set; } = "";
     public decimal? FinalGradeOverride { get; set; }
     public string? ModelId { get; set; }
+
+    /// <summary>Whether <see cref="ModelId"/> ran at Anthropic (Claude) or on this computer (Ollama).</summary>
+    public ArtGrader.Core.Ai.AiProvider? ModelProvider { get; set; }
     public DateTimeOffset? GradedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
 

@@ -69,7 +69,6 @@
   "Split off as separate work": "Als eigene Arbeit abtrennen",
   "✦ AI": "✦ KI",
   "What the AI sees in the photo": "Was die KI auf dem Foto sieht",
-  "Suggestion from": "Vorschlag von",
   "dd/MM/yyyy HH:mm": "dd.MM.yyyy HH:mm",
   "provisional": "vorläufig",
   "Grade": "Note",
@@ -102,8 +101,6 @@
   "Photo added. Choose ‘Reassess’ for a new assessment.": "Foto hinzugefügt. Für eine neue Einschätzung «Neu bewerten» wählen.",
   "The photo is now the separate work ‘{0}’.": "Das Foto ist jetzt die eigene Arbeit «{0}».",
   "The photo is now the separate work ‘{0}’. Have this work reassessed if needed; the AI suggestion included both photos.": "Das Foto ist jetzt die eigene Arbeit «{0}». Diese Arbeit bei Bedarf neu bewerten lassen; der KI-Vorschlag bezog beide Fotos ein.",
-  "This assessment was prepared with AI support. The teacher checked every criterion and set the grade.": "Die Einschätzung wurde mit Unterstützung einer KI vorbereitet. Die Lehrperson hat jedes Kriterium geprüft und die Note festgelegt.",
-  "Draft: this assessment was prepared with AI support. The teacher has not completed it yet.": "Entwurf: Die Einschätzung wurde mit Unterstützung einer KI vorbereitet. Die Lehrperson hat sie noch nicht abgeschlossen.",
   "ASSESSMENT": "BEURTEILUNG",
   "Class {0}  ·  ": "Klasse {0}  ·  ",
   "dd/MM/yyyy": "dd.MM.yyyy",
@@ -122,5 +119,15 @@
   "AI suggestion": "KI-Vorschlag",
   "Unexpected error: {0}": "Unerwarteter Fehler: {0}",
   "Edit photos": "Fotos bearbeiten",
-  "Complete & continue to Grades": "Abschliessen & weiter zu Noten"
+  "Complete & continue to Grades": "Abschliessen & weiter zu Noten",
+  "Claude, model {0}": "Claude, Modell {0}",
+  "local model {0}": "lokales Modell {0}",
+  "in the cloud at Anthropic": "in der Cloud bei Anthropic",
+  "on this computer": "auf diesem Computer",
+  "Suggestion from {0}, {1}": "Vorschlag von {0}, {1}",
+  "Not all works were assessed by the same model.": "Nicht alle Arbeiten wurden vom selben Modell bewertet.",
+  "{0} × {1}": "{0} × {1}",
+  "Different models assess differently. For comparable grades, reassess the works with one model: select them in step 3 and click ‘Reassess selection’.": "Verschiedene Modelle bewerten unterschiedlich. Für vergleichbare Noten die Arbeiten mit einem Modell neu bewerten: in Schritt 3 auswählen und «Auswahl neu bewerten» klicken.",
+  "This assessment was prepared with AI support ({0}). The teacher checked every criterion and set the grade.": "Die Einschätzung wurde mit Unterstützung einer KI vorbereitet ({0}). Die Lehrperson hat jedes Kriterium geprüft und die Note festgelegt.",
+  "Draft: this assessment was prepared with AI support ({0}). The teacher has not completed it yet.": "Entwurf: Die Einschätzung wurde mit Unterstützung einer KI vorbereitet ({0}). Die Lehrperson hat sie noch nicht abgeschlossen."
 }

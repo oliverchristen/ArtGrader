@@ -115,10 +115,13 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
             await db.Database.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261122090653_DocumentsLessonAndCrop");
             db.Exams.Add(exam = new Exam { Title = "Alt" });
             await db.SaveChangesAsync();
+            // The current model writes the work, so columns of later migrations must exist for the insert.
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Submissions ADD COLUMN ModelProvider INTEGER");
         }
         var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
         await using (var db = factory.CreateDbContext())
         {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Submissions DROP COLUMN ModelProvider");
             await db.Database.ExecuteSqlRawAsync("UPDATE Images SET Covers = NULL");
             await db.Database.MigrateAsync();
         }

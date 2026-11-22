@@ -152,6 +152,8 @@ else
             </div>
         }
 
+        <ModelMixWarning Exam="Exam" Class="mb-4" />
+
         <div class="@($"wall {(selected.Count > 0 ? "selecting" : "")}")">
             @foreach (var submission in Exam.Submissions)
             {

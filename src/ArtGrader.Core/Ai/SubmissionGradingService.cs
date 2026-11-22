@@ -41,7 +41,8 @@ public sealed record GradingSuggestion(
     IReadOnlyList<string> Strengths,
     IReadOnlyList<string> NextSteps,
     string Model,
-    ModelUsage Usage);
+    ModelUsage Usage,
+    AiProvider Provider = AiProvider.Anthropic);
 
 public sealed class SubmissionGradingService(IModelGateway claude)
 {
@@ -77,7 +78,7 @@ public sealed class SubmissionGradingService(IModelGateway claude)
             cancellationToken);
 
         var parsed = GradingResponseValidator.Parse(response.Json, keys);
-        return parsed with { Model = response.Model, Usage = response.Usage };
+        return parsed with { Model = response.Model, Usage = response.Usage, Provider = response.Provider };
     }
 
     private const string LessonNote =

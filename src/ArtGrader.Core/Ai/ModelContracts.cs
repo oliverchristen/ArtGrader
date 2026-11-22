@@ -18,7 +18,7 @@ public sealed record ModelJsonRequest(
     bool LocalOnly = false,
     string? Model = null);
 
-public sealed record ModelJsonResponse(string Json, string Model, ModelUsage Usage);
+public sealed record ModelJsonResponse(string Json, string Model, ModelUsage Usage, AiProvider Provider = AiProvider.Anthropic);
 
 public sealed record ModelUsage(long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens);
 

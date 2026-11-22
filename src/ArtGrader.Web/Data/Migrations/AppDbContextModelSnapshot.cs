@@ -16,7 +16,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261122111225_CoversAsComplexTypes";
+    public override string LastMigrationId => "20261122155524_ModelProvider";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -249,6 +249,9 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
 
                 b.Property<string>("ModelId")
                     .HasColumnType("TEXT");
+
+                b.Property<int?>("ModelProvider")
+                    .HasColumnType("INTEGER");
 
                 b.Property<int>("Status")
                     .HasColumnType("INTEGER");
