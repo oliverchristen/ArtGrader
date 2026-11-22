@@ -7,6 +7,9 @@ Bewertung für fotografierte Schülerarbeiten vor. Die Lehrperson prüft jeden V
 Als KI dient Claude von Anthropic (Cloud) oder ein Modell auf dem eigenen Computer (Ollama). Läuft auf **Windows**
 und **macOS** (Intel und Apple Silicon). Alle Daten bleiben auf dem eigenen Computer.
 
+Für die Schulleitung: [ArtGrader für die Schulleitung](docs/schulleitung.html) beschreibt ohne Technik, welche Daten
+wohin gehen, warum die Lehrperson entscheidet und was die Schule klären sollte (herunterladen und im Browser öffnen).
+
 ## So funktioniert es
 
 1. **Prüfung erstellen** – Titel, Klasse, Datum.

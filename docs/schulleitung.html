@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="de-CH">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ArtGrader für die Schulleitung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: eine ruhige Lesespalte; das Datenfluss-Schema ist das einzige grosse Element. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #1d2433;
+  --ink-soft: #5a6375;
+  --line: #d9dde5;
+  --accent: #2f4fa8;
+  --local: #2e7d5b;
+  --local-bg: #e6f3ec;
+  --cloud: #a3620a;
+  --cloud-bg: #fbf0dd;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161f; --surface: #1a202c; --ink: #e6e9f0; --ink-soft: #a3abbb; --line: #2e3646;
+    --accent: #8fa8ec; --local: #6fcf9f; --local-bg: #17332a; --cloud: #e8b25e; --cloud-bg: #3a2c15;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161f; --surface: #1a202c; --ink: #e6e9f0; --ink-soft: #a3abbb; --line: #2e3646;
+  --accent: #8fa8ec; --local: #6fcf9f; --local-bg: #17332a; --cloud: #e8b25e; --cloud-bg: #3a2c15;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 1.06rem; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 46rem; margin: 0 auto; padding-block: 3rem 4rem; display: grid; gap: 3rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 700; }
+h2 { font-size: 1.5rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 500; }
+p { margin: 0; }
+section { display: grid; gap: 1rem; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.lead { font-size: 1.2rem; color: var(--ink-soft); }
+header { display: grid; gap: 1rem; }
+
+.key { display: grid; gap: .75rem; padding: 0; margin: 0; list-style: none; }
+.key li { display: grid; grid-template-columns: 2rem 1fr; gap: .75rem; align-items: start; }
+.key .n { font-family: var(--display); font-weight: 700; color: var(--accent); font-size: 1.3rem; line-height: 1.3; }
+
+.steps { display: grid; gap: 0; padding: 0; margin: 0; list-style: none; border-left: 2px solid var(--line); }
+.steps li { position: relative; padding: 0 0 1.25rem 1.5rem; }
+.steps li::before { content: ""; position: absolute; left: -7px; top: .45rem; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+.steps li.teacher::before { background: var(--accent); }
+.steps b { display: block; }
+.who { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+
+.flow { display: grid; grid-template-columns: minmax(0, 1.6fr) auto minmax(0, 1fr); gap: 1rem; align-items: center; }
+.zone { border-radius: 14px; padding: 1.25rem; display: grid; gap: .75rem; }
+.zone.local { background: var(--local-bg); border: 2px solid var(--local); }
+.zone.cloud { background: var(--cloud-bg); border: 2px dashed var(--cloud); }
+.zone h3 { font-weight: 700; }
+.zone.local h3 { color: var(--local); }
+.zone.cloud h3 { color: var(--cloud); }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .6rem .8rem; font-size: .95rem; }
+.box small { display: block; color: var(--ink-soft); font-size: .85rem; }
+.arrow { display: grid; justify-items: center; gap: .3rem; font-size: .8rem; color: var(--ink-soft); text-align: center; max-width: 9rem; }
+.arrow svg { width: 64px; height: 24px; }
+.arrow path { stroke: var(--cloud); fill: none; stroke-width: 2; }
+.arrow polygon { fill: var(--cloud); }
+.caption { font-size: .92rem; color: var(--ink-soft); }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.col { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.25rem; display: grid; gap: .5rem; align-content: start; min-width: 0; }
+.col h3 { font-weight: 700; }
+.col.yes h3 { color: var(--cloud); }
+.col.no h3 { color: var(--local); }
+.col ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .97rem; }
+th, td { text-align: left; vertical-align: top; padding: .6rem .75rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--ink-soft); font-size: .85rem; letter-spacing: .04em; text-transform: uppercase; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+.levels { display: flex; flex-wrap: wrap; gap: .5rem; }
+.lvl { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: .2rem .75rem; font-size: .92rem; font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--display); font-size: 1.15rem; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: .75rem 1rem; }
+
+.checks { display: grid; gap: .6rem; padding: 0; margin: 0; list-style: none; }
+.checks li { display: grid; grid-template-columns: 1.4rem 1fr; gap: .6rem; }
+.checks li::before { content: "✓"; color: var(--local); font-weight: 700; }
+.tag { display: inline-block; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0 .35rem; margin-left: .3rem; vertical-align: .1em; }
+
+.open { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--cloud); border-radius: 8px; padding: 1.1rem 1.25rem; display: grid; gap: .6rem; }
+.open ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .4rem; }
+footer { font-size: .88rem; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 1rem; }
+footer a { color: var(--accent); }
+
+@media (max-width: 640px) {
+  .flow { grid-template-columns: 1fr; }
+  .arrow svg { transform: rotate(90deg); }
+  .arrow { max-width: none; }
+  .split { grid-template-columns: 1fr; }
+}
+</style>
+
+<main>
+  <header>
+    <p class="eyebrow">Bildnerisches Gestalten · Sek I</p>
+    <h1>ArtGrader: KI-Vorschläge für die Beurteilung von Schülerarbeiten</h1>
+    <p class="lead">ArtGrader hilft der Lehrperson, Zeichnungen und Bilder nach ihrem eigenen Beurteilungsraster einzuschätzen. Die KI macht einen begründeten Vorschlag. Die Note setzt immer die Lehrperson.</p>
+  </header>
+
+  <section aria-labelledby="kurz">
+    <h2 id="kurz">Das Wichtigste in Kürze</h2>
+    <ul class="key">
+      <li><span class="n">1</span><p><b>Namen verlassen den Computer nie.</b> Namen, Noten und Notizen bleiben auf dem Gerät der Lehrperson. An die KI gehen nur das Foto der Arbeit, die Aufgabe und das Raster.</p></li>
+      <li><span class="n">2</span><p><b>Die Lehrperson entscheidet.</b> Die KI schlägt pro Kriterium eine Stufe mit Begründung vor. Die Lehrperson prüft jeden Vorschlag, kann ihn ändern und schliesst die Beurteilung selbst ab.</p></li>
+      <li><span class="n">3</span><p><b>Auf Wunsch ganz ohne Internet.</b> Statt der Cloud-KI kann ein KI-Modell direkt auf dem Computer laufen. Dann verlässt gar nichts das Gerät.</p></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="zweite">
+    <h2 id="zweite">Eine zweite Meinung für fairere Noten</h2>
+    <p>Gestalterische Arbeiten zu beurteilen ist anspruchsvoll. Auch erfahrene Lehrpersonen bewerten nicht immer gleich: Es spielen die Tagesform mit, die Reihenfolge der Arbeiten oder ein starker Gesamteindruck, der einzelne Kriterien überstrahlt.</p>
+    <p>ArtGrader ist als zweite Meinung gedacht, zusätzlich zur Lehrperson und nicht an ihrer Stelle. Die KI wendet bei jeder Arbeit dieselben Kriterien auf dieselbe Weise an und begründet jede Einschätzung. Wo ihr Vorschlag und das Urteil der Lehrperson auseinandergehen, lohnt sich ein zweiter Blick. Gemeinsam soll so die Beurteilung objektiver und weniger vom Moment abhängig werden.</p>
+    <p class="caption">In unserem Test mit 14 Arbeiten stimmten zwei Durchgänge der Cloud-KI bei 82 % der Kriterien genau überein; sonst lagen sie eine Stufe auseinander. Auch die KI hat Schwächen, etwa bei schlechten Fotos. Darum bleibt der Entscheid bei der Lehrperson.</p>
+  </section>
+
+  <section aria-labelledby="ablauf">
+    <h2 id="ablauf">So läuft eine Beurteilung ab</h2>
+    <ol class="steps">
+      <li class="teacher"><span class="who">Lehrperson</span><b>Prüfung einrichten</b>Sie lädt die Aufgabe und ihr Beurteilungsraster hoch. Kriterien, die man auf einem Foto nicht sieht (zum Beispiel Ausdauer und Engagement), markiert sie als «nur Lehrperson».</li>
+      <li class="teacher"><span class="who">Lehrperson</span><b>Fotos der Arbeiten erfassen</b>Jede Arbeit erhält zuerst einen Zufallsnamen wie «Fuchs Indigo». Den echten Namen kann die Lehrperson eintragen; er wird nur lokal gespeichert.</li>
+      <li><span class="who">KI</span><b>Vorschlag erstellen</b>Die KI schätzt jedes sichtbare Kriterium ein: Stufe, kurze Begründung und wie sicher sie sich ist.</li>
+      <li class="teacher"><span class="who">Lehrperson</span><b>Prüfen und entscheiden</b>Sie sieht Foto und Vorschläge nebeneinander, übernimmt oder ändert jede Stufe, bewertet die Kriterien «nur Lehrperson» und schliesst ab.</li>
+      <li class="teacher"><span class="who">Lehrperson</span><b>Rückmeldung abgeben</b>ArtGrader erstellt ein Rückmeldeblatt pro Schülerin und Schüler (PDF) und eine Klassenübersicht (Excel), beide auf dem eigenen Computer.</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="daten">
+    <h2 id="daten">Wo die Daten liegen</h2>
+    <div class="flow">
+      <div class="zone local">
+        <h3>Computer der Lehrperson</h3>
+        <div class="box">ArtGrader<small>läuft nur auf diesem Gerät, im Browser geöffnet, nicht über das Internet erreichbar</small></div>
+        <div class="box">Namen, Fotos, Noten, Notizen<small>gespeichert im Benutzerordner der Lehrperson; Fotos unter zufälligen Dateinamen</small></div>
+        <div class="box">Zugangsschlüssel für Claude<small>verschlüsselt und an das Benutzerkonto gebunden; eine Kopie des Ordners verrät ihn nicht</small></div>
+        <div class="box">Lokales KI-Modell (optional)<small>arbeitet ohne Internet</small></div>
+      </div>
+      <div class="arrow" aria-hidden="true">
+        <svg viewBox="0 0 64 24"><path d="M2 12 H54"/><polygon points="54,5 63,12 54,19"/></svg>
+        <span>nur Foto ohne Metadaten, Aufgabe, Raster</span>
+      </div>
+      <div class="zone cloud">
+        <h3>Claude (Anthropic)</h3>
+        <div class="box">Cloud-KI<small>nur wenn die Lehrperson diese Variante wählt</small></div>
+      </div>
+    </div>
+    <p class="caption">Grün: bleibt auf dem Gerät. Orange: geht über das Internet, und nur dann, wenn die Cloud-KI gewählt ist.</p>
+    <p><b>Fotos nur bis Ende Schuljahr.</b> Schülerarbeiten, auch digitale, gehören den Schülerinnen und Schülern und werden spätestens am Ende des Schuljahres zurückgegeben (Merkblatt Datenschutz des Volksschulamts). ArtGrader erinnert darum auf der Startseite an Prüfungen aus früheren Schuljahren, die noch Fotos enthalten, und löscht diese Fotos auf Knopfdruck. Noten und Beurteilungen bleiben erhalten.</p>
+  </section>
+
+  <section aria-labelledby="sieht">
+    <h2 id="sieht">Was die KI sieht und was nicht</h2>
+    <div class="split">
+      <div class="col yes">
+        <h3>Geht an die KI</h3>
+        <ul>
+          <li>Das Foto der Arbeit, verkleinert und neu gespeichert, damit keine versteckten Bildinformationen (Kamera, Ort, Datum) mitgehen</li>
+          <li>Die Aufgabenstellung</li>
+          <li>Die Kriterien, die man auf dem Foto beurteilen kann</li>
+          <li>Optional: Unterrichtsmaterial, zum Beispiel die PowerPoint-Präsentation zum Thema, damit die KI weiss, was behandelt wurde</li>
+        </ul>
+      </div>
+      <div class="col no">
+        <h3>Bleibt auf dem Computer</h3>
+        <ul>
+          <li>Namen der Schülerinnen und Schüler</li>
+          <li>Original-Dateinamen der Fotos</li>
+          <li>Noten und Entscheide der Lehrperson</li>
+          <li>Kriterien «nur Lehrperson» und Notizen</li>
+          <li>Klasse und Schule</li>
+          <li>Schulname, Logo und Namen von Lehrpersonen auf den Dokumenten, sofern die Lehrperson sie schwärzt</li>
+        </ul>
+      </div>
+    </div>
+    <p>Ein Restrisiko bleibt das Werk selbst: Eine Signatur oder ein Name auf der Zeichnung wäre auf dem Foto sichtbar. Darum kann die Lehrperson solche Stellen vor der Bewertung zuschneiden oder schwärzen. Zusätzlich empfehlen wir, dass die Schülerinnen und Schüler auf der Rückseite signieren.</p>
+    <p>Dasselbe gilt für die Dokumente der Lehrperson: Aufgabenblatt, Beurteilungsbogen und Unterrichtsmaterial nennen oft Schule, Ort oder Lehrperson. ArtGrader zeigt jedes Dokument genau so, wie die KI es liest. Text kann die Lehrperson markieren und schwärzen, PDF-Seiten zuschneiden oder mit Balken abdecken. Den Beurteilungsbogen liest die KI erst, nachdem die Lehrperson ihn geprüft hat.</p>
+    <p><b>Vorschläge zum Schwärzen.</b> Damit nichts übersehen wird, schlägt ArtGrader Stellen zum Schwärzen vor:</p>
+    <ul class="checks">
+      <li><span><b>Eigene Liste:</b> Die Lehrperson trägt einmal Schulhaus, Ort und ihren Namen ein. ArtGrader findet diese Begriffe in jedem Dokument.</span></li>
+      <li><span><b>Kontaktangaben:</b> E-Mail-Adressen, Telefonnummern und Webadressen erkennt ArtGrader von selbst.</span></li>
+      <li><span><b>Prüfung durch ein lokales Modell (optional):</b> Ein KI-Modell auf dem Computer der Lehrperson sucht weitere Namen und Orte. Der Text verlässt dafür den Computer nicht.</span></li>
+    </ul>
+    <p class="caption">Es sind nur Vorschläge: Geschwärzt wird erst, wenn die Lehrperson bestätigt. Die abschliessende Kontrolle bleibt bei ihr.</p>
+  </section>
+
+  <section aria-labelledby="varianten">
+    <h2 id="varianten">Zwei KI-Varianten</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Cloud-KI (Claude)</th><th>Lokales Modell</th></tr></thead>
+        <tbody>
+          <tr><td>Wo sie rechnet</td><td>Bei Anthropic, über das Internet</td><td>Auf dem Computer der Lehrperson</td></tr>
+          <tr><td>Was das Gerät verlässt</td><td>Foto, Aufgabe, Raster; keine Namen</td><td>Nichts</td></tr>
+          <tr><td>Training</td><td>Nutzung über die Geschäftsschnittstelle; diese Daten verwendet Anthropic gemäss eigenen Angaben nicht fürs Training</td><td>Kein Thema, es gibt keinen Anbieter</td></tr>
+          <tr><td>Qualität im Test</td><td>Stabile, gut nachvollziehbare Vorschläge</td><td>Brauchbar, aber öfter zu milde und weniger stabil</td></tr>
+          <tr><td>Zeit pro Arbeit</td><td>etwa eine halbe Minute</td><td>etwa 2 Minuten (je nach Computer)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Für eine Prüfung kann festgelegt werden, dass <b>nur das lokale Modell</b> verwendet werden darf. Dann ist es für diese Prüfung technisch ausgeschlossen, dass etwas in die Cloud geht.</p>
+  </section>
+
+  <section aria-labelledby="entscheid">
+    <h2 id="entscheid">Die Lehrperson entscheidet</h2>
+    <p>ArtGrader ist ein Hilfsmittel für die Einschätzung, kein Notengeber. Das ist im Ablauf fest eingebaut:</p>
+    <ul class="checks">
+      <li><span><b>Nur Vorschläge.</b> Jede Stufe der KI ist als Vorschlag markiert und kann mit einem Klick geändert werden.</span></li>
+      <li><span><b>Begründung pro Kriterium.</b> Die KI muss jede Einschätzung mit sichtbaren Merkmalen im Bild begründen, zum Beispiel «Die Fluchtlinien unten rechts laufen nicht zum Fluchtpunkt».</span></li>
+      <li><span><b>Unsicherheit wird gezeigt.</b> Wenn die KI unsicher ist, hebt ArtGrader das Kriterium hervor, damit die Lehrperson genau hinschaut.</span></li>
+      <li><span><b>Ohne Lehrperson keine Note.</b> Die Kriterien «nur Lehrperson» muss sie selbst setzen. Vorher entsteht keine Note.</span></li>
+      <li><span><b>Die Note rechnet das Programm, nicht die KI.</b> Aus den Stufen ergibt sich die Note nach einer festen, offenen Formel.</span></li>
+      <li><span><b>Abschliessen durch die Lehrperson.</b> Erst wenn sie abschliesst, gilt die Beurteilung als fertig.</span></li>
+      <li><span><b>KI-Einsatz wird deklariert.</b> Das Rückmeldeblatt vermerkt, dass die Einschätzung mit KI-Unterstützung entstand und von der Lehrperson geprüft wurde.</span></li>
+    </ul>
+    <div class="levels" aria-label="Punkte pro Stufe">
+      <span class="lvl">Übertroffen · 3</span><span class="lvl">Erfüllt · 2</span><span class="lvl">Teilweise erfüllt · 1</span><span class="lvl">Nicht erfüllt · 0</span>
+    </div>
+    <p class="formula">Note = Punkte ÷ Maximum × 5 + 1, auf halbe Noten gerundet</p>
+    <p class="caption">Beispiel: 22 von 30 Punkten ergeben die Note 4.5. Gewichte und Rundung kann die Lehrperson pro Prüfung anpassen.</p>
+  </section>
+
+  <section aria-labelledby="offen">
+    <h2 id="offen">Was die Schule klären sollte</h2>
+    <div class="open">
+      <p>Die Technik schützt die Namen. Einige Punkte kann sie aber nicht lösen. Die Handreichung des Volksschulamts Solothurn nennt dazu unter anderem:</p>
+      <ul>
+        <li><b>Freigabe:</b> Die Schule entscheidet, ob ArtGrader eingesetzt werden darf, und macht für jede KI-Anwendung das verlangte Risikomanagement (Kapitel 5.2 und 5.3).</li>
+        <li><b>KI als Unterstützung bei der Beurteilung:</b> Die Handreichung erlaubt das (Kapitel 4.4) unter vier Bedingungen: Die Lehrperson prüft summative Beurteilungen in jedem Einzelfall anhand des Bewertungsrasters. Es gehen keine Personendaten an die KI. Arbeiten werden nur eingegeben, wenn keine Rückschlüsse auf die Schülerin oder den Schüler möglich sind. Die Lehrperson deklariert den KI-Einsatz. ArtGrader setzt alle vier Punkte um (siehe oben).</li>
+        <li><b>Einwilligung der Eltern:</b> Diese verlangt die Handreichung (Kapitel 5.2) für KI-Anwendungen, die Persönlichkeitsprofile für den Kompetenzerwerb und das individualisierte Lernen bearbeiten. ArtGrader erstellt keine solchen Profile, sondern macht Vorschläge zu einzelnen Werken. Die Schule hält in ihrer Risikoanalyse fest, ob sie das gleich beurteilt.</li>
+        <li><b>Deklaration:</b> Der Einsatz von KI bei summativen Beurteilungen ist offenzulegen.</li>
+        <li><b>Gerät:</b> Namen, Fotos und Noten verschlüsselt ArtGrader nicht selbst. Sie sind so gut geschützt wie der Computer. Darum muss die Festplattenverschlüsselung eingeschaltet sein (Windows: BitLocker, Mac: FileVault), und der Computer braucht ein Passwort.</li>
+      </ul>
+      <p class="caption">Diese Übersicht ersetzt keine rechtliche Prüfung. Massgebend sind die aktuellen Vorgaben des Kantons.</p>
+    </div>
+  </section>
+
+  <footer>Stand: November 2026. Grundlagen: <a href="https://so.ch/fileadmin/internet/dbk/dbk-vsa/Rechtsetzende_Erlasse/Merkblatt_Datenschutz_VSA_August_2019.pdf">Merkblatt Datenschutz an der solothurnischen Volksschule</a> (Volksschulamt, Fassung 30. August 2019) und <a href="https://so.ch/fileadmin/internet/dbk/dbk-vsa/Schulbetrieb_und_Unterricht/Informatische_Bildung/Handreichung_KI-Anwendungen_und_Kriterienkatalog/Handreichung_KI-Anwendungen.pdf">Handreichung zu KI-Anwendungen</a> des Volksschulamts. Kapitelangaben beziehen sich auf die Handreichung zu KI-Anwendungen.</footer>
+</main>
+
+</html>
