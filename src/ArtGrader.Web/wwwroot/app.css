@@ -1870,3 +1870,89 @@ code {
     right: 0.75rem;
     top: 0.5rem;
 }
+
+.crop-frame {
+    position: absolute;
+    box-shadow: 0 0 0 9999px rgba(20, 20, 20, .6);
+    outline: 2px dashed #fff;
+    pointer-events: none;
+}
+
+.crop-frame.draft {
+    outline-color: var(--ochre);
+}
+
+.cover-box {
+    overflow: hidden;
+}
+
+.page-frame img {
+    max-height: 60vh;
+}
+
+.redact-hint {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: .86rem;
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 14px;
+}
+
+.redact-hint b {
+    color: var(--ink);
+}
+
+.doc-pages {
+    display: grid;
+    gap: 22px;
+}
+
+.doc-page-label {
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+}
+
+.redactable {
+    display: grid;
+    gap: 8px;
+}
+
+.redactable-label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+}
+
+.redactable textarea {
+    width: 100%;
+    min-height: 8rem;
+    resize: vertical;
+    font: inherit;
+    font-size: .92rem;
+    line-height: 1.5;
+    color: var(--ink);
+    background: #fff;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+}
+
+.redactable textarea:focus {
+    outline: none;
+    border-color: var(--stroke);
+}
+
+.redactable-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}

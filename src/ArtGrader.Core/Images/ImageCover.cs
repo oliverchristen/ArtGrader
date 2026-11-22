@@ -5,9 +5,9 @@ namespace ArtGrader.Core.Images;
 
 public static class ImageCover
 {
-    public static byte[] Apply(byte[] image, IReadOnlyCollection<CoverArea> areas)
+    public static byte[] Apply(byte[] image, IReadOnlyCollection<CoverArea> areas, CoverArea? crop = null)
     {
-        if (areas.Count == 0)
+        if (areas.Count == 0 && crop is null)
         {
             return image;
         }
@@ -22,7 +22,14 @@ public static class ImageCover
             }
         }
         using var snapshot = SKImage.FromBitmap(bitmap);
-        using var encoded = snapshot.Encode(SKEncodedImageFormat.Jpeg, 90);
+        var bounds = crop is null ? SKRectI.Create(bitmap.Width, bitmap.Height) : SKRectI.Round(ToPixels(crop, bitmap.Width, bitmap.Height));
+        bounds.Intersect(SKRectI.Create(bitmap.Width, bitmap.Height));
+        if (bounds.Width < 1 || bounds.Height < 1)
+        {
+            bounds = SKRectI.Create(bitmap.Width, bitmap.Height);
+        }
+        using var cropped = snapshot.Subset(bounds);
+        using var encoded = cropped.Encode(SKEncodedImageFormat.Jpeg, 90);
         return encoded.ToArray();
     }
 

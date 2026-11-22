@@ -1,0 +1,68 @@
+@inject IJSRuntime JS
+
+<div class="redactable">
+    <label class="redactable-label" for="@id">@Label</label>
+    <textarea id="@id" @ref="area" rows="@Rows" placeholder="@Placeholder" value="@text"
+              @oninput="e => text = e.Value?.ToString() ?? string.Empty" @onchange="CommitAsync"></textarea>
+    <div class="redactable-tools">
+        <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.FormatStrikethrough" OnClick="RedactSelectionAsync">
+            Markierte Stelle schwärzen
+        </MudButton>
+        <span class="cover-hint">Text markieren, dann schwärzen. Oder direkt im Text löschen.</span>
+    </div>
+</div>
+
+@code {
+    public const string Redacted = "[geschwärzt]";
+
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public int Rows { get; set; } = 10;
+
+    private readonly string id = $"redact-{Guid.NewGuid():N}";
+    private ElementReference area;
+    private string text = "";
+    private string lastValue = "";
+
+    protected override void OnParametersSet()
+    {
+        if (Value != lastValue)
+        {
+            lastValue = Value;
+            text = Value;
+        }
+    }
+
+    private async Task CommitAsync(ChangeEventArgs e)
+    {
+        text = e.Value?.ToString() ?? string.Empty;
+        await PublishAsync();
+    }
+
+    private async Task RedactSelectionAsync()
+    {
+        var range = await JS.InvokeAsync<int[]>("artGrader.selection", area);
+        text = await JS.InvokeAsync<string>("artGrader.value", area);
+        var (from, to) = (Math.Clamp(range[0], 0, text.Length), Math.Clamp(range[1], 0, text.Length));
+        if (to <= from)
+        {
+            return;
+        }
+        text = Redact(text, from, to);
+        await PublishAsync();
+    }
+
+    public static string Redact(string text, int from, int to) => text[..from] + Redacted + text[to..];
+
+    private async Task PublishAsync()
+    {
+        if (text == lastValue)
+        {
+            return;
+        }
+        lastValue = text;
+        await ValueChanged.InvokeAsync(text);
+    }
+}

@@ -113,11 +113,6 @@ public sealed class AnthropicClaudeGateway(IAiSettingsSource settingsSource) : I
             {
                 Source = new BetaBase64ImageSource { Data = Convert.ToBase64String(image.Jpeg), MediaType = MediaType.ImageJpeg },
             },
-            PdfPart pdf => new BetaRequestDocumentBlock
-            {
-                Source = new BetaBase64PdfSource { Data = Convert.ToBase64String(pdf.Pdf) },
-                Title = pdf.Title,
-            },
             _ => throw new ArgumentOutOfRangeException(nameof(part)),
         };
 

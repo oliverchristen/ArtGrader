@@ -107,16 +107,22 @@ public sealed class GradingQueue(
         var images = new List<byte[]>();
         foreach (var image in submission.Images)
         {
-            images.Add(ImageCover.Apply(await files.ReadAsync(image.RelativePath, cancellationToken), image.Covers));
+            images.Add(ImageCover.Apply(await files.ReadAsync(image.RelativePath, cancellationToken), image.Covers, image.Crop));
         }
 
-        byte[]? exercisePdf = null;
-        if (string.IsNullOrWhiteSpace(exam.ExerciseText) && exam.ExerciseFile is { ContentType: "application/pdf" } file)
+        var exercisePages = new List<byte[]>();
+        foreach (var page in exam.PagesOf(DocumentKind.Aufgabe))
         {
-            exercisePdf = await files.ReadAsync(file.RelativePath, cancellationToken);
+            exercisePages.Add(ImageCover.Apply(await files.ReadAsync(page.RelativePath, cancellationToken), page.Covers, page.Crop));
         }
 
-        var suggestion = await grading.GradeAsync(GradingContext.From(exam, exercisePdf), images, cancellationToken);
+        var lessonPages = new List<byte[]>();
+        foreach (var page in exam.PagesOf(DocumentKind.Unterricht))
+        {
+            lessonPages.Add(ImageCover.Apply(await files.ReadAsync(page.RelativePath, cancellationToken), page.Covers, page.Crop));
+        }
+
+        var suggestion = await grading.GradeAsync(GradingContext.From(exam, exercisePages, lessonPages), images, cancellationToken);
         await StoreAsync(submissionId, suggestion);
     }
 

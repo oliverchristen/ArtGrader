@@ -11,9 +11,15 @@ public sealed class Exam
     public StoredFile? RubricFile { get; set; }
     public GradingSettings Settings { get; set; } = new();
     public bool LocalOnly { get; set; }
+    public string RubricText { get; set; } = "";
+    public StoredFile? LessonFile { get; set; }
+    public string LessonText { get; set; } = "";
+    public List<DocumentPage> Pages { get; set; } = [];
     public List<RubricCategory> Categories { get; set; } = [];
     public List<Submission> Submissions { get; set; } = [];
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
+
+    public IEnumerable<DocumentPage> PagesOf(DocumentKind kind) => Pages.Where(p => p.Kind == kind).OrderBy(p => p.Order);
 
     public IEnumerable<RubricCriterion> OrderedCriteria() =>
         Categories.OrderBy(c => c.Order).SelectMany(c => c.Criteria.OrderBy(k => k.Order));
@@ -85,6 +91,18 @@ public sealed class SubmissionImage
     public string RelativePath { get; set; } = "";
     public int Order { get; set; }
     public List<CoverArea> Covers { get; set; } = [];
+    public CoverArea? Crop { get; set; }
+}
+
+public sealed class DocumentPage
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ExamId { get; set; }
+    public DocumentKind Kind { get; set; }
+    public int Order { get; set; }
+    public string RelativePath { get; set; } = "";
+    public List<CoverArea> Covers { get; set; } = [];
+    public CoverArea? Crop { get; set; }
 }
 
 public sealed class CoverArea

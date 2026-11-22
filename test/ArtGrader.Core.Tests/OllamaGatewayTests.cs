@@ -144,15 +144,6 @@ public class OllamaGatewayTests
     }
 
     [Fact]
-    public async Task Pdf_is_rejected_with_a_hint()
-    {
-        var ex = await Assert.ThrowsAsync<ModelException>(() =>
-            new OllamaGateway(new HttpClient(new FakeOllama()), new Settings()).CompleteJsonAsync(Request(new PdfPart([1], "Aufgabe")), default));
-
-        Assert.Contains("PDF", ex.Message);
-    }
-
-    [Fact]
     public async Task No_model_selected_is_a_configuration_error()
     {
         await Assert.ThrowsAsync<ModelNotConfiguredException>(() =>

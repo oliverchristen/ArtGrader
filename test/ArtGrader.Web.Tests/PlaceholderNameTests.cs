@@ -81,7 +81,7 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
     {
         var work = await repository.AddSubmissionAsync(exam.Id, null, [Image("a.jpg")]);
 
-        await repository.SetCoversAsync(work.Images[0].Id, [new CoverArea { X = 0.7, Y = 0.8, Width = 0.3, Height = 0.2 }]);
+        await repository.SetImageEditsAsync(work.Images[0].Id, [new CoverArea { X = 0.7, Y = 0.8, Width = 0.3, Height = 0.2 }], new CoverArea { X = 0.1, Y = 0.1, Width = 0.8, Height = 0.8 });
         await repository.UpdateExamDetailsAsync(new Exam { Id = exam.Id, Title = exam.Title, LocalOnly = true });
 
         var stored = (await repository.GetAsync(exam.Id))!;
@@ -89,6 +89,7 @@ public sealed class PlaceholderNameTests : IAsyncLifetime
         var cover = Assert.Single(stored.Submissions.Single().Images.Single().Covers);
         Assert.Equal(0.7, cover.X, 6);
         Assert.Equal(0.2, cover.Height, 6);
+        Assert.Equal(0.8, stored.Submissions.Single().Images.Single().Crop!.Width, 6);
     }
 
     [Fact]

@@ -33,9 +33,6 @@ public sealed class OllamaGateway(HttpClient http, IAiSettingsSource settingsSou
                     images.Add(Convert.ToBase64String(image.Jpeg));
                     text.Append($"[Bild {images.Count} ist angehängt]\n\n");
                     break;
-                case PdfPart pdf:
-                    throw new ModelException(
-                        $"Das lokale Modell kann keine PDF-Dateien lesen ({pdf.Title}). Bitte den Text als Word-Datei hochladen oder einfügen.");
             }
         }
 

@@ -7,19 +7,25 @@ namespace ArtGrader.Core.Ai;
 public sealed class RubricImportService(IModelGateway claude)
 {
     public async Task<List<RubricCategory>> ImportAsync(
-        DocumentContent rubric,
+        string rubricText,
+        IReadOnlyList<byte[]> rubricPages,
         string? exerciseText,
         bool localOnly,
         CancellationToken cancellationToken)
     {
-        var shared = new List<ContentPart>();
-        if (rubric.Pdf is not null)
+        if (string.IsNullOrWhiteSpace(rubricText) && rubricPages.Count == 0)
         {
-            shared.Add(new PdfPart(rubric.Pdf, "Beurteilungsbogen"));
+            throw new ModelException("Der Beurteilungsbogen ist leer.");
         }
-        else
+        var shared = new List<ContentPart>();
+        for (var i = 0; i < rubricPages.Count; i++)
         {
-            shared.Add(new TextPart("<beurteilungsbogen>\n" + rubric.Text + "\n</beurteilungsbogen>"));
+            shared.Add(new TextPart($"Beurteilungsbogen, Seite {i + 1} von {rubricPages.Count}:"));
+            shared.Add(new ImagePart(rubricPages[i]));
+        }
+        if (!string.IsNullOrWhiteSpace(rubricText))
+        {
+            shared.Add(new TextPart("<beurteilungsbogen>\n" + rubricText.Trim() + "\n</beurteilungsbogen>"));
         }
 
         var response = await claude.CompleteJsonAsync(

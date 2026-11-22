@@ -198,7 +198,7 @@ public class SubmissionGradingServiceTests
         part switch
         {
             TextPart t => "T:" + t.Text,
-            PdfPart p => "P:" + p.Pdf.Length,
+            ImagePart i => "I:" + i.Jpeg.Length,
             _ => part.GetType().Name,
         };
 }

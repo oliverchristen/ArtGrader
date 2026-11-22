@@ -77,3 +77,10 @@ public static class LevelText
             _ => status.ToString(),
         };
 }
+
+public enum DocumentKind
+{
+    Aufgabe = 0,
+    Beurteilung = 1,
+    Unterricht = 2,
+}

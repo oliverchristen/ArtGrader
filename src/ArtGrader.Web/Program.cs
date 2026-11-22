@@ -54,6 +54,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await using var db = await factory.CreateDbContextAsync();
     await db.Database.MigrateAsync();
     await scope.ServiceProvider.GetRequiredService<ExamRepository>().ReplaceGeneratedNamesAsync();
+    await DocumentBackfill.RunAsync(scope.ServiceProvider.GetRequiredService<ExamRepository>(), scope.ServiceProvider.GetRequiredService<FileStore>(), app.Logger);
 }
 
 try
@@ -105,7 +106,18 @@ app.MapGet("/bild/{imageId:guid}", async (Guid imageId, ExamRepository repositor
         return Results.NotFound();
     }
     var bytes = await files.ReadAsync(image.RelativePath, ct);
-    return Results.File(ArtGrader.Core.Images.ImageCover.Apply(bytes, image.Covers), "image/jpeg");
+    return Results.File(ArtGrader.Core.Images.ImageCover.Apply(bytes, image.Covers, image.Crop), "image/jpeg");
+});
+
+app.MapGet("/seite/{pageId:guid}", async (Guid pageId, ExamRepository repository, FileStore files, CancellationToken ct) =>
+{
+    var page = await repository.GetPageAsync(pageId);
+    if (page is null || files.TryResolveExisting(page.RelativePath) is null)
+    {
+        return Results.NotFound();
+    }
+    var bytes = await files.ReadAsync(page.RelativePath, ct);
+    return Results.File(ArtGrader.Core.Images.ImageCover.Apply(bytes, page.Covers, page.Crop), "image/jpeg");
 });
 
 app.MapGet("/export/{examId:guid}/noten.xlsx", async (Guid examId, ExamRepository repository) =>
@@ -138,7 +150,7 @@ app.MapGet(
         {
             if (files.TryResolveExisting(image.RelativePath) is not null)
             {
-                var covered = ArtGrader.Core.Images.ImageCover.Apply(await files.ReadAsync(image.RelativePath, ct), image.Covers);
+                var covered = ArtGrader.Core.Images.ImageCover.Apply(await files.ReadAsync(image.RelativePath, ct), image.Covers, image.Crop);
                 await using var original = new MemoryStream(covered);
                 images[image.Id] = await ArtGrader.Core.Images.ImagePreprocessor.ToJpegAsync(original, 1200, ct);
             }

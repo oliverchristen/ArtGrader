@@ -21,6 +21,13 @@ public sealed class FileStore(AppPaths paths)
         return ToUrlPath(relative);
     }
 
+    public async Task<string> SavePageAsync(Guid examId, byte[] jpeg)
+    {
+        var relative = Path.Combine(examId.ToString("N"), "seiten", $"{Guid.NewGuid():N}.jpg");
+        await WriteAsync(relative, jpeg);
+        return ToUrlPath(relative);
+    }
+
     public Task<byte[]> ReadAsync(string relativePath, CancellationToken cancellationToken = default) =>
         File.ReadAllBytesAsync(Resolve(relativePath), cancellationToken);
 

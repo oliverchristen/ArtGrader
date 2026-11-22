@@ -77,7 +77,8 @@ else
             @if (submission.Images.Count > 0)
             {
                 var current = submission.Images[Math.Min(imageIndex, submission.Images.Count - 1)];
-                <CoverEditor Image="current" Alt="@($"Foto {imageIndex + 1} der Arbeit")" Changed="StateHasChanged" />
+                <CoverEditor Src="@ImageUrls.Original(current)" Covers="current.Covers" Crop="current.Crop" ItemId="current.Id"
+                             Alt="@($"Foto {imageIndex + 1} der Arbeit")" Save="edits => SaveImageEditsAsync(current, edits)" />
             }
             <div class="thumbs">
                 @for (var i = 0; i < submission.Images.Count; i++)
@@ -249,6 +250,13 @@ else
         submission = exam?.Submissions.FirstOrDefault(s => s.Id == SubmissionId);
         loaded = true;
         Current.Set(exam);
+    }
+
+    private async Task SaveImageEditsAsync(SubmissionImage image, ImageEdits edits)
+    {
+        await Repository.SetImageEditsAsync(image.Id, edits.Covers, edits.Crop);
+        image.Covers = edits.Covers;
+        image.Crop = edits.Crop;
     }
 
     private string Url(Submission s) => $"/pruefung/{ExamId}/arbeit/{s.Id}";

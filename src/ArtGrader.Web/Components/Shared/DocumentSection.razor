@@ -1,0 +1,193 @@
+@using ArtGrader.Core.Documents
+@inject ExamRepository Repository
+@inject FileStore Files
+@inject ISnackbar Snackbar
+
+<section class="sheet">
+    <div class="d-flex align-center justify-space-between gap-2">
+        <h2 class="sheet-title">@Title</h2>
+        @if (Optional)
+        {
+            <span class="tag">optional</span>
+        }
+    </div>
+    <p class="sheet-sub">@Sub</p>
+
+    <div class="dropzone compact mb-3">
+        <InputFile OnChange="UploadAsync" accept="@Accept" aria-label="@($"{Title} hochladen")" disabled="@busy" />
+        @if (busy)
+        {
+            <span class="file-chip"><MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Tertiary" /> Datei wird gelesen …</span>
+        }
+        else
+        {
+            <span class="file-chip">
+                <span class="doc">@DocType(File)</span>
+                @if (File is null)
+                {
+                    <span>@DropText <span class="faint">oder klicken</span></span>
+                }
+                else
+                {
+                    <span>@File.OriginalName <span class="faint">· ersetzen</span></span>
+                }
+            </span>
+        }
+    </div>
+
+    @if (File is not null || pages.Count > 0 || !string.IsNullOrWhiteSpace(Text))
+    {
+        <div class="redact-hint">
+            <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Size="Size.Small" />
+            <span>
+                <b>Das liest die KI.</b> Schwärze, was auf deine Schule hinweist: Schulname, Logo, Adresse, Namen von
+                Lehrpersonen oder Klassen. Für die Beurteilung braucht die KI das nicht.
+            </span>
+        </div>
+    }
+
+    @if (pages.Count > 0)
+    {
+        <div class="doc-pages">
+            @foreach (var page in pages)
+            {
+                <div class="doc-page" @key="page.Id">
+                    <div class="doc-page-label">Seite @(page.Order + 1) von @pages.Count</div>
+                    <CoverEditor Src="@ImageUrls.Original(page)" Covers="page.Covers" Crop="page.Crop" ItemId="page.Id"
+                                 CoverLabel="Stelle schwärzen" FrameClass="page-frame" Alt="@($"{Title}, Seite {page.Order + 1}")"
+                                 Save="edits => SavePageAsync(page, edits)" />
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <RedactableText Value="@Text" ValueChanged="SaveTextAsync" Label="@TextLabel" Rows="@Rows" Placeholder="@Placeholder" />
+    }
+
+    <div class="d-flex justify-space-between align-center flex-wrap gap-2 mt-3">
+        @if (File is not null || pages.Count > 0)
+        {
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Delete" OnClick="RemoveAsync">Dokument entfernen</MudButton>
+        }
+        else
+        {
+            <span></span>
+        }
+        @Footer
+    </div>
+</section>
+
+@code {
+    private const long MaxDocumentBytes = 40 * 1024 * 1024;
+
+    [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
+    [Parameter, EditorRequired] public DocumentKind Kind { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string Sub { get; set; } = "";
+    [Parameter] public string DropText { get; set; } = "Datei hierher ziehen";
+    [Parameter] public string Accept { get; set; } = ".docx,.pptx,.pdf,.txt,.md";
+    [Parameter] public string TextLabel { get; set; } = "Text";
+    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public int Rows { get; set; } = 10;
+    [Parameter] public bool Optional { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private List<DocumentPage> pages = [];
+    private bool busy;
+
+    private StoredFile? File => Kind switch
+    {
+        DocumentKind.Aufgabe => Exam.ExerciseFile,
+        DocumentKind.Beurteilung => Exam.RubricFile,
+        _ => Exam.LessonFile,
+    };
+
+    private string Text => Kind switch
+    {
+        DocumentKind.Aufgabe => Exam.ExerciseText,
+        DocumentKind.Beurteilung => Exam.RubricText,
+        _ => Exam.LessonText,
+    };
+
+    protected override void OnParametersSet() => pages = Exam.PagesOf(Kind).ToList();
+
+    private static string DocType(StoredFile? file) =>
+        file is null ? "+" : Path.GetExtension(file.OriginalName).TrimStart('.').ToUpperInvariant();
+
+    private async Task UploadAsync(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxDocumentBytes)
+        {
+            Snackbar.Add("Die Datei ist grösser als 40 MB.", Severity.Error);
+            return;
+        }
+        busy = true;
+        StateHasChanged();
+        try
+        {
+            using var stream = new MemoryStream();
+            await e.File.OpenReadStream(MaxDocumentBytes).CopyToAsync(stream);
+            var bytes = stream.ToArray();
+            var content = await Task.Run(() => DocumentContent.Read(e.File.Name, bytes));
+            var file = new StoredFile
+            {
+                OriginalName = e.File.Name,
+                RelativePath = await Files.SaveDocumentAsync(Exam.Id, Kind.ToString().ToLowerInvariant(), e.File.Name, bytes),
+                ContentType = content.Pages.Count > 0 ? "application/pdf" : "text/plain",
+            };
+            var paths = new List<string>();
+            foreach (var page in content.Pages)
+            {
+                paths.Add(await Files.SavePageAsync(Exam.Id, page));
+            }
+            var previous = File?.RelativePath;
+            foreach (var old in await Repository.SetDocumentAsync(Exam.Id, Kind, file, content.Text, paths))
+            {
+                Files.Delete(old);
+            }
+            Files.Delete(previous);
+            Snackbar.Add(content.Pages.Count > 0
+                ? $"{content.Pages.Count} Seite(n) übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist."
+                : "Text übernommen. Bitte prüfen und schwärzen, was auf die Schule hinweist.", Severity.Success);
+            await Changed.InvokeAsync();
+        }
+        catch (UnsupportedDocumentException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        catch (Exception ex) when (ex is DocumentFormat.OpenXml.Packaging.OpenXmlPackageException or InvalidDataException or FileFormatException)
+        {
+            Snackbar.Add("Die Datei konnte nicht gelesen werden.", Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SaveTextAsync(string text)
+    {
+        await Repository.SetDocumentTextAsync(Exam.Id, Kind, text);
+        await Changed.InvokeAsync();
+    }
+
+    private async Task SavePageAsync(DocumentPage page, ImageEdits edits)
+    {
+        await Repository.SetPageEditsAsync(page.Id, edits.Covers, edits.Crop);
+        page.Covers = edits.Covers;
+        page.Crop = edits.Crop;
+    }
+
+    private async Task RemoveAsync()
+    {
+        var previous = File?.RelativePath;
+        foreach (var old in await Repository.SetDocumentAsync(Exam.Id, Kind, null, "", []))
+        {
+            Files.Delete(old);
+        }
+        Files.Delete(previous);
+        await Changed.InvokeAsync();
+    }
+}

@@ -10,6 +10,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<RubricCriterion> Criteria => Set<RubricCriterion>();
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<SubmissionImage> Images => Set<SubmissionImage>();
+    public DbSet<DocumentPage> Pages => Set<DocumentPage>();
     public DbSet<CriterionAssessment> Assessments => Set<CriterionAssessment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -19,6 +20,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             exam.OwnsOne(e => e.Settings);
             exam.OwnsOne(e => e.ExerciseFile);
             exam.OwnsOne(e => e.RubricFile);
+            exam.OwnsOne(e => e.LessonFile);
+            exam.HasMany(e => e.Pages).WithOne().HasForeignKey(p => p.ExamId).OnDelete(DeleteBehavior.Cascade);
             exam.Property(e => e.CreatedAt).HasConversion(v => v.ToUnixTimeMilliseconds(), v => DateTimeOffset.FromUnixTimeMilliseconds(v));
             exam.HasMany(e => e.Categories).WithOne().HasForeignKey(c => c.ExamId).OnDelete(DeleteBehavior.Cascade);
             exam.HasMany(e => e.Submissions).WithOne().HasForeignKey(s => s.ExamId).OnDelete(DeleteBehavior.Cascade);
@@ -40,7 +43,17 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                 v => v.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(v.Value) : null);
         });
 
-        modelBuilder.Entity<SubmissionImage>().OwnsMany(i => i.Covers, covers => covers.ToJson());
+        modelBuilder.Entity<SubmissionImage>(image =>
+        {
+            image.OwnsMany(i => i.Covers, covers => covers.ToJson());
+            image.OwnsOne(i => i.Crop, crop => crop.ToJson());
+        });
+
+        modelBuilder.Entity<DocumentPage>(page =>
+        {
+            page.OwnsMany(p => p.Covers, covers => covers.ToJson());
+            page.OwnsOne(p => p.Crop, crop => crop.ToJson());
+        });
 
         modelBuilder.Entity<CriterionAssessment>(assessment =>
         {

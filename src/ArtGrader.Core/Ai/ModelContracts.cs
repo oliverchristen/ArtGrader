@@ -8,8 +8,6 @@ public sealed record TextPart(string Text) : ContentPart;
 
 public sealed record ImagePart(byte[] Jpeg) : ContentPart;
 
-public sealed record PdfPart(byte[] Pdf, string Title) : ContentPart;
-
 public sealed record ModelJsonRequest(
     string SystemPrompt,
     IReadOnlyList<ContentPart> SharedContext,

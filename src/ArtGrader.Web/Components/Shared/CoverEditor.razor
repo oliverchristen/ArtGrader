@@ -1,53 +1,71 @@
 @using ArtGrader.Core.Images
-@inject ExamRepository Repository
 @inject IJSRuntime JS
 
 <div class="cover-tools">
-    @if (editing)
+    @switch (mode)
     {
-        <span class="cover-hint">Rechteck über Namen oder Signatur ziehen.</span>
-        <span class="topbar-spacer"></span>
-        <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Undo" Disabled="@(Image.Covers.Count == 0)" OnClick="RemoveLastAsync">Letzten Balken entfernen</MudButton>
-        <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => editing = false">Fertig</MudButton>
-    }
-    else
-    {
-        <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="StartEditing">Name oder Signatur abdecken</MudButton>
-        @if (Image.Covers.Count > 0)
-        {
-            <span class="cover-hint">@Image.Covers.Count @(Image.Covers.Count == 1 ? "Stelle" : "Stellen") abgedeckt · die KI sieht dort schwarze Balken</span>
-        }
+        case Mode.Cover:
+            <span class="cover-hint">Rechteck über die Stelle ziehen, die schwarz werden soll.</span>
+            <span class="topbar-spacer"></span>
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Undo" Disabled="@(Covers.Count == 0)" OnClick="RemoveLastAsync">Letzten Balken entfernen</MudButton>
+            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">Fertig</MudButton>
+            break;
+        case Mode.Crop:
+            <span class="cover-hint">Rechteck um den Bereich ziehen, der bleiben soll.</span>
+            <span class="topbar-spacer"></span>
+            <MudButton Class="btn-quiet" Size="Size.Small" StartIcon="@Icons.Material.Outlined.CropFree" Disabled="@(Crop is null)" OnClick="RemoveCropAsync">Zuschnitt aufheben</MudButton>
+            <MudButton Class="btn-ink" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check" OnClick="() => mode = Mode.View">Fertig</MudButton>
+            break;
+        default:
+            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Rectangle" OnClick="() => Start(Mode.Cover)">@CoverLabel</MudButton>
+            <MudButton Class="btn-soft" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Crop" OnClick="() => Start(Mode.Crop)">Zuschneiden</MudButton>
+            @if (Summary() is { Length: > 0 } summary)
+            {
+                <span class="cover-hint">@summary</span>
+            }
+            break;
     }
 </div>
 
-<div class="@($"frame {(zoomed && !editing ? "zoomed" : "")}")">
-    <div class="@($"cover-box {(editing ? "editing" : "")}")">
-        <img src="@ImageUrls.Original(Image)" alt="@Alt" @onclick="() => zoomed = !editing && !zoomed" />
-        @foreach (var cover in Image.Covers)
+<div class="@($"frame {(zoomed && mode == Mode.View ? "zoomed" : "")} {FrameClass}")">
+    <div class="@($"cover-box {(mode == Mode.View ? "" : "editing")}")">
+        <img src="@Src" alt="@Alt" @onclick="() => zoomed = mode == Mode.View && !zoomed" />
+        @foreach (var cover in Covers)
         {
             <span class="cover" style="@Style(cover)"></span>
         }
+        @if (Crop is not null && !(mode == Mode.Crop && draft is not null))
+        {
+            <span class="crop-frame" style="@Style(Crop)"></span>
+        }
         @if (draft is not null)
         {
-            <span class="cover draft" style="@Style(draft)"></span>
+            <span class="@(mode == Mode.Crop ? "crop-frame draft" : "cover draft")" style="@Style(draft)"></span>
         }
-        @if (editing)
+        @if (mode != Mode.View)
         {
             <div class="cover-surface" @ref="surface"
-                 @onpointerdown="StartAsync" @onpointermove="Move" @onpointerup="FinishAsync" @onpointerleave="FinishAsync"></div>
+                 @onpointerdown="StartDragAsync" @onpointermove="Move" @onpointerup="FinishAsync" @onpointerleave="FinishAsync"></div>
         }
     </div>
 </div>
 
 @code {
-    [Parameter, EditorRequired] public SubmissionImage Image { get; set; } = null!;
+    private enum Mode { View, Cover, Crop }
+
+    [Parameter, EditorRequired] public string Src { get; set; } = "";
+    [Parameter, EditorRequired] public List<CoverArea> Covers { get; set; } = [];
+    [Parameter] public CoverArea? Crop { get; set; }
+    [Parameter, EditorRequired] public Guid ItemId { get; set; }
     [Parameter] public string Alt { get; set; } = "";
-    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public string CoverLabel { get; set; } = "Name oder Signatur abdecken";
+    [Parameter] public string FrameClass { get; set; } = "";
+    [Parameter] public EventCallback<ImageEdits> Save { get; set; }
 
     private ElementReference surface;
-    private bool editing;
+    private Mode mode;
     private bool zoomed;
-    private Guid shownImage;
+    private Guid shownItem;
     private (double X, double Y)? start;
     private double width;
     private double height;
@@ -55,26 +73,40 @@
 
     protected override void OnParametersSet()
     {
-        if (shownImage != Image.Id)
+        if (shownItem != ItemId)
         {
-            shownImage = Image.Id;
-            editing = false;
+            shownItem = ItemId;
+            mode = Mode.View;
             zoomed = false;
             start = null;
             draft = null;
         }
     }
 
+    private string Summary()
+    {
+        var parts = new List<string>();
+        if (Covers.Count > 0)
+        {
+            parts.Add(Covers.Count == 1 ? "1 Stelle abgedeckt" : $"{Covers.Count} Stellen abgedeckt");
+        }
+        if (Crop is not null)
+        {
+            parts.Add("zugeschnitten");
+        }
+        return parts.Count == 0 ? "" : string.Join(" · ", parts) + " · die KI sieht nur den hellen Bereich ohne Balken";
+    }
+
     private static string Style(CoverArea area) =>
         $"left:{ImageUrls.Percent(area.X)};top:{ImageUrls.Percent(area.Y)};width:{ImageUrls.Percent(area.Width)};height:{ImageUrls.Percent(area.Height)}";
 
-    private void StartEditing()
+    private void Start(Mode next)
     {
         zoomed = false;
-        editing = true;
+        mode = next;
     }
 
-    private async Task StartAsync(PointerEventArgs e)
+    private async Task StartDragAsync(PointerEventArgs e)
     {
         var size = await JS.InvokeAsync<double[]>("artGrader.size", surface);
         (width, height) = (size[0], size[1]);
@@ -103,19 +135,27 @@
         var area = ImageCover.Normalize(from.X, from.Y, e.OffsetX / width, e.OffsetY / height);
         start = null;
         draft = null;
-        if (area.Width < 0.01 || area.Height < 0.01)
+        if (mode == Mode.Crop)
         {
-            return;
+            if (area.Width >= 0.05 && area.Height >= 0.05)
+            {
+                await SaveAsync(Covers, area);
+            }
         }
-        await SaveAsync([.. Image.Covers, area]);
+        else if (area.Width >= 0.01 && area.Height >= 0.01)
+        {
+            await SaveAsync([.. Covers, area], Crop);
+        }
     }
 
-    private Task RemoveLastAsync() => SaveAsync(Image.Covers.Take(Image.Covers.Count - 1).ToList());
+    private Task RemoveLastAsync() => SaveAsync(Covers.Take(Covers.Count - 1).ToList(), Crop);
 
-    private async Task SaveAsync(List<CoverArea> covers)
+    private Task RemoveCropAsync() => SaveAsync(Covers, null);
+
+    private async Task SaveAsync(List<CoverArea> covers, CoverArea? crop)
     {
-        await Repository.SetCoversAsync(Image.Id, covers);
-        Image.Covers = covers;
-        await Changed.InvokeAsync();
+        Covers = covers;
+        Crop = crop;
+        await Save.InvokeAsync(new ImageEdits(covers, crop));
     }
 }

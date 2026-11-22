@@ -6,19 +6,29 @@ namespace ArtGrader.Core.Ai;
 
 public sealed record GradingCriterion(Guid Id, string Category, string Text);
 
-public sealed record GradingContext(string ExerciseText, byte[]? ExercisePdf, IReadOnlyList<GradingCriterion> Criteria, bool LocalOnly = false)
+public sealed record GradingContext(
+    string ExerciseText,
+    IReadOnlyList<byte[]> ExercisePages,
+    IReadOnlyList<GradingCriterion> Criteria,
+    bool LocalOnly = false,
+    string LessonText = "",
+    IReadOnlyList<byte[]>? LessonPages = null)
 {
-    public static GradingContext From(Exam exam, byte[]? exercisePdf) =>
+    public const int MaxLessonCharacters = 20000;
+
+    public static GradingContext From(Exam exam, IReadOnlyList<byte[]>? exercisePages, IReadOnlyList<byte[]>? lessonPages = null) =>
         new(
             exam.ExerciseText,
-            exercisePdf,
+            exercisePages ?? [],
             exam.Categories.OrderBy(c => c.Order)
                 .SelectMany(c =>
                     c.Criteria.OrderBy(k => k.Order)
                         .Where(k => k.AssessedBy == AssessedBy.Ai)
                         .Select(k => new GradingCriterion(k.Id, c.Name, k.Text)))
                 .ToList(),
-            exam.LocalOnly);
+            exam.LocalOnly,
+            exam.LessonText,
+            lessonPages);
 }
 
 public sealed record CriterionSuggestion(Guid CriterionId, Level Level, string Justification, Confidence Confidence);
@@ -69,19 +79,43 @@ public sealed class SubmissionGradingService(IModelGateway claude)
         return parsed with { Model = response.Model, Usage = response.Usage };
     }
 
+    private const string LessonNote =
+        "Das Unterrichtsmaterial zeigt, was im Unterricht behandelt wurde. Nutze es nur als Hintergrund, "
+            + "um die Kriterien richtig zu verstehen. Beurteile ausschliesslich nach den Kriterien.";
+
     public static IReadOnlyDictionary<string, Guid> CriterionKeys(IReadOnlyList<GradingCriterion> criteria) =>
         criteria.Select((c, i) => (Key: $"K{i + 1}", c.Id)).ToDictionary(x => x.Key, x => x.Id);
 
     public static IReadOnlyList<ContentPart> SharedContext(GradingContext context, IReadOnlyDictionary<string, Guid> keys)
     {
         var parts = new List<ContentPart>();
-        if (context.ExercisePdf is not null && string.IsNullOrWhiteSpace(context.ExerciseText))
+        for (var i = 0; i < context.ExercisePages.Count; i++)
         {
-            parts.Add(new PdfPart(context.ExercisePdf, "Aufgabenstellung"));
+            parts.Add(new TextPart($"Aufgabenblatt, Seite {i + 1} von {context.ExercisePages.Count}:"));
+            parts.Add(new ImagePart(context.ExercisePages[i]));
         }
-        else
+        if (!string.IsNullOrWhiteSpace(context.ExerciseText))
         {
             parts.Add(new TextPart("<aufgabe>\n" + context.ExerciseText.Trim() + "\n</aufgabe>"));
+        }
+        var lessonPages = context.LessonPages ?? [];
+        for (var i = 0; i < lessonPages.Count; i++)
+        {
+            parts.Add(new TextPart($"Unterrichtsmaterial, Seite {i + 1} von {lessonPages.Count}:"));
+            parts.Add(new ImagePart(lessonPages[i]));
+        }
+        if (lessonPages.Count > 0 && string.IsNullOrWhiteSpace(context.LessonText))
+        {
+            parts.Add(new TextPart(LessonNote));
+        }
+        if (!string.IsNullOrWhiteSpace(context.LessonText))
+        {
+            var lesson = context.LessonText.Trim();
+            if (lesson.Length > GradingContext.MaxLessonCharacters)
+            {
+                lesson = lesson[..GradingContext.MaxLessonCharacters];
+            }
+            parts.Add(new TextPart("<unterrichtsmaterial>\n" + lesson + "\n</unterrichtsmaterial>\n" + LessonNote));
         }
 
         var byId = context.Criteria.ToDictionary(c => c.Id);

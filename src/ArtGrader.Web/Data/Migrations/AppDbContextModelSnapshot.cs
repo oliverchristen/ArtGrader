@@ -51,6 +51,32 @@ namespace ArtGrader.Web.Data.Migrations
                     b.ToTable("Assessments");
                 });
 
+            modelBuilder.Entity("ArtGrader.Core.Domain.DocumentPage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
+
+                    b.ToTable("Pages");
+                });
+
             modelBuilder.Entity("ArtGrader.Core.Domain.Exam", b =>
                 {
                     b.Property<Guid>("Id")
@@ -67,8 +93,16 @@ namespace ArtGrader.Web.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("LessonText")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("LocalOnly")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("RubricText")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SchoolClass")
                         .IsRequired()
@@ -238,9 +272,98 @@ namespace ArtGrader.Web.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ArtGrader.Core.Domain.DocumentPage", b =>
+                {
+                    b.HasOne("ArtGrader.Core.Domain.Exam", null)
+                        .WithMany("Pages")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsMany("ArtGrader.Core.Domain.CoverArea", "Covers", b1 =>
+                        {
+                            b1.Property<Guid>("DocumentPageId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<double>("Height");
+
+                            b1.Property<double>("Width");
+
+                            b1.Property<double>("X");
+
+                            b1.Property<double>("Y");
+
+                            b1.HasKey("DocumentPageId", "__synthesizedOrdinal");
+
+                            b1.ToTable("Pages");
+
+                            b1
+                                .ToJson("Covers")
+                                .HasColumnType("TEXT");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DocumentPageId");
+                        });
+
+                    b.OwnsOne("ArtGrader.Core.Domain.CoverArea", "Crop", b1 =>
+                        {
+                            b1.Property<Guid>("DocumentPageId");
+
+                            b1.Property<double>("Height");
+
+                            b1.Property<double>("Width");
+
+                            b1.Property<double>("X");
+
+                            b1.Property<double>("Y");
+
+                            b1.HasKey("DocumentPageId");
+
+                            b1.ToTable("Pages");
+
+                            b1
+                                .ToJson("Crop")
+                                .HasColumnType("TEXT");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DocumentPageId");
+                        });
+
+                    b.Navigation("Covers");
+
+                    b.Navigation("Crop");
+                });
+
             modelBuilder.Entity("ArtGrader.Core.Domain.Exam", b =>
                 {
                     b.OwnsOne("ArtGrader.Core.Domain.StoredFile", "ExerciseFile", b1 =>
+                        {
+                            b1.Property<Guid>("ExamId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("ContentType")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("OriginalName")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("RelativePath")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("ExamId");
+
+                            b1.ToTable("Exams");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ExamId");
+                        });
+
+                    b.OwnsOne("ArtGrader.Core.Domain.StoredFile", "LessonFile", b1 =>
                         {
                             b1.Property<Guid>("ExamId")
                                 .HasColumnType("TEXT");
@@ -326,6 +449,8 @@ namespace ArtGrader.Web.Data.Migrations
 
                     b.Navigation("ExerciseFile");
 
+                    b.Navigation("LessonFile");
+
                     b.Navigation("RubricFile");
 
                     b.Navigation("Settings")
@@ -394,12 +519,40 @@ namespace ArtGrader.Web.Data.Migrations
                                 .HasForeignKey("SubmissionImageId");
                         });
 
+                    b.OwnsOne("ArtGrader.Core.Domain.CoverArea", "Crop", b1 =>
+                        {
+                            b1.Property<Guid>("SubmissionImageId");
+
+                            b1.Property<double>("Height");
+
+                            b1.Property<double>("Width");
+
+                            b1.Property<double>("X");
+
+                            b1.Property<double>("Y");
+
+                            b1.HasKey("SubmissionImageId");
+
+                            b1.ToTable("Images");
+
+                            b1
+                                .ToJson("Crop")
+                                .HasColumnType("TEXT");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SubmissionImageId");
+                        });
+
                     b.Navigation("Covers");
+
+                    b.Navigation("Crop");
                 });
 
             modelBuilder.Entity("ArtGrader.Core.Domain.Exam", b =>
                 {
                     b.Navigation("Categories");
+
+                    b.Navigation("Pages");
 
                     b.Navigation("Submissions");
                 });

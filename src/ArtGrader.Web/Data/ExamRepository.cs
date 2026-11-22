@@ -39,6 +39,7 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
             .Include(e => e.Categories).ThenInclude(c => c.Criteria)
             .Include(e => e.Submissions).ThenInclude(s => s.Images)
             .Include(e => e.Submissions).ThenInclude(s => s.Assessments)
+            .Include(e => e.Pages)
             .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == id);
         if (exam is not null)
@@ -48,6 +49,7 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
             {
                 category.Criteria = category.Criteria.OrderBy(k => k.Order).ToList();
             }
+            exam.Pages = exam.Pages.OrderBy(p => p.Kind).ThenBy(p => p.Order).ToList();
             exam.Submissions = exam.Submissions.OrderBy(s => s.StudentName, StringComparer.CurrentCultureIgnoreCase).ToList();
             foreach (var submission in exam.Submissions)
             {
@@ -73,9 +75,6 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         exam.Title = source.Title.Trim();
         exam.SchoolClass = source.SchoolClass.Trim();
         exam.Date = source.Date;
-        exam.ExerciseText = source.ExerciseText;
-        exam.ExerciseFile = source.ExerciseFile;
-        exam.RubricFile = source.RubricFile;
         exam.LocalOnly = source.LocalOnly;
         exam.Settings = new GradingSettings
         {
@@ -184,13 +183,76 @@ public sealed class ExamRepository(IDbContextFactory<AppDbContext> factory)
         return await db.Images.AsNoTracking().FirstOrDefaultAsync(i => i.Id == imageId);
     }
 
-    public async Task SetCoversAsync(Guid imageId, IReadOnlyList<CoverArea> covers)
+    public async Task SetImageEditsAsync(Guid imageId, IReadOnlyList<CoverArea> covers, CoverArea? crop)
     {
         await using var db = await factory.CreateDbContextAsync();
         var image = await db.Images.FirstAsync(i => i.Id == imageId);
-        image.Covers = covers.Select(c => new CoverArea { X = c.X, Y = c.Y, Width = c.Width, Height = c.Height }).ToList();
+        image.Covers = covers.Select(Copy).ToList();
+        image.Crop = crop is null ? null : Copy(crop);
         await db.SaveChangesAsync();
     }
+
+    public async Task SetPageEditsAsync(Guid pageId, IReadOnlyList<CoverArea> covers, CoverArea? crop)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var page = await db.Pages.FirstAsync(p => p.Id == pageId);
+        page.Covers = covers.Select(Copy).ToList();
+        page.Crop = crop is null ? null : Copy(crop);
+        await db.SaveChangesAsync();
+    }
+
+    public async Task<DocumentPage?> GetPageAsync(Guid pageId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.Pages.AsNoTracking().FirstOrDefaultAsync(p => p.Id == pageId);
+    }
+
+    public async Task<List<string>> SetDocumentAsync(Guid examId, DocumentKind kind, StoredFile? file, string text, IReadOnlyList<string> pagePaths)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var exam = await db.Exams.FirstAsync(e => e.Id == examId);
+        switch (kind)
+        {
+            case DocumentKind.Aufgabe:
+                exam.ExerciseFile = file;
+                exam.ExerciseText = text;
+                break;
+            case DocumentKind.Beurteilung:
+                exam.RubricFile = file;
+                exam.RubricText = text;
+                break;
+            default:
+                exam.LessonFile = file;
+                exam.LessonText = text;
+                break;
+        }
+        var old = await db.Pages.Where(p => p.ExamId == examId && p.Kind == kind).ToListAsync();
+        db.Pages.RemoveRange(old);
+        db.Pages.AddRange(pagePaths.Select((path, index) => new DocumentPage { ExamId = examId, Kind = kind, Order = index, RelativePath = path }));
+        await db.SaveChangesAsync();
+        return old.Select(p => p.RelativePath).ToList();
+    }
+
+    public async Task SetDocumentTextAsync(Guid examId, DocumentKind kind, string text)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var exam = await db.Exams.FirstAsync(e => e.Id == examId);
+        switch (kind)
+        {
+            case DocumentKind.Aufgabe:
+                exam.ExerciseText = text;
+                break;
+            case DocumentKind.Beurteilung:
+                exam.RubricText = text;
+                break;
+            default:
+                exam.LessonText = text;
+                break;
+        }
+        await db.SaveChangesAsync();
+    }
+
+    private static CoverArea Copy(CoverArea area) => new() { X = area.X, Y = area.Y, Width = area.Width, Height = area.Height };
 
     public async Task<List<SubmissionImage>> RemoveImageAsync(Guid imageId)
     {

@@ -1,5 +1,5 @@
-@using ArtGrader.Core.Ai
-@using ArtGrader.Core.Documents
+﻿@using ArtGrader.Core.Ai
+@using ArtGrader.Core.Images
 @inject ExamRepository Repository
 @inject FileStore Files
 @inject RubricImportService RubricImport
@@ -9,29 +9,15 @@
 
 <MudGrid Spacing="5">
     <MudItem xs="12" lg="6">
-        <section class="sheet">
-            <h2 class="sheet-title">Aufgabenstellung</h2>
-            <p class="sheet-sub">Das Blatt, das die Klasse bekommen hat. Die KI liest es, um zu verstehen, worum es geht.</p>
-            <div class="dropzone compact mb-4">
-                <InputFile OnChange="UploadExerciseAsync" accept=".docx,.pdf,.txt,.md" aria-label="Aufgabe hochladen" />
-                <span class="file-chip">
-                    <span class="doc">@DocType(draft.ExerciseFile)</span>
-                    @if (draft.ExerciseFile is null)
-                    {
-                        <span>Word, PDF oder Text hierher ziehen <span class="faint">oder klicken</span></span>
-                    }
-                    else
-                    {
-                        <span>@draft.ExerciseFile.OriginalName <span class="faint">· ersetzen</span></span>
-                    }
-                </span>
-            </div>
-            @if (draft.ExerciseFile?.ContentType == "application/pdf" && string.IsNullOrWhiteSpace(draft.ExerciseText))
-            {
-                <div class="banner info mb-3">Das PDF wird bei jeder Bewertung mitgeschickt. Das lokale Modell kann PDFs nicht lesen – dann den Text unten einfügen.</div>
-            }
-            <MudTextField @bind-Value="draft.ExerciseText" Label="Text der Aufgabe" Variant="Variant.Outlined" Lines="10" Sizing="InputSizing.Auto" MaxLines="24" />
-        </section>
+        <DocumentSection Exam="Exam" Kind="DocumentKind.Aufgabe" Title="Aufgabenstellung"
+                         Sub="Das Blatt, das die Klasse bekommen hat. Die KI liest es, um zu verstehen, worum es geht."
+                         DropText="Word, PDF oder Text hierher ziehen" TextLabel="Text der Aufgabe"
+                         Placeholder="Aufgabe hochladen oder hier eintippen" Changed="OnDocumentChanged" />
+
+        <DocumentSection Exam="Exam" Kind="DocumentKind.Unterricht" Title="Unterrichtsmaterial" Optional="true"
+                         Sub="Zum Beispiel die PowerPoint-Präsentation zum Thema. So weiss die KI, was im Unterricht behandelt wurde."
+                         DropText="PowerPoint, PDF oder Word hierher ziehen" TextLabel="Text aus dem Unterrichtsmaterial" Rows="8"
+                         Changed="OnDocumentChanged" />
 
         <section class="sheet">
             <h2 class="sheet-title">Angaben & Notenberechnung</h2>
@@ -77,6 +63,16 @@
     </MudItem>
 
     <MudItem xs="12" lg="6">
+        <DocumentSection Exam="Exam" Kind="DocumentKind.Beurteilung" Title="Beurteilungsbogen"
+                         Sub="Hochladen, prüfen und schwärzen. Dann liest die KI die Kriterien daraus aus."
+                         DropText="Beurteilungsbogen hierher ziehen" TextLabel="Text des Beurteilungsbogens" Changed="OnDocumentChanged">
+            <Footer>
+                <MudButton Class="btn-ink" StartIcon="@Icons.Material.Filled.AutoAwesome" Disabled="@(importing || !HasRubricSource)" OnClick="ImportRubricAsync">
+                    @(importing ? "Die KI liest …" : "Kriterien auslesen")
+                </MudButton>
+            </Footer>
+        </DocumentSection>
+
         <section class="sheet">
             <div class="d-flex align-center justify-space-between gap-2">
                 <h2 class="sheet-title">Beurteilungskriterien</h2>
@@ -85,28 +81,7 @@
                     <span class="tag unsure">nicht gespeichert</span>
                 }
             </div>
-            <p class="sheet-sub">Beurteilungsbogen hochladen – die KI schreibt die Kriterien ab. Danach kannst du alles anpassen.</p>
-            <div class="dropzone compact mb-2">
-                <InputFile OnChange="UploadRubricAsync" accept=".docx,.pdf,.txt,.md" aria-label="Beurteilungsbogen hochladen" disabled="@importing" />
-                @if (importing)
-                {
-                    <span class="file-chip"><MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Tertiary" /> Die KI liest den Beurteilungsbogen …</span>
-                }
-                else
-                {
-                    <span class="file-chip">
-                        <span class="doc">@DocType(draft.RubricFile)</span>
-                        @if (draft.RubricFile is null)
-                        {
-                            <span>Beurteilungsbogen hierher ziehen <span class="faint">oder klicken</span></span>
-                        }
-                        else
-                        {
-                            <span>@draft.RubricFile.OriginalName <span class="faint">· neu auslesen</span></span>
-                        }
-                    </span>
-                }
-            </div>
+            <p class="sheet-sub">Aus dem Beurteilungsbogen auslesen oder selbst erfassen. Danach kannst du alles anpassen.</p>
 
             @if (categories.Count == 0)
             {
@@ -177,7 +152,6 @@
 </MudGrid>
 
 @code {
-    private const long MaxDocumentBytes = 25 * 1024 * 1024;
     private static readonly System.Globalization.CultureInfo culture = new("de-CH");
 
     [Parameter, EditorRequired] public Exam Exam { get; set; } = null!;
@@ -205,9 +179,6 @@
                 Title = Exam.Title,
                 SchoolClass = Exam.SchoolClass,
                 Date = Exam.Date,
-                ExerciseText = Exam.ExerciseText,
-                ExerciseFile = Exam.ExerciseFile,
-                RubricFile = Exam.RubricFile,
                 LocalOnly = Exam.LocalOnly,
                 Settings = new GradingSettings
                 {
@@ -242,9 +213,6 @@
             })
             .ToList();
     }
-
-    private static string DocType(StoredFile? file) =>
-        file is null ? "+" : Path.GetExtension(file.OriginalName).TrimStart('.').ToUpperInvariant();
 
     private string Example()
     {
@@ -288,53 +256,17 @@
         await Changed.InvokeAsync();
     }
 
-    private async Task UploadExerciseAsync(InputFileChangeEventArgs e)
-    {
-        var upload = await ReadUploadAsync(e.File);
-        if (upload is null)
-        {
-            return;
-        }
-        try
-        {
-            var content = DocumentContent.Read(e.File.Name, upload);
-            draft.ExerciseFile = new StoredFile
-            {
-                OriginalName = e.File.Name,
-                RelativePath = await Files.SaveDocumentAsync(Exam.Id, "aufgabe", e.File.Name, upload),
-                ContentType = content.Pdf is null ? "text/plain" : "application/pdf",
-            };
-            if (content.Text is not null)
-            {
-                draft.ExerciseText = content.Text;
-            }
-            draft.Date = DateOnly.FromDateTime(date ?? DateTime.Today);
-            await Repository.UpdateExamDetailsAsync(draft);
-            Snackbar.Add("Aufgabe übernommen.", Severity.Success);
-            await Changed.InvokeAsync();
-        }
-        catch (UnsupportedDocumentException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-        catch (Exception ex) when (ex is DocumentFormat.OpenXml.Packaging.OpenXmlPackageException or InvalidDataException or FileFormatException)
-        {
-            Snackbar.Add("Das Word-Dokument konnte nicht gelesen werden.", Severity.Error);
-        }
-    }
+    private bool HasRubricSource => !string.IsNullOrWhiteSpace(Exam.RubricText) || Exam.PagesOf(DocumentKind.Beurteilung).Any();
 
-    private async Task UploadRubricAsync(InputFileChangeEventArgs e)
+    private Task OnDocumentChanged() => Changed.InvokeAsync();
+
+    private async Task ImportRubricAsync()
     {
         if (!Settings.CanGrade(draft))
         {
             Snackbar.Add(draft.LocalOnly
                 ? RoutingModelGateway.LocalOnlyWithoutModel
                 : "Bitte zuerst unter «Einstellungen» Claude oder ein lokales Modell einrichten.", Severity.Warning);
-            return;
-        }
-        var upload = await ReadUploadAsync(e.File);
-        if (upload is null)
-        {
             return;
         }
         if (categories.Count > 0 || Exam.Submissions.Any(s => s.GradedAt is not null))
@@ -354,17 +286,12 @@
         StateHasChanged();
         try
         {
-            var content = DocumentContent.Read(e.File.Name, upload);
-            draft.RubricFile = new StoredFile
+            var pages = new List<byte[]>();
+            foreach (var page in Exam.PagesOf(DocumentKind.Beurteilung))
             {
-                OriginalName = e.File.Name,
-                RelativePath = await Files.SaveDocumentAsync(Exam.Id, "beurteilung", e.File.Name, upload),
-                ContentType = content.Pdf is null ? "text/plain" : "application/pdf",
-            };
-            draft.Date = DateOnly.FromDateTime(date ?? DateTime.Today);
-            await Repository.UpdateExamDetailsAsync(draft);
-
-            categories = await RubricImport.ImportAsync(content, draft.ExerciseText, draft.LocalOnly, CancellationToken.None);
+                pages.Add(ImageCover.Apply(await Files.ReadAsync(page.RelativePath), page.Covers, page.Crop));
+            }
+            categories = await RubricImport.ImportAsync(Exam.RubricText, pages, Exam.ExerciseText, draft.LocalOnly, CancellationToken.None);
             await Repository.SaveRubricAsync(Exam.Id, categories);
             rubricDirty = false;
             var teacherOnly = categories.SelectMany(c => c.Criteria).Count(k => k.AssessedBy == AssessedBy.Teacher);
@@ -374,30 +301,14 @@
                 Severity.Success);
             await Changed.InvokeAsync();
         }
-        catch (Exception ex) when (ex is ModelException or UnsupportedDocumentException)
+        catch (ModelException ex)
         {
             Snackbar.Add(ex.Message, Severity.Error);
-        }
-        catch (Exception ex) when (ex is DocumentFormat.OpenXml.Packaging.OpenXmlPackageException or InvalidDataException or FileFormatException)
-        {
-            Snackbar.Add("Das Word-Dokument konnte nicht gelesen werden.", Severity.Error);
         }
         finally
         {
             importing = false;
         }
-    }
-
-    private async Task<byte[]?> ReadUploadAsync(IBrowserFile file)
-    {
-        if (file.Size > MaxDocumentBytes)
-        {
-            Snackbar.Add("Die Datei ist grösser als 25 MB.", Severity.Error);
-            return null;
-        }
-        using var stream = new MemoryStream();
-        await file.OpenReadStream(MaxDocumentBytes).CopyToAsync(stream);
-        return stream.ToArray();
     }
 
     private void AddCategory()

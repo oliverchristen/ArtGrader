@@ -144,7 +144,7 @@ public class LocalOnlyRoutingTests
         var gateway = new RecordingGateway();
 
         await Assert.ThrowsAnyAsync<ModelException>(() =>
-            new RubricImportService(gateway).ImportAsync(new Documents.DocumentContent("Raster", null), null, localOnly: true, default));
+            new RubricImportService(gateway).ImportAsync("Raster", [], null, localOnly: true, default));
 
         Assert.True(gateway.LastRequest!.LocalOnly);
     }
