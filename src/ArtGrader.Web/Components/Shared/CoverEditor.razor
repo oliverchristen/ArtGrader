@@ -108,8 +108,15 @@
 
     private async Task StartDragAsync(PointerEventArgs e)
     {
-        var size = await JS.InvokeAsync<double[]>("artGrader.size", surface);
-        (width, height) = (size[0], size[1]);
+        try
+        {
+            var size = await JS.InvokeAsync<double[]>("artGrader.size", surface);
+            (width, height) = (size[0], size[1]);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException)
+        {
+            return;
+        }
         if (width <= 0 || height <= 0)
         {
             return;

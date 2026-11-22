@@ -59,15 +59,16 @@ public class GradeCalculatorTests
     }
 
     [Theory]
-    [InlineData(0.5, 4.5)]
-    [InlineData(0.25, 4.25)]
-    [InlineData(0.1, 4.3)]
-    public void Rounding_step_is_applied(double step, double expected)
+    [InlineData("0.5", "4.5")]
+    [InlineData("0.25", "4.25")]
+    [InlineData("0.1", "4.3")]
+    public void Rounding_step_is_applied(string step, string expectedGrade)
     {
-        var settings = new GradingSettings { RoundingStep = (decimal)step };
+        var settings = new GradingSettings { RoundingStep = decimal.Parse(step, System.Globalization.CultureInfo.InvariantCulture) };
+        var expected = decimal.Parse(expectedGrade, System.Globalization.CultureInfo.InvariantCulture);
         var result = GradeCalculator.Calculate(Levels(Level.Erfuellt, Level.Erfuellt, Level.Erfuellt, Level.Erfuellt, Level.Erfuellt, Level.Erfuellt), settings);
         Assert.Equal(12m, result.Points);
-        Assert.Equal((decimal)expected, result.Grade);
+        Assert.Equal(expected, result.Grade);
     }
 
     [Fact]

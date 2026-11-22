@@ -92,14 +92,17 @@ else
         {
             running = exam.Submissions.Count(s => s.Status is SubmissionStatus.InWarteschlange or SubmissionStatus.WirdBewertet);
         }
-        StateHasChanged();
     }
 
     private void OnSubmissionChanged(Guid examId, Guid submissionId)
     {
         if (examId == Id)
         {
-            InvokeAsync(ReloadAsync);
+            InvokeAsync(async () =>
+            {
+                await ReloadAsync();
+                StateHasChanged();
+            });
         }
     }
 

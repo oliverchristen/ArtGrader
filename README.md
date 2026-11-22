@@ -89,7 +89,7 @@ einfügen. Die Arbeiten werden nacheinander bewertet.
 
 ## Für Entwickler
 
-- .NET 10, Blazor Web App (Interactive Server), MudBlazor, EF Core + SQLite, Anthropic C# SDK, SkiaSharp,
+- .NET 11, Blazor Web App (Interactive Server), MudBlazor, EF Core + SQLite, Anthropic C# SDK, SkiaSharp,
   DocumentFormat.OpenXml, ClosedXML, QuestPDF.
 - `src/ArtGrader.Core` – Domäne, Notenberechnung, Dokument- und Bildaufbereitung, KI-Anbindung
   (`IModelGateway` mit `AnthropicClaudeGateway` und `OllamaGateway`, Auswahl über `RoutingModelGateway`).

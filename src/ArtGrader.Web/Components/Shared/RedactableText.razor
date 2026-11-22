@@ -43,8 +43,16 @@
 
     private async Task RedactSelectionAsync()
     {
-        var range = await JS.InvokeAsync<int[]>("artGrader.selection", area);
-        text = await JS.InvokeAsync<string>("artGrader.value", area);
+        int[] range;
+        try
+        {
+            range = await JS.InvokeAsync<int[]>("artGrader.selection", area);
+            text = await JS.InvokeAsync<string>("artGrader.value", area);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException)
+        {
+            return;
+        }
         var (from, to) = (Math.Clamp(range[0], 0, text.Length), Math.Clamp(range[1], 0, text.Length));
         if (to <= from)
         {
