@@ -13,9 +13,9 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            runtimes: win-x64
+            publish: pwsh ./publish.ps1 -Runtimes win-x64
           - os: macos-latest
-            runtimes: osx-arm64 osx-x64
+            publish: ./publish.sh osx-arm64 osx-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
 
       - name: Publish
         shell: bash
-        run: ./publish.sh ${{ matrix.runtimes }}
+        run: ${{ matrix.publish }}
 
       - uses: actions/upload-artifact@v4
         with:
