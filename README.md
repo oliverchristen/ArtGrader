@@ -95,8 +95,10 @@ Die Vorschläge gelten für Text. PDF-Seiten deckt die Lehrperson von Hand ab.
      Firmencomputern), muss die Informatik ArtGrader freigeben.
    - **Mac:** Einmalig im Programm «Terminal» `bash ` eintippen (mit Leerzeichen), die Datei `install.sh` aus dem
      entpackten Ordner ins Terminalfenster ziehen und Enter drücken. Das Skript kopiert `ArtGrader.app` nach
-     «Programme» im Benutzerordner, gibt es für macOS frei und startet es. Danach startet ArtGrader per Doppelklick
-     auf `ArtGrader.app` (Tipp: ins Dock ziehen).
+     «Programme» im Benutzerordner, gibt es für macOS frei, legt es ins Dock und startet es. Mit Administratorrechten
+     legt es zusätzlich einen Verweis in die allgemeinen «Programme»; ohne fehlt dieser Verweis, und ArtGrader liegt
+     nur in den «Programmen» im Benutzerordner. Dort kann sich ArtGrader immer selbst aktualisieren. Danach startet
+     ArtGrader per Klick im Dock oder per Doppelklick auf `ArtGrader.app`.
 3. Der Browser öffnet sich mit http://localhost:5080. Es erscheint kein weiteres Fenster. Ein zweiter Doppelklick
    öffnet ArtGrader im Browser, auch wenn es schon läuft.
 4. **Beenden:** in ArtGrader oben rechts auf ⏻. Ist 30 Minuten lang kein ArtGrader-Tab offen und läuft keine
