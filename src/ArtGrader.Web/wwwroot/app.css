@@ -709,7 +709,16 @@ html:has(.exam-head.compact) {
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: .55;
+}
+
+.exam-cover .empty-cover img {
+    position: static;
+    width: 72px;
+    height: auto;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    transform: none;
 }
 
 .exam-body {
@@ -759,8 +768,7 @@ html:has(.exam-head.compact) {
 }
 
 .empty-state img {
-    width: 160px;
-    opacity: .9;
+    width: 112px;
 }
 
 /* ---------- Steps ---------- */
