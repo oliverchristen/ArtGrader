@@ -131,8 +131,19 @@ public sealed class MacUpdateScriptTests : IDisposable
             ? "/" + char.ToLowerInvariant(path[0]) + path[2..].Replace('\\', '/')
             : path;
 
-    private void Fake(string name, string body) =>
-        File.WriteAllText(Path.Combine(Tools, name), "#!/bin/bash\n" + body.Trim() + "\n");
+    /// <summary>
+    /// On macOS and Linux, bash only uses a stand-in that is executable; otherwise it runs the real tool, and on a Mac
+    /// that would change the real Dock.
+    /// </summary>
+    private void Fake(string name, string body)
+    {
+        var file = Path.Combine(Tools, name);
+        File.WriteAllText(file, "#!/bin/bash\n" + body.Trim() + "\n");
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(file, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
 
     private static void Bundle(string bundle, string version)
     {
