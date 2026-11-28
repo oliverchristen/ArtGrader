@@ -7,6 +7,7 @@
 @inject ISnackbar Snackbar
 @inject ModelDownloads Downloads
 @inject NavigationManager Navigation
+@inject ArtGrader.Web.Services.Updates.Updater Updates
 @implements IAsyncDisposable
 
 <PageTitle>@T("Settings") · ArtGrader</PageTitle>
@@ -264,6 +265,19 @@
             </MudButton>
         </section>
         <section class="sheet">
+            <h2 class="sheet-title">@T("Updates")</h2>
+            <p>@T("Version {0}", Updates.Target.Current.ToString(3))</p>
+            <MudSwitch T="bool" Value="Settings.CheckAtStart" ValueChanged="Settings.SaveCheckAtStart" Color="Color.Primary"
+                       Label="@T("Look for a new version at every start")" />
+            <p class="faint" style="font-size:.88rem">
+                @T("ArtGrader asks GitHub for the newest version. No names, photos or grades go there.")
+                @T("Updates fix errors and close security gaps quickly.")
+            </p>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Refresh" Disabled="checkingForUpdates" OnClick="CheckForUpdatesAsync" Class="mt-2">
+                @T("Check for updates")
+            </MudButton>
+        </section>
+        <section class="sheet">
             <h2 class="sheet-title">@T("Data folder")</h2>
             <p style="word-break:break-all"><code>@Paths.Root</code></p>
             <p class="faint" style="font-size:.88rem">@T("To make a backup, copy this folder while ArtGrader is closed.")</p>
@@ -285,6 +299,32 @@
     private readonly Debouncer saver = new();
     private readonly Debouncer termsSaver = new();
     private string? apiKeyError;
+
+    private bool checkingForUpdates;
+
+    private async Task CheckForUpdatesAsync()
+    {
+        checkingForUpdates = true;
+        try
+        {
+            switch (await Updates.CheckAsync(manual: true, CancellationToken.None))
+            {
+                case ArtGrader.Web.Services.Updates.UpdateCheckOutcome.Available:
+                    Snackbar.Add(T("A new version is available. See the notice at the top."), Severity.Info);
+                    break;
+                case ArtGrader.Web.Services.Updates.UpdateCheckOutcome.UpToDate:
+                    Snackbar.Add(T("ArtGrader is up to date."), Severity.Success);
+                    break;
+                default:
+                    Snackbar.Add(T("GitHub could not be reached. Check the internet connection."), Severity.Warning);
+                    break;
+            }
+        }
+        finally
+        {
+            checkingForUpdates = false;
+        }
+    }
 
     private void RedactTermsChanged() => termsSaver.Schedule(() => InvokeAsync(SaveRedactTerms));
 

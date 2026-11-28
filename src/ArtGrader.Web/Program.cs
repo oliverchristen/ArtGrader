@@ -5,6 +5,7 @@ using ArtGrader.Web.Components;
 using ArtGrader.Web.Data;
 using ArtGrader.Web.Export;
 using ArtGrader.Web.Services;
+using ArtGrader.Web.Services.Updates;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -63,6 +64,17 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ActiveTabs>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler, TabCircuitHandler>();
 builder.Services.AddHostedService<IdleShutdown>();
+builder.Services.AddSingleton<IUpdatePreferences>(sp => sp.GetRequiredService<SettingsStore>());
+builder.Services.AddSingleton(UpdateTarget.ThisApp());
+builder.Services.AddSingleton<IUpdateLauncher, UpdateLauncher>();
+builder.Services.AddSingleton(sp => new Updater(
+    new HttpClient { Timeout = Timeout.InfiniteTimeSpan },
+    sp.GetRequiredService<IUpdatePreferences>(),
+    paths,
+    sp.GetRequiredService<UpdateTarget>(),
+    sp.GetRequiredService<ILogger<Updater>>(),
+    sp.GetRequiredService<IUpdateLauncher>()));
+builder.Services.AddHostedService<UpdateCheckOnStart>();
 
 builder.Services.AddMudServices();
 builder.Services.AddRazorComponents()

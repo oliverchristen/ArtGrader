@@ -106,7 +106,19 @@ Die Vorschläge gelten für Text. PDF-Seiten deckt die Lehrperson von Hand ab.
 
 ### Aktualisieren
 
-ArtGrader beenden (⏻ oben rechts), die neue Version wie oben installieren – auf dem Mac wieder mit `install.sh`, das
+Beim Start fragt ArtGrader bei GitHub nach, ob es eine neue Version gibt. Gibt es eine, erscheint oben ein Hinweis:
+
+- **Jetzt aktualisieren** lädt die passende Version für Windows oder Mac (Apple-Chip oder Intel) herunter, prüft die
+  Datei, ersetzt ArtGrader und startet es neu. ArtGrader öffnet sich danach in einem neuen Tab.
+- **Später** blendet den Hinweis bis zum nächsten Start aus.
+- **Diese Version überspringen** blendet den Hinweis aus, bis eine noch neuere Version erscheint.
+
+Unter **Einstellungen → Updates** sucht *Nach Updates suchen* jederzeit nach einer neuen Version, auch nach einer
+übersprungenen. Dort lässt sich die Suche beim Start ausschalten. An GitHub gehen keine Namen, Fotos oder Noten, nur
+die Versionsnummer von ArtGrader.
+
+Darf ArtGrader seinen Ordner nicht ändern (zum Beispiel unter «Programme» auf einem verwalteten Computer), bietet der
+Hinweis stattdessen den Download an. Dann von Hand aktualisieren: ArtGrader beenden (⏻ oben rechts), die neue Version wie oben installieren – auf dem Mac wieder mit `install.sh`, das
 eine laufende Version selbst beendet. Prüfungen, Fotos, Noten und der API-Schlüssel liegen im Datenordner und bleiben erhalten, ebenso die
 lokalen Modelle von Ollama. Nötige Änderungen an der Datenbank macht ArtGrader beim ersten Start selbst. Vorher den
 Datenordner zu kopieren schadet nie.
@@ -135,6 +147,8 @@ blendet ArtGrader aus und verwendet sie nie, weil sie auf fremden Servern rechne
 
 ### Datenschutz
 
+- Updates: Beim Start fragt ArtGrader `api.github.com` nach der neusten Version (abschaltbar unter Einstellungen →
+  Updates). Die Anfrage enthält nur die Versionsnummer von ArtGrader.
 - Gespeichert wird lokal: Windows `%LOCALAPPDATA%\ArtGrader`, macOS `~/Library/Application Support/ArtGrader`.
   Im Unterordner `logs` liegen Protokolle der letzten 14 Tage, falls etwas nicht funktioniert.
 - Mit Claude gehen nur Aufgabe, Unterrichtsmaterial, Kriterien und Fotos an Anthropic – **keine Namen** und keine
@@ -196,6 +210,14 @@ dotnet run --project src/ArtGrader.Web            # http://localhost:5080
   zum Öffnen in der Konsole.
 - Lokale Modelle: Die Ollama-Adresse muss auf diesen Computer zeigen (`localhost`, `127.0.0.1`, `::1`). Andere
   Adressen speichert ArtGrader nicht und ruft sie nicht auf.
+- Updates (`Services/Updates`): `Updater` liest die Releases von GitHub (auch Pre-Releases) und wählt das Paket
+  `ArtGrader-<rid>.zip` für `win-x64`, `osx-arm64` oder `osx-x64`. Es lädt nur Pakete aus den Release-Downloads des
+  Repositorys und prüft Grösse und SHA-256 (`digest` der GitHub-API). Danach wartet ein Skript (`install.cmd` mit
+  robocopy, bzw. `install.sh`), bis ArtGrader beendet ist, ersetzt den Programmordner bzw. `ArtGrader.app` und
+  startet ArtGrader neu. Aus der IDE (`dotnet run`) bietet der Hinweis nur den Download an.
+- Release: Ein Tag `v0.3` baut die Pakete und hängt sie an das GitHub-Release `v0.3` (Job `release` in
+  `build.yml`). Der Tag muss zu `<Version>` in `ArtGrader.Web.csproj` passen, sonst bricht der Job ab. Die Version in
+  `build/mac/Info.plist` von Hand mitziehen.
 - Schemaänderungen: `dotnet ef migrations add <Name> --project src/ArtGrader.Web --output-dir Data/Migrations`.
   Beim Start werden Migrationen automatisch angewendet.
 - Die Schlüssel für den API-Schlüssel (ASP.NET Data Protection) sind unter Windows mit DPAPI an den Benutzer

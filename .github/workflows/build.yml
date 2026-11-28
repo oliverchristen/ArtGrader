@@ -3,6 +3,7 @@ name: build
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -36,3 +37,41 @@ jobs:
           name: ArtGrader-${{ runner.os }}
           path: artifacts/*.zip
           if-no-files-found: error
+
+  # A tag v0.3 publishes the packages of this build on the GitHub release v0.3. The update check in ArtGrader reads these
+  # releases, so the tag and the version in ArtGrader.Web.csproj must agree. Otherwise ArtGrader offers its own version
+  # again and again.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check that the tag matches the version
+        shell: bash
+        run: |
+          version="$(grep -oP '(?<=<Version>)[^<]+' src/ArtGrader.Web/ArtGrader.Web.csproj)"
+          tag="${GITHUB_REF_NAME#v}"
+          normalize() { IFS=. read -r a b c <<< "$1"; echo "${a:-0}.${b:-0}.${c:-0}"; }
+          if [[ "$(normalize "$tag")" != "$(normalize "$version")" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match <Version>$version</Version> in ArtGrader.Web.csproj." >&2
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish the packages on the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --prerelease --generate-notes --title "ArtGrader ${GITHUB_REF_NAME#v}"
+          fi
+          gh release upload "$GITHUB_REF_NAME" artifacts/*.zip --clobber

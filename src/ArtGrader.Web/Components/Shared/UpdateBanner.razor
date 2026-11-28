@@ -1,0 +1,75 @@
+@using ArtGrader.Web.Services.Updates
+@inject Updater Updates
+@inject GradingQueue Queue
+@inject IDialogService Dialogs
+@implements IDisposable
+
+@if (Updates.Offer is { } offer)
+{
+    <div class="banner info update-banner mb-6" role="status">
+        <MudIcon Icon="@Icons.Material.Outlined.SystemUpdateAlt" />
+        <div class="update-text">
+            <b>@T("ArtGrader {0} is available", offer.Version.ToString(3))</b>
+            <span>
+                @StatusText()
+                <a href="@offer.PageUrl" target="_blank" rel="noopener">@T("What is new?")</a>
+            </span>
+        </div>
+        @if (!Updates.IsBusy)
+        {
+            <div class="update-actions">
+                @if (CanInstall)
+                {
+                    <MudButton Class="btn-ink" StartIcon="@Icons.Material.Outlined.SystemUpdateAlt" OnClick="InstallAsync">
+                        @(Updates.State == UpdateState.Failed ? T("Try again") : T("Update now"))
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Class="btn-ink" StartIcon="@Icons.Material.Outlined.Download" Href="@offer.PageUrl" Target="_blank">@T("Download")</MudButton>
+                }
+                <MudButton Variant="Variant.Text" OnClick="Updates.Later">@T("Later")</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="Updates.Skip">@T("Skip this version")</MudButton>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private bool CanInstall => Updates.Target.CanInstall && Updates.Failure != UpdateFailure.NoWriteAccess;
+
+    private string StatusText() => (Updates.State, Updates.Failure) switch
+    {
+        (UpdateState.Downloading, _) => T("Downloading … {0} %", Updates.Percent),
+        (UpdateState.Installing, _) => T("ArtGrader restarts and opens again in a new tab."),
+        (UpdateState.Failed, UpdateFailure.NoWriteAccess) => T("ArtGrader may not change its own folder. Download the new version and install it as described in the instructions."),
+        (UpdateState.Failed, UpdateFailure.Damaged) => T("The download is damaged and was not installed. Try again later."),
+        (UpdateState.Failed, _) => T("The download failed. Check the internet connection and try again."),
+        _ when !Updates.Target.CanInstall => T("You use version {0}. Download the new version and install it as described in the instructions.", Updates.Target.Current.ToString(3)),
+        _ => T("You use version {0}. Updates fix errors and close security gaps. Your assignments and settings are kept.", Updates.Target.Current.ToString(3)),
+    };
+
+    private async Task InstallAsync()
+    {
+        if (Queue.IsBusy)
+        {
+            var confirmed = await Dialogs.ShowMessageBoxAsync(
+                T("Update ArtGrader now?"),
+                T("Works are still being assessed. This will be stopped, and you can assess them again after the next start."),
+                yesText: T("Update now"),
+                cancelText: T("Cancel"));
+            if (confirmed != true)
+            {
+                return;
+            }
+        }
+        // Not bound to this tab: the update goes on when the tab closes.
+        await Updates.InstallAsync(CancellationToken.None);
+    }
+
+    protected override void OnInitialized() => Updates.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Updates.Changed -= OnChanged;
+}

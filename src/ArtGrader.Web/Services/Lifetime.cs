@@ -45,6 +45,7 @@ public sealed class IdleShutdown(
     ActiveTabs tabs,
     GradingQueue queue,
     ModelDownloads downloads,
+    Updates.Updater updater,
     IHostApplicationLifetime lifetime,
     IConfiguration configuration,
     TimeProvider clock,
@@ -63,7 +64,7 @@ public sealed class IdleShutdown(
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30), clock);
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            if (ShouldStop(tabs.Count, queue.IsBusy || downloads.IsBusy, tabs.LastChange, clock.GetUtcNow(), idle))
+            if (ShouldStop(tabs.Count, queue.IsBusy || downloads.IsBusy || updater.IsBusy, tabs.LastChange, clock.GetUtcNow(), idle))
             {
                 logger.LogInformation("No ArtGrader window has been open for {Minutes} minutes. ArtGrader is shutting down.", idle.TotalMinutes);
                 lifetime.StopApplication();

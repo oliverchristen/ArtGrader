@@ -3,11 +3,12 @@ using System.Text.Json.Serialization;
 using ArtGrader.Core.Ai;
 using ArtGrader.Core.Localization;
 using ArtGrader.Core.Storage;
+using ArtGrader.Web.Services.Updates;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace ArtGrader.Web.Services;
 
-public sealed class SettingsStore : IAiSettingsSource
+public sealed class SettingsStore : IAiSettingsSource, IUpdatePreferences
 {
     private const string EnvironmentKey = "ANTHROPIC_API_KEY";
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -78,6 +79,30 @@ public sealed class SettingsStore : IAiSettingsSource
         ArtGrader.Core.Localization.Language.Current = language;
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = ArtGrader.Core.Localization.Language.Culture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = ArtGrader.Core.Localization.Language.Culture;
+    }
+
+    public bool CheckAtStart => stored.CheckForUpdates;
+
+    public Version? SkippedVersion => Version.TryParse(stored.SkippedVersion, out var version) ? version : null;
+
+    public void SaveCheckAtStart(bool check)
+    {
+        lock (gate)
+        {
+            stored = stored with { CheckForUpdates = check };
+            Persist();
+        }
+        Changed?.Invoke();
+    }
+
+    public void SkipVersion(Version version)
+    {
+        lock (gate)
+        {
+            stored = stored with { SkippedVersion = version.ToString(3) };
+            Persist();
+        }
+        Changed?.Invoke();
     }
 
     public void SaveRedactTerms(IEnumerable<string> terms)
@@ -212,6 +237,8 @@ public sealed class SettingsStore : IAiSettingsSource
         public List<string> RedactTerms { get; init; } = [];
         public AppLanguage Language { get; init; } = AppLanguage.De;
         public AppTheme Theme { get; init; } = AppTheme.Atelier;
+        public bool CheckForUpdates { get; init; } = true;
+        public string? SkippedVersion { get; init; }
     }
 }
 
