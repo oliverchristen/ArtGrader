@@ -36,6 +36,7 @@ public enum UpdateFailure
     Download,
     Damaged,
     NoWriteAccess,
+    Replace,
 }
 
 /// <summary>The unpacked new version, ready to replace the files at <see cref="InstallPath"/>.</summary>
@@ -168,7 +169,16 @@ public sealed class Updater(
             var prepared = await PrepareAsync(release, cancellationToken);
             SetState(UpdateState.Installing, UpdateFailure.None);
             logger.LogInformation("Installing ArtGrader {Version} and restarting.", release.Version.ToString(3));
-            launcher.Launch(prepared);
+            try
+            {
+                launcher.Launch(prepared);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // The launcher has put the old files back, so this ArtGrader keeps running.
+                logger.LogWarning(ex, "Could not replace ArtGrader with version {Version}.", release.Version.ToString(3));
+                SetState(UpdateState.Failed, UpdateFailure.Replace);
+            }
         }
         catch (InvalidDataException ex)
         {
@@ -209,8 +219,17 @@ public sealed class Updater(
         }
     }
 
-    /// <summary>Removes downloads of earlier updates.</summary>
-    public void CleanUp() => TryDelete(paths.Updates);
+    /// <summary>Removes downloads of earlier updates and the files that the previous version left behind.</summary>
+    public void CleanUp()
+    {
+        TryDelete(paths.Updates);
+        if (target.InstallPath is { } installPath)
+        {
+            AppReplacer.RemoveLeftovers(installPath, bundle: IsMac);
+        }
+    }
+
+    private bool IsMac => target.RuntimeId?.StartsWith("osx", StringComparison.Ordinal) == true;
 
     private ProductInfoHeaderValue UserAgent() => new("ArtGrader", target.Current.ToString(3));
 
@@ -254,7 +273,7 @@ public sealed class Updater(
 
     private string? FindContent(string folder)
     {
-        if (target.RuntimeId?.StartsWith("osx", StringComparison.Ordinal) == true)
+        if (IsMac)
         {
             return Directory.EnumerateDirectories(folder, "ArtGrader.app", SearchOption.AllDirectories).FirstOrDefault();
         }

@@ -20,5 +20,6 @@
   "Check for updates": "Nach Updates suchen",
   "A new version is available. See the notice at the top.": "Eine neue Version ist verfügbar. Siehe den Hinweis oben.",
   "ArtGrader is up to date.": "ArtGrader ist auf dem neusten Stand.",
-  "GitHub could not be reached. Check the internet connection.": "GitHub ist nicht erreichbar. Prüfe die Internetverbindung."
+  "GitHub could not be reached. Check the internet connection.": "GitHub ist nicht erreichbar. Prüfe die Internetverbindung.",
+  "The new version could not be installed. ArtGrader keeps running the old version. Try again later.": "Die neue Version konnte nicht installiert werden. ArtGrader läuft mit der bisherigen Version weiter. Versuche es später nochmals."
 }

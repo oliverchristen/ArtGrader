@@ -20,5 +20,6 @@
   "Check for updates": "Tschertgar actualisaziuns",
   "A new version is available. See the notice at the top.": "Ina nova versiun è disponibla. Guarda l’avis survart.",
   "ArtGrader is up to date.": "ArtGrader è actual.",
-  "GitHub could not be reached. Check the internet connection.": "GitHub n’è betg cuntanschibel. Controllescha la connexiun d’internet."
+  "GitHub could not be reached. Check the internet connection.": "GitHub n’è betg cuntanschibel. Controllescha la connexiun d’internet.",
+  "The new version could not be installed. ArtGrader keeps running the old version. Try again later.": "La nova versiun n’ha betg pudì vegnir installada. ArtGrader cuntinuescha cun la versiun actuala. Emprova pli tard anc ina giada."
 }

@@ -43,6 +43,7 @@
         (UpdateState.Downloading, _) => T("Downloading … {0} %", Updates.Percent),
         (UpdateState.Installing, _) => T("ArtGrader restarts and opens again in a new tab."),
         (UpdateState.Failed, UpdateFailure.NoWriteAccess) => T("ArtGrader may not change its own folder. Download the new version and install it as described in the instructions."),
+        (UpdateState.Failed, UpdateFailure.Replace) => T("The new version could not be installed. ArtGrader keeps running the old version. Try again later."),
         (UpdateState.Failed, UpdateFailure.Damaged) => T("The download is damaged and was not installed. Try again later."),
         (UpdateState.Failed, _) => T("The download failed. Check the internet connection and try again."),
         _ when !Updates.Target.CanInstall => T("You use version {0}. Download the new version and install it as described in the instructions.", Updates.Target.Current.ToString(3)),

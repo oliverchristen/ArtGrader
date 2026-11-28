@@ -19,6 +19,9 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = AppContext.BaseDirectory,
 });
 
+// After an update: wait until the previous version has ended, so that it can no longer answer as "already running".
+await AfterUpdate.WaitForPreviousAsync(args);
+
 var url = builder.Configuration["ArtGrader:Url"] ?? "http://localhost:5080";
 var paths = new AppPaths();
 var accessKey = AccessGate.LoadOrCreateKey(paths.AccessKeyFile);
