@@ -14,7 +14,7 @@
   "Update ArtGrader now?": "Aggiornare ArtGrader ora?",
   "Updates": "Aggiornamenti",
   "Version {0}": "Versione {0}",
-  "Look for a new version at every start": "Cerca una nuova versione a ogni avvio",
+  "Look for new versions automatically": "Cerca automaticamente nuove versioni",
   "ArtGrader asks GitHub for the newest version. No names, photos or grades go there.": "ArtGrader chiede a GitHub la versione più recente. Lì non vengono inviati nomi, foto o note.",
   "Updates fix errors and close security gaps quickly.": "Gli aggiornamenti correggono rapidamente errori e falle di sicurezza.",
   "Check for updates": "Cerca aggiornamenti",

@@ -108,15 +108,16 @@ Die Vorschläge gelten für Text. PDF-Seiten deckt die Lehrperson von Hand ab.
 
 ### Aktualisieren
 
-Beim Start fragt ArtGrader bei GitHub nach, ob es eine neue Version gibt. Gibt es eine, erscheint oben ein Hinweis:
+Beim Start und danach jede Stunde fragt ArtGrader bei GitHub nach, ob es eine neue Version gibt. Gibt es eine, erscheint oben ein Hinweis:
 
 - **Jetzt aktualisieren** lädt die passende Version für Windows oder Mac (Apple-Chip oder Intel) herunter, prüft die
   Datei, ersetzt ArtGrader und startet es neu. ArtGrader öffnet sich danach in einem neuen Tab.
-- **Später** blendet den Hinweis bis zum nächsten Start aus.
+- **Später** blendet den Hinweis bis zum nächsten Start aus. Erscheint vorher eine noch neuere Version, zeigt
+  ArtGrader den Hinweis wieder.
 - **Diese Version überspringen** blendet den Hinweis aus, bis eine noch neuere Version erscheint.
 
 Unter **Einstellungen → Updates** sucht *Nach Updates suchen* jederzeit nach einer neuen Version, auch nach einer
-übersprungenen. Dort lässt sich die Suche beim Start ausschalten. An GitHub gehen keine Namen, Fotos oder Noten, nur
+übersprungenen. Dort lässt sich die automatische Suche ausschalten. An GitHub gehen keine Namen, Fotos oder Noten, nur
 die Versionsnummer von ArtGrader.
 
 Darf ArtGrader seinen Ordner nicht ändern (zum Beispiel unter «Programme» auf einem verwalteten Computer), bietet der
@@ -149,8 +150,8 @@ blendet ArtGrader aus und verwendet sie nie, weil sie auf fremden Servern rechne
 
 ### Datenschutz
 
-- Updates: Beim Start fragt ArtGrader `api.github.com` nach der neusten Version (abschaltbar unter Einstellungen →
-  Updates). Die Anfrage enthält nur die Versionsnummer von ArtGrader.
+- Updates: Beim Start und danach stündlich fragt ArtGrader `api.github.com` nach der neusten Version (abschaltbar
+  unter Einstellungen → Updates). Die Anfrage enthält nur die Versionsnummer von ArtGrader.
 - Gespeichert wird lokal: Windows `%LOCALAPPDATA%\ArtGrader`, macOS `~/Library/Application Support/ArtGrader`.
   Im Unterordner `logs` liegen Protokolle der letzten 14 Tage, falls etwas nicht funktioniert.
 - Mit Claude gehen nur Aufgabe, Unterrichtsmaterial, Kriterien und Fotos an Anthropic – **keine Namen** und keine

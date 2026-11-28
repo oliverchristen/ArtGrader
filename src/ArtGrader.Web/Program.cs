@@ -74,7 +74,7 @@ builder.Services.AddSingleton(sp => new Updater(
     sp.GetRequiredService<UpdateTarget>(),
     sp.GetRequiredService<ILogger<Updater>>(),
     sp.GetRequiredService<IUpdateLauncher>()));
-builder.Services.AddHostedService<UpdateCheckOnStart>();
+builder.Services.AddHostedService<PeriodicUpdateCheck>();
 
 builder.Services.AddMudServices();
 builder.Services.AddRazorComponents()

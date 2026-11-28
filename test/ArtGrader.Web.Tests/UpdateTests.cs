@@ -7,6 +7,7 @@ using System.Text.Json;
 using ArtGrader.Core.Storage;
 using ArtGrader.Web.Services.Updates;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace ArtGrader.Web.Tests;
 
@@ -163,9 +164,94 @@ public sealed class UpdateTests : IDisposable
     }
 
     [Fact]
+    public async Task After_later_the_same_version_is_offered_again_only_on_request()
+    {
+        var updater = Updater(_ => Json(Releases(Release("v0.3"))));
+        await updater.CheckAsync(manual: false, TestContext.Current.CancellationToken);
+        updater.Later();
+
+        Assert.Equal(UpdateCheckOutcome.UpToDate, await updater.CheckAsync(manual: false, TestContext.Current.CancellationToken));
+        Assert.Null(updater.Offer);
+
+        Assert.Equal(UpdateCheckOutcome.Available, await updater.CheckAsync(manual: true, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task After_later_a_newer_version_is_offered()
+    {
+        var releases = Releases(Release("v0.3"));
+        var updater = Updater(_ => Json(releases));
+        await updater.CheckAsync(manual: false, TestContext.Current.CancellationToken);
+        updater.Later();
+
+        releases = Releases(Release("v0.4"), Release("v0.3"));
+
+        Assert.Equal(UpdateCheckOutcome.Available, await updater.CheckAsync(manual: false, TestContext.Current.CancellationToken));
+        Assert.Equal(new Version(0, 4, 0), updater.Offer?.Version);
+    }
+
+    [Fact]
+    public async Task While_ArtGrader_runs_it_checks_at_start_and_then_every_hour()
+    {
+        var requests = 0;
+        var clock = new FakeTimeProvider();
+        using var check = new PeriodicUpdateCheck(Updater(_ =>
+        {
+            Interlocked.Increment(ref requests);
+            return Json(Releases(Release("v0.2")));
+        }), clock);
+
+        await check.StartAsync(TestContext.Current.CancellationToken);
+        await Eventually(() => Volatile.Read(ref requests) == 1);
+
+        clock.Advance(TimeSpan.FromMinutes(59));
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(1, Volatile.Read(ref requests));
+
+        clock.Advance(TimeSpan.FromMinutes(1));
+        await Eventually(() => Volatile.Read(ref requests) == 2);
+
+        clock.Advance(TimeSpan.FromHours(1));
+        await Eventually(() => Volatile.Read(ref requests) == 3);
+        await check.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task The_hourly_check_follows_the_setting()
+    {
+        preferences.CheckAutomatically = false;
+        var requests = 0;
+        var clock = new FakeTimeProvider();
+        using var check = new PeriodicUpdateCheck(Updater(_ =>
+        {
+            Interlocked.Increment(ref requests);
+            return Json(Releases(Release("v0.2")));
+        }), clock);
+        await check.StartAsync(TestContext.Current.CancellationToken);
+
+        clock.Advance(TimeSpan.FromHours(1));
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(0, Volatile.Read(ref requests));
+
+        preferences.CheckAutomatically = true;
+        clock.Advance(TimeSpan.FromHours(1));
+        await Eventually(() => Volatile.Read(ref requests) == 1);
+        await check.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    private static async Task Eventually(Func<bool> condition)
+    {
+        for (var i = 0; i < 100 && !condition(); i++)
+        {
+            await Task.Delay(20, TestContext.Current.CancellationToken);
+        }
+        Assert.True(condition());
+    }
+
+    [Fact]
     public async Task The_check_at_start_can_be_switched_off()
     {
-        preferences.CheckAtStart = false;
+        preferences.CheckAutomatically = false;
         var requests = 0;
         var updater = Updater(_ =>
         {
@@ -173,7 +259,7 @@ public sealed class UpdateTests : IDisposable
             return Json(Releases(Release("v0.3")));
         });
 
-        await updater.CheckOnStartAsync(TestContext.Current.CancellationToken);
+        await updater.CheckAutomaticallyAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0, requests);
         Assert.Null(updater.Offer);
@@ -280,7 +366,7 @@ public sealed class UpdateTests : IDisposable
 
     private sealed class FakePreferences : IUpdatePreferences
     {
-        public bool CheckAtStart { get; set; } = true;
+        public bool CheckAutomatically { get; set; } = true;
 
         public Version? SkippedVersion { get; set; }
 

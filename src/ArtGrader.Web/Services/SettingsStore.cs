@@ -81,11 +81,11 @@ public sealed class SettingsStore : IAiSettingsSource, IUpdatePreferences
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = ArtGrader.Core.Localization.Language.Culture;
     }
 
-    public bool CheckAtStart => stored.CheckForUpdates;
+    public bool CheckAutomatically => stored.CheckForUpdates;
 
     public Version? SkippedVersion => Version.TryParse(stored.SkippedVersion, out var version) ? version : null;
 
-    public void SaveCheckAtStart(bool check)
+    public void SaveCheckAutomatically(bool check)
     {
         lock (gate)
         {

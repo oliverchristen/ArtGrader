@@ -267,8 +267,8 @@
         <section class="sheet">
             <h2 class="sheet-title">@T("Updates")</h2>
             <p>@T("Version {0}", Updates.Target.Current.ToString(3))</p>
-            <MudSwitch T="bool" Value="Settings.CheckAtStart" ValueChanged="Settings.SaveCheckAtStart" Color="Color.Primary"
-                       Label="@T("Look for a new version at every start")" />
+            <MudSwitch T="bool" Value="Settings.CheckAutomatically" ValueChanged="Settings.SaveCheckAutomatically" Color="Color.Primary"
+                       Label="@T("Look for new versions automatically")" />
             <p class="faint" style="font-size:.88rem">
                 @T("ArtGrader asks GitHub for the newest version. No names, photos or grades go there.")
                 @T("Updates fix errors and close security gaps quickly.")

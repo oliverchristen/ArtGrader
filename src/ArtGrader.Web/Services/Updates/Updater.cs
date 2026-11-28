@@ -8,7 +8,7 @@ namespace ArtGrader.Web.Services.Updates;
 
 public interface IUpdatePreferences
 {
-    bool CheckAtStart { get; }
+    bool CheckAutomatically { get; }
 
     Version? SkippedVersion { get; }
 
@@ -56,6 +56,8 @@ public sealed class Updater(
     private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan DownloadTimeout = TimeSpan.FromMinutes(30);
 
+    private Version? postponed;
+
     public event Action? Changed;
 
     public UpdateTarget Target => target;
@@ -72,9 +74,9 @@ public sealed class Updater(
 
     public bool IsBusy => State is UpdateState.Downloading or UpdateState.Installing;
 
-    public async Task CheckOnStartAsync(CancellationToken cancellationToken)
+    public async Task CheckAutomaticallyAsync(CancellationToken cancellationToken)
     {
-        if (preferences.CheckAtStart)
+        if (preferences.CheckAutomatically)
         {
             await CheckAsync(manual: false, cancellationToken);
         }
@@ -106,27 +108,36 @@ public sealed class Updater(
             return UpdateCheckOutcome.Failed;
         }
 
-        var skipped = !manual && newest is not null && preferences.SkippedVersion is { } version && newest.Version <= version;
-        Offer = skipped ? null : newest;
-        if (Offer is not null)
+        var hidden = !manual && newest is not null && (IsAtMost(newest.Version, preferences.SkippedVersion) || IsAtMost(newest.Version, postponed));
+        var offer = hidden ? null : newest;
+        if (offer?.Version != Offer?.Version || manual)
         {
+            // A new offer starts fresh; an hourly check of the same version keeps the banner as it is, an error included.
             State = UpdateState.Idle;
             Failure = UpdateFailure.None;
-            logger.LogInformation("ArtGrader {Version} is available.", Offer.Version.ToString(3));
+            if (offer is not null)
+            {
+                logger.LogInformation("ArtGrader {Version} is available.", offer.Version.ToString(3));
+            }
         }
+        Offer = offer;
         Changed?.Invoke();
         return Offer is null ? UpdateCheckOutcome.UpToDate : UpdateCheckOutcome.Available;
     }
 
+    /// <summary>Hides the offer. The automatic checks offer this version again only after the next start.</summary>
     public void Later()
     {
-        if (IsBusy)
+        if (Offer is null || IsBusy)
         {
             return;
         }
+        postponed = Offer.Version;
         Offer = null;
         Changed?.Invoke();
     }
+
+    private static bool IsAtMost(Version version, Version? limit) => limit is not null && version <= limit;
 
     public void Skip()
     {
