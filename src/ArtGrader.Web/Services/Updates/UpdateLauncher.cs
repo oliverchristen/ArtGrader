@@ -77,7 +77,7 @@ public sealed class UpdateLauncher(AppPaths paths, IHostApplicationLifetime life
     /// app into the applications folder when the user may write there, and adds it to the Dock. It adds the Dock entry
     /// only once (marker file dock-entry in the data folder), so an app the user removed from the Dock stays removed.
     /// </summary>
-    public const string MacScript = """
+    public static string MacScript { get; } = """
         #!/bin/bash
         trap '' HUP
         pid="$1"
@@ -120,5 +120,5 @@ public sealed class UpdateLauncher(AppPaths paths, IHostApplicationLifetime life
 
         open "$target"
 
-        """;
+        """.ReplaceLineEndings("\n");
 }
