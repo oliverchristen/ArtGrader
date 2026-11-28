@@ -38,6 +38,8 @@ public sealed class UpdateLauncher(AppPaths paths, IHostApplicationLifetime life
             start.ArgumentList.Add(processId.ToString(CultureInfo.InvariantCulture));
             start.ArgumentList.Add(update.NewContent);
             start.ArgumentList.Add(update.InstallPath);
+            start.ArgumentList.Add(paths.Root);
+            start.ArgumentList.Add("/Applications");
             Process.Start(start);
         }
         lifetime.StopApplication();
@@ -69,13 +71,20 @@ public sealed class UpdateLauncher(AppPaths paths, IHostApplicationLifetime life
 
     private static string Escape(string path) => path.Replace("%", "%%", StringComparison.Ordinal);
 
-    // The old bundle stays until the new one is in place, so a failed move leaves the old version working.
-    private const string MacScript = """
+    /// <summary>
+    /// Arguments: process id, new bundle, installed bundle, data folder, applications folder. The old bundle stays until the
+    /// new one is in place, so a failed move leaves the old version working. Like build/install.sh, the script links the
+    /// app into the applications folder when the user may write there, and adds it to the Dock. It adds the Dock entry
+    /// only once (marker file dock-entry in the data folder), so an app the user removed from the Dock stays removed.
+    /// </summary>
+    public const string MacScript = """
         #!/bin/bash
         trap '' HUP
         pid="$1"
         source="$2"
         target="$3"
+        data="$4"
+        applications="${5:-/Applications}"
         while kill -0 "$pid" 2>/dev/null; do sleep 0.5; done
         rm -rf "$target.old"
         if mv "$target" "$target.old"; then
@@ -88,6 +97,27 @@ public sealed class UpdateLauncher(AppPaths paths, IHostApplicationLifetime life
         xattr -dr com.apple.quarantine "$target" 2>/dev/null || true
         chmod +x "$target/Contents/MacOS/ArtGrader" "$target/Contents/Resources/app/ArtGrader"
         codesign --force --sign - "$target/Contents/Resources/app/ArtGrader" >/dev/null 2>&1 || true
+
+        shared="$applications/ArtGrader.app"
+        if [[ "$target" != "$applications/"* ]] && [[ -L "$shared" || ! -e "$shared" ]] && [[ -w "$applications" ]]; then
+            ln -sfn "$target" "$shared" 2>/dev/null || true
+        fi
+
+        marker="$data/dock-entry"
+        if [[ ! -e "$marker" ]]; then
+            dock_apps="$(defaults read com.apple.dock persistent-apps 2>/dev/null || true)"
+            if [[ "$dock_apps" == *"/ArtGrader.app"* ]]; then
+                touch "$marker"
+            else
+                url="file://$(printf '%s' "$target/" | sed 's/ /%20/g')"
+                tile="<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>$url</string><key>_CFURLStringType</key><integer>15</integer></dict></dict></dict>"
+                if defaults write com.apple.dock persistent-apps -array-add "$tile" 2>/dev/null; then
+                    killall Dock 2>/dev/null || true
+                    touch "$marker"
+                fi
+            fi
+        fi
+
         open "$target"
 
         """;

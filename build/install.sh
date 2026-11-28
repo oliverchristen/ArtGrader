@@ -63,6 +63,11 @@ else
         docked=true
     fi
 fi
+# The automatic update adds the Dock entry only when this marker is missing, so a removed entry stays removed.
+if [[ "$docked" == true ]]; then
+    data="${ARTGRADER_DATA:-$HOME/Library/Application Support/ArtGrader}"
+    mkdir -p "$data" && touch "$data/dock-entry" || true
+fi
 
 echo
 echo "ArtGrader is installed and starting now."

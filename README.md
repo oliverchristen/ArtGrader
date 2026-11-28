@@ -216,7 +216,9 @@ dotnet run --project src/ArtGrader.Web            # http://localhost:5080
   `ArtGrader-<rid>.zip` für `win-x64`, `osx-arm64` oder `osx-x64`. Es lädt nur Pakete aus den Release-Downloads des
   Repositorys und prüft Grösse und SHA-256 (`digest` der GitHub-API). Danach wartet ein Skript (`install.cmd` mit
   robocopy, bzw. `install.sh`), bis ArtGrader beendet ist, ersetzt den Programmordner bzw. `ArtGrader.app` und
-  startet ArtGrader neu. Aus der IDE (`dotnet run`) bietet der Hinweis nur den Download an.
+  startet ArtGrader neu. Auf dem Mac legt das Skript wie `build/install.sh` einen Verweis in `/Applications` (wenn
+  schreibbar) und einmalig einen Dock-Eintrag an (Marker `dock-entry` im Datenordner). Aus der IDE (`dotnet run`)
+  bietet der Hinweis nur den Download an.
 - Release: Ein Tag `v0.3` baut die Pakete und hängt sie an das GitHub-Release `v0.3` (Job `release` in
   `build.yml`). Der Tag muss zu `<Version>` in `ArtGrader.Web.csproj` passen, sonst bricht der Job ab. Die Version in
   `build/mac/Info.plist` von Hand mitziehen.
